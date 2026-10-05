@@ -75,12 +75,71 @@ function leaderLine(d, rows, w) {
  * scored, just "Episode 5" and when it airs.
  */
 export function standingsHero(d, w = stWeek(d)) {
-  const how = `<button type="button" class="st-how" aria-expanded="${state.how}" aria-controls="st-explain-${w}">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button>
+  const how = `<div class="st-btns"><button type="button" class="st-how" aria-expanded="${state.how}" aria-controls="st-explain-${w}">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button><button type="button" class="st-wl" aria-controls="welcome">Welcome</button></div>
     <div class="st-explain" id="st-explain-${w}"><div><div class="how-grid">${TERMS.map(howCard).join("")}</div></div></div>`;
   // The kicker, like the episode head's: the series and that week's episode.
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${esc(fmtDay.format(d.episodes[w - 1].air))}</div>`;
   if (w > d.weeksScored) return `${kicker}<h2 class="ep-title">Episode ${w}</h2><div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</div>${how}`;
   return `${kicker}<h2 class="ep-title">Episode ${w} Standings</h2><p class="st-leaders">${leaderLine(d, atWeek(d, w), w)}</p>${how}`;
+}
+
+/**
+ * The welcome card (on request: the host's welcome message, in the app): how
+ * the league works and what's where. It sits at the top of the Standings, over
+ * the weeks (#welcome), on a device's first visit (in place of How scoring
+ * works opening by itself) until its ✕ is tapped; the Welcome button beside
+ * How scoring works brings it back. Static text, the host's words lightly
+ * adapted for the page.
+ */
+const TAB_ICONS = {
+  Standings: '<rect x="2" y="14" width="7" height="11" rx="1" opacity=".7"/><rect x="10.5" y="8" width="7" height="17" rx="1"/><rect x="19" y="18" width="7" height="7" rx="1" opacity=".5"/><path d="M12 6l2-3 2 3 2-2-.5 4h-7L10 4Z"/>',
+  Episodes: '<rect x="4" y="10" width="20" height="14" rx="2" opacity=".35"/><rect x="4" y="5.5" width="20" height="5" rx="1.5"/><path d="M12 14.5v7l6-3.5Z"/>',
+  Cast: '<path d="M5 20v-8l4 4 5-8 5 8 4-4v8Z"/><rect x="5" y="21" width="18" height="3" rx="1"/>',
+  "Series switcher": '<path d="M4 9.5h17M16 4.5l5 5-5 5M24 18.5H7M12 13.5l-5 5 5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+};
+const WL_TABS = [
+  ["Standings", [
+    "Both leaderboards side by side: <b>Show</b> and <b>League</b>. Tap <b>How scoring works</b> for a refresher.",
+    "Tap the <b>Show</b> or <b>League</b> header to open its race chart: every player's gap to the leader, week by week. Tap a line to follow one player.",
+    "Tap <b>Ep 1</b>, <b>Ep 2</b>… or swipe to see the standings after any episode.",
+    "Tap any name to see their points and pick for every episode.",
+  ]],
+  ["Episodes", [
+    "Task-by-task breakdown for every episode, and the race so far.",
+    "Weekly cast winners beam in glory, while those who finish 5 or more points behind 4th place are acknowledged differently.",
+  ]],
+  ["Cast", [
+    "Episode and task scores for every cast member.",
+    "Radar charts showing how each cast member's prize, filmed and live task performances compare to every past contestant.",
+    "Short bios because cast members are human beings who deserve to be recognized as such regardless of what Greg says.",
+  ]],
+  ["Series switcher", [
+    "Tap the gold series number at the top to study the Series 21 results. Regardless of the numbers, Joel is the real MVP.",
+  ]],
+];
+export function welcomeCard() {
+  const tabs = WL_TABS.map(([name, lines]) => `
+      <div class="wl-tab"><h4><svg viewBox="0 0 28 28" aria-hidden="true">${TAB_ICONS[name]}</svg>${name}</h4>
+        <ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul></div>`).join("");
+  return `
+    <section class="card welcome" aria-labelledby="wl-title">
+      <div class="card-head"><span>Welcome to Fantasky Master</span><button type="button" class="wl-x" aria-label="Close the welcome"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
+      <div class="wl-body">
+        <h3 class="wl-title" id="wl-title">How it works</h3>
+        <ol class="wl-steps">
+          <li><span class="wl-n">1</span><div><b>WhatsApp polls.</b> Vote in the 10 episode polls in our group chat. You can update your picks as often as you want before that episode's <a href="https://www.youtube.com/@Taskmaster" target="_blank" rel="noopener">YouTube livestream</a> starts. You'll hear in the group when the scores are updated.</div></li>
+          <li><span class="wl-n">2</span><div><b>Two leaderboards.</b>
+            <ul class="wl-boards">
+              <li><b class="wl-show">The Show:</b> the player with the most points at the end of the series wins, regardless of episode placements. 0–25 pts per episode.</li>
+              <li><b class="wl-league">The League:</b> the player with the best episode placements throughout the series wins, regardless of points. 1–5 pts per episode.</li>
+            </ul></div></li>
+          <li><span class="wl-n">3</span><div><b>Mandatory pick rule.</b> You must pick all 5 contestants at least once across the 10 episodes. The app shows a red <b class="wl-warn">“Must pick: …”</b> warning when you open your row if you're running out of free weeks!</div></li>
+        </ol>
+        <h4 class="wl-sub">App highlights</h4>
+        <div class="wl-tabs">${tabs}</div>
+        <p class="wl-tip">Add it to your home screen for one-tap access. The countdown at the top shows the next episode in your own time zone.</p>
+      </div>
+    </section>`;
 }
 
 /** Ep 1–10, like the episode strip; weeks not yet scored are faint. */
