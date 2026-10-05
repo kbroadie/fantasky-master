@@ -4,6 +4,7 @@
 
 :root {
   --red: #c41818; --red-glow: rgba(196, 24, 24, .35); --red-t: rgba(196, 24, 24, .10);
+  --warn: #ff5d55; /* the pick-rule line under a name: bright enough to read at 11px on the dark rows */
   --gold: #b88018; --gold2: #d4a028; --gold3: #ecc040; --gold4: #8a6010;
   --gold-t: rgba(184, 128, 24, .12); --gold-glow: rgba(212, 160, 40, .30);
   --silver: #c9bba4; --bronze: #c98a45;
@@ -458,6 +459,13 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .xp-swap b.league { color: var(--league-hi); }
 .xp-swap .swap { width: 12px; height: 12px; fill: none; stroke: var(--gold2); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .xp .jr-card .jr-plot { height: 152px; } /* the race fills the five rows */
+/* The pick-rule warning at the top of an opened row: the card's plot gives
+   up the line's room, so the box stays exactly five rows and the card ends
+   where an unwarned one does. */
+.xp-must { margin: 0 2px 5px; font: 700 11px/12px var(--ff); color: var(--warn); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xp.warned .bars { --plot: 122px; }
+.xp.warned .jr-card .jr-plot { height: 134px; }
+.pc-more > div > .xp-must { margin: 10px 12px 0; } /* edit mode: above the pick chooser */
 /* An opened half: the race chart ("The race so far") for the opened board,
    full width, only the opened player highlighted (journey in table.js). */
 .jr { --c: var(--show-hi); padding: 14px 16px 10px; }

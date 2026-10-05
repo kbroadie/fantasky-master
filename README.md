@@ -29,7 +29,7 @@ Everything happens in our WhatsApp group. There's nothing to sign up for.
 6. **No vote = no points** for that episode, so don't forget the later weeks.
 7. **Pick every contestant at least once.** Across the series' 10 polls you must vote for **each of the 5 contestants at least once**. That leaves 5 picks free to use however you like, including backing a favourite several times.
 
-   > 💡 Plan ahead: each poll you miss is one fewer week to fit everyone in, so don't leave a contestant until the last episode. Once your remaining polls are all needed to fit in the contestants you haven't picked yet, the site shows a red **"Must pick: …"** line under your name.
+   > 💡 Plan ahead: each poll you miss is one fewer week to fit everyone in, so don't leave a contestant until the last episode. Once your remaining polls are all needed to fit in the contestants you haven't picked yet, a red **"Must pick: …"** line appears when you open your row on the Standings.
 
 ---
 
@@ -85,28 +85,33 @@ The site has three tabs: **Standings**, **Episodes** and **Cast**.
 
 **Standings**
 
-- Everyone's **Show** and **League** totals.
-- **Tap a column heading** to rank the table by that score; tap it again to flip the order.
-- **Tap your row** to see your pick for every episode and what each pick scored.
-- The small **+2** / **−3** under each rank shows how many places you moved since last week.
-- A red **"Must pick: …"** line under a name means every remaining poll is needed to fit in the contestants that player hasn't picked yet.
-- The top three get gold, silver and bronze seals, and whoever's last hangs slightly crooked. 😉
+- Both boards side by side: **Show** on the left, **League** on the right, each from first place down.
+- **How scoring works** explains both boards.
+- Tap **Ep 1**, **Ep 2**… or swipe sideways to see the standings after any episode.
+- **Tap the Show or League heading** to open that board's race: every player's gap to the leader, week by week. Tap a line to follow one player.
+- **Tap any name** to see their points and pick for every episode. Tap the card's title to switch to their race.
+- If you open a row and see a red **"Must pick: …"** line, every remaining poll is needed to fit in the contestants that player hasn't picked yet. It becomes **"Can't fit all: …"** if they no longer can, and **"Never picked: …"** once the series is over.
 
 **Episodes**
 
-- One page per episode: the winner, every task, each contestant's score, and a short write-up.
-- Episodes that haven't aired yet show a sealed envelope.
+- One page per episode: the cast with their scores and how many players picked each, every task, and the race so far.
+- The winner glows gold, and a last place 5 or more points behind everyone else gets a cloud of stink.
+- Episodes that haven't aired yet show when they air, in your own time.
 
 **Cast**
 
-- A profile of each contestant.
-- Their total so far and **average per episode aired**.
-- Their ranks on prize, filmed and live tasks.
-- An episode-by-episode score grid.
+- A page for each contestant: their place, total, average per episode and wins.
+- Their points every episode, and every task's score in a heat strip.
+- A radar comparing their prize, filmed and live tasks with every Taskmaster contestant ever, and their all-time records once the series is over.
+- A short bio and personal facts.
 
 **Switching series**
 
-- The site opens on the current series. Tap the series number (**22**) next to "Series" at the top to switch to another series. The number turns ivory when you're looking at a past series.
+- The site opens on the current series. Tap the gold series number at the top to switch to another series.
+
+**Times**
+
+- The countdown at the top shows the next episode in your own time zone.
 
 ---
 
