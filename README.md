@@ -89,7 +89,7 @@ The site has three tabs: **Standings**, **Episodes** and **Cast**.
 - **Tap a column heading** to rank the table by that score; tap it again to flip the order.
 - **Tap your row** to see your pick for every episode and what each pick scored.
 - The small **+2** / **−3** under each rank shows how many places you moved since last week.
-- A red **"Must pick: …"** line under a name means every remaining poll is needed to fit in the contestants that player hasn't picked yet.
+- A red **"Must pick: …"** line under a name means every remaining poll is needed to fit in the contestants that player hasn't picked yet. It becomes **"Can't fit all: …"** if they no longer can, and **"Never picked: …"** once the series is over.
 - The top three get gold, silver and bronze seals, and whoever's last hangs slightly crooked. 😉
 
 **Episodes**

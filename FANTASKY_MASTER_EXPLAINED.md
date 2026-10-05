@@ -300,7 +300,7 @@ status = none                        if needed is empty or |needed| < left
        = NEVER_PICKED(needed)        if left = 0 and needed is non-empty
 ```
 
-The status is reported only when mathematically binding. Aired-but-unentered weeks count as still available, because their picks aren't known yet, so late data entry can't produce a false status.
+The site shows it as a red line under the player's name on both boards ("Must pick: …", "Can't fit all: …", "Never picked: …"), as it stood after the week on show. The status is reported only when mathematically binding. Aired-but-unentered weeks count as still available, because their picks aren't known yet, so late data entry can't produce a false status.
 
 ### 6.10 Contestant statistics
 

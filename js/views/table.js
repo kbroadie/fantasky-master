@@ -8,6 +8,7 @@ import { esc, listing, tier, ord, fmtDay, fmtWhen, smooth, niceStep, state } fro
 import { pickChooser } from "../edit.js";
 import { barsCard, median } from "./cast.js";
 import { raceSvg } from "./episodes.js";
+import { pickStatus } from "../league.js";
 
 /** The week on show: state.wk, or the latest scored week. */
 export const stWeek = (d) => Math.min(Math.max(1, state.wk || d.weeksScored), d.episodes.length);
@@ -181,6 +182,20 @@ export function boardChart(d, w, k, width) {
  * behind it, filled in proportion to the player's points against the
  * board's leader (--m).
  */
+/**
+ * The pick-every-contestant rule (league.js pickStatus), as it stood after
+ * the week on show: a red line under the name once every poll left is
+ * needed to fit in the contestants a player hasn't picked ("Must pick"),
+ * once they can't all fit ("Can't fit all"), or once the series is over
+ * ("Never picked"). Only scored weeks count, so picks made ahead can still
+ * change.
+ */
+const MUST = { must: "Must pick", cannot: "Can't fit all", never: "Never picked" };
+function mustLine(d, p, w) {
+  const known = Math.min(w, d.weeksScored);
+  return known ? pickStatus(d.names, p.weeks.filter((x) => x.ep <= known).map((x) => x.pick), known) : null;
+}
+
 export function standingsRows(d, w = stWeek(d)) {
   const { show, league } = boards(d, w);
   const top = { show: Math.max(0, ...show.map((p) => p.show)), league: Math.max(0, ...league.map((p) => p.league)) };
@@ -188,8 +203,9 @@ export function standingsRows(d, w = stWeek(d)) {
     const k = side === "show" ? "show" : "league", rank = p[`${k}Rank`];
     const num = `<span class="pc-num${rank === 1 ? " t1" : ""}">${p[k]}</span>`;
     const name = `<span class="pc-name"><span class="nm">${esc(p.name)}</span><svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span>`;
-    const say = `${p.name}, ${ord(rank)} in the ${side === "show" ? "Show" : "League"} with ${p[k]} points`;
-    return `<button class="sd ${side === "show" ? "l" : "r"}" type="button" data-side="${side}" data-p="${esc(p.name)}" style="--m:${top[k] ? (p[k] / top[k]).toFixed(3) : 0}" aria-expanded="false" aria-label="${esc(say)}">${name + num}</button>`;
+    const st = mustLine(d, p, w), warn = st && `${MUST[st.kind]}: ${listing(st.needed)}`;
+    const say = `${p.name}, ${ord(rank)} in the ${side === "show" ? "Show" : "League"} with ${p[k]} points${warn ? `. ${warn}` : ""}`;
+    return `<button class="sd ${side === "show" ? "l" : "r"}${warn ? " warn" : ""}" type="button" data-side="${side}" data-p="${esc(p.name)}" style="--m:${top[k] ? (p[k] / top[k]).toFixed(3) : 0}" aria-expanded="false" aria-label="${esc(say)}">${name + num}${warn ? `<span class="pc-must" aria-hidden="true">${esc(warn)}</span>` : ""}</button>`;
   };
   return show.map((l, i) => {
     const r = league[i];

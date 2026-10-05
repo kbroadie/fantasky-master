@@ -4,6 +4,7 @@
 
 :root {
   --red: #c41818; --red-glow: rgba(196, 24, 24, .35); --red-t: rgba(196, 24, 24, .10);
+  --warn: #ff5d55; /* the pick-rule line under a name: bright enough to read at 11px on the dark rows */
   --gold: #b88018; --gold2: #d4a028; --gold3: #ecc040; --gold4: #8a6010;
   --gold-t: rgba(184, 128, 24, .12); --gold-glow: rgba(212, 160, 40, .30);
   --silver: #c9bba4; --bronze: #c98a45;
@@ -425,6 +426,10 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 
 .pk b { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 .pc-name, .pc-num, .pc-rank { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
+/* The pick-rule warning: a second line under the name, the row's height
+   unchanged (the name and points move up to make room). */
+.sd.warn { align-self: start; } /* not baseline-aligned with the row: its name sits higher, which would push the whole cell down */
+.pc-must { grid-column: 1 / -1; min-width: 0; margin-top: 1px; font: 700 11px/1.2 var(--ff); color: var(--warn); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 
 /* Tap a half to open its card under the row */
 .pc-more { display: grid; grid-template-rows: 0fr; }
