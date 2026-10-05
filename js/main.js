@@ -191,7 +191,10 @@ function countdown() {
     el.removeAttribute("aria-label");
     return;
   }
-  el.innerHTML = `<span class="cd-pill"><span class="cd-what" id="cd-what"></span> <span class="cd-left" id="cd-left"></span></span>`;
+  // The device's time zone after the countdown, as at the episode's air time
+  // (on request): "PDT", "BST", or "GMT-7" where a locale has no short name.
+  const tz = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" }).formatToParts(e.air).find((p) => p.type === "timeZoneName")?.value || "";
+  el.innerHTML = `<span class="cd-pill"><span class="cd-what" id="cd-what"></span> <span class="cd-left" id="cd-left"></span><span class="cd-tz" id="cd-tz">${esc(tz)}</span></span>`;
   el.setAttribute("aria-label", `Episode ${e.ep} airs ${fmtWhen.format(e.air)}`);
   let last = "";
   const tick = () => {
@@ -201,6 +204,7 @@ function countdown() {
     last = html;
     $("#cd-what").textContent = ms > 0 ? `Ep ${e.ep} airs in` : `Ep ${e.ep} is on air`;
     $("#cd-left").innerHTML = html;
+    $("#cd-tz").hidden = ms <= 0;
     if (ms <= 0) clearInterval(timer);
   };
   tick();
