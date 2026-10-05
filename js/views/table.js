@@ -138,7 +138,6 @@ export function welcomeCard() {
         </ol>
         <h4 class="wl-sub">App highlights</h4>
         <div class="wl-tabs">${tabs}</div>
-        <p class="wl-tip">Add it to your home screen for one-tap access. The countdown at the top shows the next episode in your own time zone.</p>
         <button type="button" class="wl-x wl-done">Close</button>
       </div>
     </section>`;

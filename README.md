@@ -111,7 +111,7 @@ The site has three tabs: **Standings**, **Episodes** and **Cast**.
 
 **Times**
 
-- The countdown at the top shows the next episode in your own time zone.
+- The countdown at the top shows the next episode in your own time zone, which it names (for example **PDT** or **BST**).
 
 ---
 
