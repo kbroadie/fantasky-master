@@ -186,7 +186,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 /* "How scoring works" under the leaders line opens both explanations below
    it (the hero grows; tap again to close). A gold label with a chevron, so
    it reads as something to tap. */
-.st-how {
+.st-btns { display: flex; justify-content: center; gap: 4px; }
+.st-how, .st-wl {
   display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; padding: 6px 8px;
   font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--gold2);
   -webkit-tap-highlight-color: transparent;
@@ -546,6 +547,33 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 /* Slides off screen (all but the one on show and its neighbours) skip style,
    layout and paint until they come near. They keep their last size once seen. */
 .slide { content-visibility: auto; contain-intrinsic-size: auto 390px auto 1200px; }
+
+/* The welcome card at the top of the Standings, over the weeks: shown on a
+   device's first visit until its ✕ is tapped, and from the Welcome button. */
+#welcome { padding: 12px var(--px) 0; }
+#welcome[hidden] { display: none; }
+.welcome { margin: 0; }
+.wl-x { display: flex; padding: 8px; margin: -8px -8px -8px 0; color: var(--t3); -webkit-tap-highlight-color: transparent; }
+.wl-x svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.wl-body { padding: 4px 14px 16px; font-size: 14px; line-height: 1.5; color: var(--t2); text-wrap: pretty; }
+.wl-title { margin: 2px 0 12px; font: 400 22px/1.1 var(--ff-head); color: var(--t1); }
+.wl-body b { font-weight: 600; color: var(--t1); }
+.wl-body a { color: var(--gold2); text-decoration: underline; text-underline-offset: 2px; }
+.wl-steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.wl-steps > li { display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 10px; }
+.wl-n { width: 22px; height: 22px; border: 1px solid var(--b-gold); border-radius: 50%; font: 500 12px/20px var(--fm); text-align: center; color: var(--gold2); }
+.wl-boards { display: grid; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
+.wl-body .wl-show { color: var(--show-hi); }
+.wl-body .wl-league { color: var(--league-hi); }
+.wl-body .wl-warn { color: var(--warn); }
+.wl-sub { margin: 20px 0 10px; padding-top: 14px; border-top: 1px solid var(--b-dim); font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--t3); }
+.wl-tabs { display: grid; gap: 12px; }
+.wl-tab h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--gold2); }
+.wl-tab h4 svg { width: 18px; height: 18px; fill: currentColor; }
+.wl-tab ul { display: grid; gap: 4px; margin: 0; padding: 0 0 0 26px; list-style: none; }
+.wl-tab li { position: relative; }
+.wl-tab li::before { content: ""; position: absolute; left: -12px; top: .62em; width: 4px; height: 4px; border-radius: 50%; background: var(--t4); }
+.wl-tip { margin: 16px 0 0; font-size: 13px; color: var(--t3); }
 
 /* ── Cards ─────────────────────────────────────────────────────────── */
 .card {

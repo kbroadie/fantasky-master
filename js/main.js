@@ -5,7 +5,7 @@ import { loadText, parseCSV, buildSeries } from "./csv.js";
 import { initEdit } from "./edit.js";
 import { derive, currentSeriesKey } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
-import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable } from "./views/table.js";
+import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
@@ -221,6 +221,20 @@ $("#series").addEventListener("click", () => {
 });
 
 $("#p-standings").addEventListener("click", (e) => {
+  // The welcome card: ✕ hides it for good on this device; the Welcome button
+  // beside How scoring works shows it again and scrolls up to it.
+  if (e.target.closest(".wl-x")) {
+    $("#welcome").hidden = true;
+    try { localStorage.setItem("fm-welcome", "closed"); } catch {}
+    fit($("#st-body"));
+    return;
+  }
+  if (e.target.closest(".st-wl")) {
+    $("#welcome").hidden = false;
+    fit($("#st-body"));
+    scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    return;
+  }
   // "How scoring works": open both explanations; tap again to close. It stays
   // open as the week changes (state.how).
   const how = e.target.closest(".st-how");
@@ -485,10 +499,13 @@ try {
   // the all-time stats are available, otherwise against the league's series.
   state.allTime = allTime;
   state.stats = allTime.length ? allTimePerEpisode(allTime) : { ...perEpisodeStats(SERIES), n: 0 };
-  // A first visit opens How scoring works on Standings (League scoring is new;
-  // on request, in place of a walkthrough). Remembered per device; closed
-  // from then on unless tapped open.
-  try { if (!localStorage.getItem("fm-seen-how")) { state.how = true; localStorage.setItem("fm-seen-how", "1"); } } catch {}
+  // The welcome card shows at the top of the Standings until its ✕ is tapped
+  // (remembered per device; on request, in place of How scoring works opening
+  // by itself on a first visit). The Welcome button brings it back.
+  let welcome = true;
+  try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
+  $("#welcome").innerHTML = welcomeCard();
+  $("#welcome").hidden = !welcome;
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);
