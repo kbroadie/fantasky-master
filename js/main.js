@@ -280,13 +280,80 @@ $("#p-standings").addEventListener("click", (e) => {
   // the week on show opens; a row open in another week closes, without easing.
   const sd = e.target.closest(".pc .sd");
   if (sd) {
+    glideEnd?.(); // settle a row still gliding, so this one starts from where things are
     const row = sd.closest(".pc"), side = sd.dataset.side, open = row.classList.contains("open") && row.dataset.open === side;
     state.open = open ? null : { side, name: sd.dataset.p, wk: +row.closest(".st-slide").dataset.week };
     for (const b of $$("#st-body .board.ease")) b.classList.remove("ease");
-    row.closest(".board").classList.add("ease");
-    syncAll();
+    const board = row.closest(".board");
+    board.classList.add("ease");
+    if (open) slideShut(board, row, syncAll);
+    else glide(board, syncAll);
   }
 });
+
+// Rows opening and closing (on request, "smoother"): the layout changes at
+// once and only transforms move, so the GPU slides the rows and nothing is
+// repainted (animating the card's height repainted every row below it, and
+// its grained background, on every frame). Opening, the rows below start
+// where they were, over the new card, and glide down to their places,
+// uncovering it (FLIP: First, Last, Invert, Play); closing, they glide up
+// over the card and only then does it fold away. Moving rows are lifted
+// over the opened card (.board.glide) only while they move, so no row is a
+// layer of its own for longer than that.
+const GLIDE_MS = 300;
+let glideEnd = null;
+/** Run `change` (rows opening or closing), then slide the board's rows from where they were to where they are. */
+function glide(board, change) {
+  glideEnd?.();
+  const rows = [...board.querySelectorAll(".rows > .pc")], before = rows.map((r) => r.offsetTop), height = board.offsetHeight;
+  change();
+  if (reducedMotion) return;
+  const moved = rows.filter((r, i) => {
+    const dy = before[i] - r.offsetTop;
+    if (Math.abs(dy) < 1) return false;
+    r.style.transform = `translateY(${dy}px)`;
+    return true;
+  });
+  // The board's bottom edge follows its last row (a clip, eased the same
+  // way), so it never shows a band the rows haven't reached yet; with no rows
+  // below (the last row opening), it sweeps down over the new card.
+  const grow = board.offsetHeight - height;
+  if (!moved.length && grow <= 0) return;
+  if (grow > 0) board.style.clipPath = `inset(0 0 ${grow}px 0 round 12px)`;
+  board.offsetHeight; // the rows' starting places, before the transition starts
+  board.classList.add("glide");
+  for (const r of moved) r.style.transform = "";
+  if (grow > 0) board.style.clipPath = "inset(0 0 0 0 round 12px)";
+  const t = setTimeout(() => glideEnd?.(), GLIDE_MS + 40);
+  glideEnd = () => { clearTimeout(t); board.classList.remove("glide"); board.style.clipPath = ""; glideEnd = null; };
+}
+/** Close an opened row: the rows below glide up over its card (or, for the last row, the board's bottom edge sweeps up over it), then `finish` folds it away. */
+function slideShut(board, row, finish) {
+  glideEnd?.();
+  const below = [];
+  for (let r = row.nextElementSibling; r; r = r.nextElementSibling) below.push(r);
+  if (reducedMotion) { glide(board, finish); return; }
+  const h = row.querySelector(".pc-more").offsetHeight;
+  // The row reads as closed at once (its line folds back into the chevron,
+  // the other cells come forward); only its height waits for the rows.
+  delete row.dataset.open;
+  for (const b of row.querySelectorAll(".sd")) b.setAttribute("aria-expanded", "false");
+  board.classList.remove("focus");
+  board.style.clipPath = "inset(0 0 0 0 round 12px)";
+  board.offsetHeight;
+  board.classList.add("glide");
+  for (const r of below) r.style.transform = `translateY(${-h}px)`;
+  board.style.clipPath = `inset(0 0 ${h + 1}px 0 round 12px)`; // the bottom edge comes up with the last row (and its 1px border)
+  const t = setTimeout(() => glideEnd?.(), GLIDE_MS);
+  glideEnd = () => {
+    clearTimeout(t);
+    board.classList.remove("glide"); // no transition while the rows go back to no transform
+    finish();
+    for (const r of below) r.style.transform = "";
+    board.style.clipPath = "";
+    glideEnd = null;
+  };
+}
 
 // ── Standings weeks ──────────────────────────────────────────────────────────
 // A swiper of weeks, like Episodes (ST, bound below): swipe or tap the strip,

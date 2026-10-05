@@ -431,7 +431,14 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 
 /* Tap a half to open its card under the row */
 .pc-more { display: grid; grid-template-rows: 0fr; }
-.board.ease .pc-more { transition: grid-template-rows .3s var(--ease); } /* only the board tapped on animates (.ease, set in main.js); the other weeks just switch */
+/* A row opens at once and the rows below glide (glide / slideShut in
+   main.js): transforms only, so nothing repaints. While they move they're
+   lifted over the opened card (each its own stacking context, in order). */
+.board.glide .rows > .pc { z-index: 1; transition: transform .3s var(--ease); }
+.board.glide { transition: clip-path .3s var(--ease); } /* its bottom edge, with the last row */
+.board.ease .pc.open .pc-more > div { animation: xp-in .3s var(--ease); } /* the card fades in as it's uncovered, on the board tapped on only */
+@keyframes xp-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .board.ease .pc.open .pc-more > div { animation: none; } }
 .pc.open .pc-more { grid-template-rows: 1fr; }
 .pc-more > div { overflow: hidden; min-height: 0; }
 /* A slightly darker bed behind an opened row's card. */
