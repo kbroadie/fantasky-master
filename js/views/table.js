@@ -173,16 +173,6 @@ export function boardChart(d, w, k, width) {
 }
 
 /**
- * One row per place: the place number in a fixed column at the left (it never
- * moves or changes), then the Show's player at that place and
- * the League's, each as name then points. Each half is a button that opens that player's
- * card (rowMore), keyed by player (data-p).
- *
- * Each half is also a gap meter (on request): a wash in the board's colour
- * behind it, filled in proportion to the player's points against the
- * board's leader (--m).
- */
-/**
  * The pick-every-contestant rule (league.js pickStatus), as it stood after
  * the week on show: a red line under the name once every poll left is
  * needed to fit in the contestants a player hasn't picked ("Must pick"),
@@ -196,6 +186,16 @@ function mustLine(d, p, w) {
   return known ? pickStatus(d.names, p.weeks.filter((x) => x.ep <= known).map((x) => x.pick), known) : null;
 }
 
+/**
+ * One row per place: the place number in a fixed column at the left (it never
+ * moves or changes), then the Show's player at that place and
+ * the League's, each as name then points. Each half is a button that opens that player's
+ * card (rowMore), keyed by player (data-p).
+ *
+ * Each half is also a gap meter (on request): a wash in the board's colour
+ * behind it, filled in proportion to the player's points against the
+ * board's leader (--m).
+ */
 export function standingsRows(d, w = stWeek(d)) {
   const { show, league } = boards(d, w);
   const top = { show: Math.max(0, ...show.map((p) => p.show)), league: Math.max(0, ...league.map((p) => p.league)) };
