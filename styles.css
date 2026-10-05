@@ -186,8 +186,7 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 /* "How scoring works" under the leaders line opens both explanations below
    it (the hero grows; tap again to close). A gold label with a chevron, so
    it reads as something to tap. */
-.st-btns { display: flex; justify-content: center; gap: 4px; }
-.st-how, .st-wl {
+.st-how {
   display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; padding: 6px 8px;
   font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--gold2);
   -webkit-tap-highlight-color: transparent;
@@ -574,6 +573,11 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .wl-tab li { position: relative; }
 .wl-tab li::before { content: ""; position: absolute; left: -12px; top: .62em; width: 4px; height: 4px; border-radius: 50%; background: var(--t4); }
 .wl-tip { margin: 16px 0 0; font-size: 13px; color: var(--t3); }
+/* Close at the end of the card, as well as the ✕ at the top: a quiet gold pill. */
+.wl-x.wl-done { display: block; margin: 18px auto 0; padding: 9px 22px; border: 1px solid var(--b-gold); border-radius: 999px; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--gold2); }
+/* "New here? Read the welcome": a quiet line under the How scoring works cards. */
+.st-wl { display: block; margin: 10px auto 0; padding: 6px 8px; font-size: 13px; color: var(--t3); -webkit-tap-highlight-color: transparent; }
+.st-wl span { color: var(--gold2); text-decoration: underline; text-underline-offset: 2px; }
 
 /* ── Cards ─────────────────────────────────────────────────────────── */
 .card {

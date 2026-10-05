@@ -86,7 +86,7 @@ The site has three tabs: **Standings**, **Episodes** and **Cast**.
 **Standings**
 
 - Both boards side by side: **Show** on the left, **League** on the right, each from first place down.
-- **How scoring works** explains both boards, and **Welcome** brings back the welcome message the site opens with.
+- **How scoring works** explains both boards. Under it, **Read the welcome** brings back the welcome message the site opens with.
 - Tap **Ep 1**, **Ep 2**… or swipe sideways to see the standings after any episode.
 - **Tap the Show or League heading** to open that board's race: every player's gap to the leader, week by week. Tap a line to follow one player.
 - **Tap any name** to see their points and pick for every episode. Tap the card's title to switch to their race.

@@ -75,8 +75,8 @@ function leaderLine(d, rows, w) {
  * scored, just "Episode 5" and when it airs.
  */
 export function standingsHero(d, w = stWeek(d)) {
-  const how = `<div class="st-btns"><button type="button" class="st-how" aria-expanded="${state.how}" aria-controls="st-explain-${w}">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button><button type="button" class="st-wl" aria-controls="welcome">Welcome</button></div>
-    <div class="st-explain" id="st-explain-${w}"><div><div class="how-grid">${TERMS.map(howCard).join("")}</div></div></div>`;
+  const how = `<button type="button" class="st-how" aria-expanded="${state.how}" aria-controls="st-explain-${w}">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button>
+    <div class="st-explain" id="st-explain-${w}"><div><div class="how-grid">${TERMS.map(howCard).join("")}</div><button type="button" class="st-wl" aria-controls="welcome">New here? <span>Read the welcome</span></button></div></div>`;
   // The kicker, like the episode head's: the series and that week's episode.
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${esc(fmtDay.format(d.episodes[w - 1].air))}</div>`;
   if (w > d.weeksScored) return `${kicker}<h2 class="ep-title">Episode ${w}</h2><div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</div>${how}`;
@@ -87,8 +87,9 @@ export function standingsHero(d, w = stWeek(d)) {
  * The welcome card (on request: the host's welcome message, in the app): how
  * the league works and what's where. It sits at the top of the Standings, over
  * the weeks (#welcome), on a device's first visit (in place of How scoring
- * works opening by itself) until its ✕ is tapped; the Welcome button beside
- * How scoring works brings it back. Static text, the host's words lightly
+ * works opening by itself) until it's closed (its ✕, or Close at the end);
+ * a quiet line under the How scoring works cards brings it back (on request,
+ * somewhere subtler than the button it first had beside How scoring works). Static text, the host's words lightly
  * adapted for the page.
  */
 const TAB_ICONS = {
@@ -138,6 +139,7 @@ export function welcomeCard() {
         <h4 class="wl-sub">App highlights</h4>
         <div class="wl-tabs">${tabs}</div>
         <p class="wl-tip">Add it to your home screen for one-tap access. The countdown at the top shows the next episode in your own time zone.</p>
+        <button type="button" class="wl-x wl-done">Close</button>
       </div>
     </section>`;
 }
