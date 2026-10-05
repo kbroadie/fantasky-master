@@ -221,12 +221,14 @@ $("#series").addEventListener("click", () => {
 });
 
 $("#p-standings").addEventListener("click", (e) => {
-  // The welcome card: ✕ hides it for good on this device; the Welcome button
-  // beside How scoring works shows it again and scrolls up to it.
+  // The welcome card: ✕ (or Close at its end) hides it for good on this
+  // device, back at the top of the page; "Read the welcome" under the How
+  // scoring works cards shows it again and scrolls up to it.
   if (e.target.closest(".wl-x")) {
     $("#welcome").hidden = true;
     try { localStorage.setItem("fm-welcome", "closed"); } catch {}
     fit($("#st-body"));
+    if (scrollY) scrollTo(0, 0);
     return;
   }
   if (e.target.closest(".st-wl")) {
