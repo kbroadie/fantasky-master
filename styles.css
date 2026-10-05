@@ -426,10 +426,6 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 
 .pk b { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 .pc-name, .pc-num, .pc-rank { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
-/* The pick-rule warning: a second line under the name, the row's height
-   unchanged (the name and points move up to make room). */
-.sd.warn { align-self: start; } /* not baseline-aligned with the row: its name sits higher, which would push the whole cell down */
-.pc-must { grid-column: 1 / -1; min-width: 0; margin-top: 1px; font: 700 11px/1.2 var(--ff); color: var(--warn); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 
 /* Tap a half to open its card under the row */
 .pc-more { display: grid; grid-template-rows: 0fr; }
@@ -463,6 +459,13 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .xp-swap b.league { color: var(--league-hi); }
 .xp-swap .swap { width: 12px; height: 12px; fill: none; stroke: var(--gold2); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .xp .jr-card .jr-plot { height: 152px; } /* the race fills the five rows */
+/* The pick-rule warning at the top of an opened row: the card's plot gives
+   up the line's room, so the box stays exactly five rows and the card ends
+   where an unwarned one does. */
+.xp-must { margin: 0 2px 5px; font: 700 11px/12px var(--ff); color: var(--warn); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xp.warned .bars { --plot: 122px; }
+.xp.warned .jr-card .jr-plot { height: 134px; }
+.pc-more > div > .xp-must { margin: 10px 12px 0; } /* edit mode: above the pick chooser */
 /* An opened half: the race chart ("The race so far") for the opened board,
    full width, only the opened player highlighted (journey in table.js). */
 .jr { --c: var(--show-hi); padding: 14px 16px 10px; }

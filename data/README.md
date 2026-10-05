@@ -21,7 +21,7 @@ Each row has a `record` type that says which columns it uses. Leave the other co
 | `contestant` | contestant per series | `series`, `contestant` (short name), `full_name`, `accent_color` (hex), `portrait_url` (a file in the repo, `img/s<series>/<name>-portrait.webp`: GitHub Pages serves it, as Imgur is blocked in the UK), `bio` (who they are, in a sentence or two; no performance) |
 | `player` | league player per series (the roster) | `series`, `player` |
 | `episode` | episode per series, 1–10, including future ones | `series`, `episode`, `title`, `air_date` (London date, e.g. `1 Oct 2026`), `tiebreak_winner` (only if contestants tied for the top score), `analysis` |
-| `score` | contestant per task | `series`, `episode`, `task_no` (1, 2, 3… within the episode), `task_type` (`P` prize, `F` filmed, `T` team, `L` live), `task_name`, `contestant`, `score` (a whole number, or `DQ` for a disqualification, which counts as 0) |
+| `score` | contestant per task | `series`, `episode`, `task_no` (1, 2, 3… within the episode), `task_type` (`P` prize, `F` filmed, `T` team, `L` live), `task_name`, `contestant`, `score` (a whole number from −1 to 10, or `DQ` for a disqualification, which counts as 0) |
 | `pick` | player per episode they voted in | `series`, `episode`, `player`, `contestant` (their final poll vote) |
 
 **No `pick` row = no vote** for that player and episode.

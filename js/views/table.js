@@ -173,20 +173,6 @@ export function boardChart(d, w, k, width) {
 }
 
 /**
- * The pick-every-contestant rule (league.js pickStatus), as it stood after
- * the week on show: a red line under the name once every poll left is
- * needed to fit in the contestants a player hasn't picked ("Must pick"),
- * once they can't all fit ("Can't fit all"), or once the series is over
- * ("Never picked"). Only scored weeks count, so picks made ahead can still
- * change.
- */
-const MUST = { must: "Must pick", cannot: "Can't fit all", never: "Never picked" };
-function mustLine(d, p, w) {
-  const known = Math.min(w, d.weeksScored);
-  return known ? pickStatus(d.names, p.weeks.filter((x) => x.ep <= known).map((x) => x.pick), known) : null;
-}
-
-/**
  * One row per place: the place number in a fixed column at the left (it never
  * moves or changes), then the Show's player at that place and
  * the League's, each as name then points. Each half is a button that opens that player's
@@ -203,9 +189,8 @@ export function standingsRows(d, w = stWeek(d)) {
     const k = side === "show" ? "show" : "league", rank = p[`${k}Rank`];
     const num = `<span class="pc-num${rank === 1 ? " t1" : ""}">${p[k]}</span>`;
     const name = `<span class="pc-name"><span class="nm">${esc(p.name)}</span><svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span>`;
-    const st = mustLine(d, p, w), warn = st && `${MUST[st.kind]}: ${listing(st.needed)}`;
-    const say = `${p.name}, ${ord(rank)} in the ${side === "show" ? "Show" : "League"} with ${p[k]} points${warn ? `. ${warn}` : ""}`;
-    return `<button class="sd ${side === "show" ? "l" : "r"}${warn ? " warn" : ""}" type="button" data-side="${side}" data-p="${esc(p.name)}" style="--m:${top[k] ? (p[k] / top[k]).toFixed(3) : 0}" aria-expanded="false" aria-label="${esc(say)}">${name + num}${warn ? `<span class="pc-must" aria-hidden="true">${esc(warn)}</span>` : ""}</button>`;
+    const say = `${p.name}, ${ord(rank)} in the ${side === "show" ? "Show" : "League"} with ${p[k]} points`;
+    return `<button class="sd ${side === "show" ? "l" : "r"}" type="button" data-side="${side}" data-p="${esc(p.name)}" style="--m:${top[k] ? (p[k] / top[k]).toFixed(3) : 0}" aria-expanded="false" aria-label="${esc(say)}">${name + num}</button>`;
   };
   return show.map((l, i) => {
     const r = league[i];
@@ -217,13 +202,29 @@ export function standingsRows(d, w = stWeek(d)) {
   }).join("");
 }
 
-/** What an opened half shows: the player's points or race card (their pick chooser in edit mode). */
+/**
+ * The pick-every-contestant rule (league.js pickStatus), as it stood after
+ * the week on show: "Must pick" once every poll left is needed to fit in the
+ * contestants a player hasn't picked, "Can't fit all" once they can't all
+ * fit, "Never picked" once the series is over. Only scored weeks count, so
+ * picks made ahead can still change. Shown in red at the top of an opened
+ * row (on request; it was first under the name in the row itself).
+ */
+const MUST = { must: "Must pick", cannot: "Can't fit all", never: "Never picked" };
+function mustLine(d, p, w) {
+  const known = Math.min(w, d.weeksScored);
+  const st = known && pickStatus(d.names, p.weeks.filter((x) => x.ep <= known).map((x) => x.pick), known);
+  return st ? `<p class="xp-must">${MUST[st.kind]}: ${esc(listing(st.needed))}</p>` : "";
+}
+
+/** What an opened half shows: the player's points or race card (their pick chooser in edit mode), under any pick-rule warning. */
 export function rowMore(d, name, side, w = stWeek(d)) {
   const p = atWeek(d, w).find((x) => x.name === name);
   if (!p) return "";
-  if (state.edit) return pickChooser(d, p, w);
+  const must = mustLine(d, p, w);
+  if (state.edit) return must + pickChooser(d, p, w);
   const k = side === "show" ? "show" : "league";
-  return `<div class="xp">${state.xpView === "race" ? raceCard(d, p, w, k) : pointsCard(d, p, w, k)}</div>`;
+  return `<div class="xp${must ? " warned" : ""}">${must}${state.xpView === "race" ? raceCard(d, p, w, k) : pointsCard(d, p, w, k)}</div>`;
 }
 
 /**
