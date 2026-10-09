@@ -975,12 +975,15 @@ html.fz #cd-what { display: none; }
 /* Comically over the top (on request), but every word still reads: the
    rainbow shimmers, "Fantasy" wiggles now and then, titles sparkle, cards
    glow pink with a sunshine ring, and first place is a rainbow. */
-html.fz .tab-ind { background: var(--rainbow) 0 0 / 200% 100%; box-shadow: 0 0 16px rgba(255, 90, 210, .75), 0 0 0 2px rgba(255, 255, 255, .5), inset 0 1px 1px rgba(255, 255, 255, .6); }
+/* The tab panel's rainbow slides by transform (a layer twice its width), not
+   by repainting its background each frame */
+html.fz .tab-ind::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 200%; background: var(--rainbow) 0 0 / 50% 100% repeat-x; }
+html.fz .tab-ind { overflow: hidden; background: none; box-shadow: 0 0 16px rgba(255, 90, 210, .75), 0 0 0 2px rgba(255, 255, 255, .5), inset 0 1px 1px rgba(255, 255, 255, .6); }
 html.fz .tab[aria-selected="true"] { color: #2a0845; }
 html.fz .tab[aria-selected="true"] span { font-weight: 500; }
 html.fz .kicker { color: var(--show-hi); }
 html.fz .ep-title {
-  background: var(--rainbow) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 2px 0 #3a0a5c) drop-shadow(0 0 10px rgba(255, 90, 210, .55));
 }
 html.fz .ep-title::before, html.fz .ep-title::after { content: "✨"; display: inline-block; margin: 0 .3em; font-size: .62em; vertical-align: .25em; color: #fff; -webkit-text-fill-color: initial; }
@@ -991,19 +994,20 @@ html.fz .card { border-color: rgba(255, 120, 220, .7); box-shadow: 0 0 0 3px rgb
 html.fz .card.board::before { background: var(--grain), radial-gradient(55% 110% at 22% 0%, rgba(255, 63, 164, .42), transparent 80%); }
 html.fz .card.board::after { background: radial-gradient(55% 110% at 78% 0%, rgba(23, 212, 240, .36), transparent 80%); }
 html.fz .pc-num.t1 {
-  background: var(--rainbow) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent !important;
+  background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent !important;
   text-shadow: none; filter: drop-shadow(0 0 6px rgba(255, 225, 77, .7));
 }
-html.fz .hero::after, html.fz .ep-head::after { height: 2px; background: var(--rainbow) 0 0 / 200% 100%; opacity: .9; }
+html.fz .hero::after, html.fz .ep-head::after { height: 2px; background: var(--rainbow); opacity: .9; }
 html.fz .strip-tab.on { border-bottom-color: #ff8fd2; background: linear-gradient(180deg, rgba(255, 79, 195, .32), rgba(255, 79, 195, .06)); text-shadow: 0 0 10px rgba(255, 140, 220, .8); }
 html.fz .st-leaders b { text-shadow: 0 0 10px rgba(255, 225, 77, .6), 0 1px 6px rgba(0, 0, 0, .7); }
 html.fz .st-leaders b::after { content: "👑"; margin-left: .2em; font-size: .85em; text-shadow: none; }
 @media (prefers-reduced-motion: no-preference) {
   html.fz .fz-word { animation: fz-shimmer 4s linear infinite, fz-wiggle 5s ease-in-out infinite; }
-  html.fz .tab-ind, html.fz .ep-title, html.fz .pc-num.t1, html.fz .hero::after, html.fz .ep-head::after { animation: fz-shimmer 6s linear infinite; }
+  html.fz .tab-ind::before { animation: fz-slide 6s linear infinite; }
   html.fz .ep-title::before, html.fz .ep-title::after { animation: fz-twinkle 2.2s ease-in-out infinite; }
 }
 @keyframes fz-shimmer { to { background-position: -200% 0; } }
+@keyframes fz-slide { to { transform: translateX(-50%); } }
 @keyframes fz-wiggle { 0%, 78%, 100% { rotate: 0deg; scale: 1; } 84% { rotate: -7deg; scale: 1.08; } 90% { rotate: 6deg; scale: 1.08; } 95% { rotate: -3deg; scale: 1.03; } }
 @keyframes fz-twinkle { 0%, 100% { opacity: 1; scale: 1; rotate: 0deg; } 50% { opacity: .55; scale: .7; rotate: 25deg; } }
 /* Turned over (180°, or a quarter turn in a landscape page): the body is a
@@ -1021,7 +1025,10 @@ html.fz-side * { touch-action: none; }
 /* Inside main, a sticky strip's offset counts from below main's padding (the bar's spacer), so it sticks at 0 */
 html.fz-turn .page > .strip, html.fz-side .page > .strip { top: 0; }
 /* The bar and the strips stay solid, so nothing reads through them as the page scrolls under */
-html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .94), rgba(38, 8, 68, .96)); }
+html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .94), rgba(38, 8, 68, .96)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* No frosted glass upside down: the bar is all but solid, and a blur over the
+   fall would be worked out afresh every frame (the costliest thing on the page) */
+html.fz body::before { background: #2a0a46; -webkit-backdrop-filter: none; backdrop-filter: none; }
 html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
 /* Sideways, the page is landscape but the turned body is as wide as the
    screen is tall: sizes that follow the screen's width follow its height
@@ -1052,18 +1059,30 @@ html.fz-side .tilt-probe { max-width: calc(100vh - 16px); }
    One still leap under reduced motion. */
 .fz-foot { display: none; }
 html.fz #foot { display: none; }
-html.fz .fz-foot { display: block; position: relative; height: 104px; margin-top: 8px; overflow: hidden; pointer-events: none; }
+html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top: 8px; overflow: hidden; pointer-events: none; }
+/* A double rainbow (on request): two bows with the same order, red on top
+   down to violet (on request), the outer one fainter, with the sky a little
+   brighter within the inner one. Every band blends softly into the next,
+   and the whole fades into the haze towards the sea, so it sits far back
+   behind the dolphins. It's screened onto what's behind it, so it only ever
+   lightens it, never darkens (on request). */
 html.fz .fz-foot::before {
-  content: ""; position: absolute; left: 50%; bottom: 18px; width: 168px; aspect-ratio: 2; translate: -50% 0; opacity: .45;
-  background: radial-gradient(circle farthest-side at 50% 100%, transparent 70%, #b37bff 71%, #4fd8ff 76%, #6dff9a 81%, #ffe14d 86%, #ffa94d 91%, #ff4fc3 96%, transparent 97%);
+  content: ""; position: absolute; left: 50%; bottom: 4px; width: min(76%, 264px); aspect-ratio: 2; translate: -50% 0; opacity: .85; mix-blend-mode: screen;
+  background: radial-gradient(circle farthest-side at 50% 100%,
+    transparent 46%, rgba(255, 240, 255, .07) 58%, rgba(170, 110, 255, 0) 61%,
+    rgba(170, 110, 255, .5) 63%, rgba(110, 100, 255, .5) 65%, rgba(80, 150, 255, .55) 67%, rgba(90, 230, 150, .55) 69%, rgba(255, 230, 90, .6) 71%, rgba(255, 160, 70, .55) 73.5%, rgba(255, 70, 110, .5) 76%, rgba(255, 70, 110, 0) 78.5%,
+    rgba(170, 110, 255, 0) 84%, rgba(170, 110, 255, .18) 86%, rgba(110, 100, 255, .18) 88%, rgba(80, 150, 255, .2) 90%, rgba(90, 230, 150, .22) 92%, rgba(255, 230, 90, .24) 94%, rgba(255, 160, 70, .22) 96%, rgba(255, 70, 110, .2) 98%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%);
 }
+/* Haze over the sea, where the rainbow's feet melt away */
+html.fz .fz-foot::after { content: ""; position: absolute; left: 0; right: 0; bottom: 22px; height: 34px; background: radial-gradient(60% 100% at 50% 100%, rgba(255, 200, 250, .16), transparent 75%); }
 .fz-sea { position: absolute; left: 0; bottom: 0; width: 140%; height: 34px; filter: drop-shadow(0 -2px 6px rgba(79, 216, 255, .45)); }
 .dl { --d: 3.4s; --w: 0s; position: absolute; bottom: 0; height: 100%; width: 30%; }
 .dl:nth-of-type(1) { left: 6%; }
 .dl:nth-of-type(2) { left: 37%; --d: 3.9s; --w: -1.3s; scale: -1 1; }
 .dl:nth-of-type(3) { left: 66%; --d: 3.6s; --w: -2.5s; }
 .dl i { position: absolute; inset: 0; transform: translateX(50%); }
-.dl b { position: absolute; left: -24px; bottom: 2px; width: 48px; height: 23px; transform: translateY(-58px); }
+.dl b { position: absolute; left: -32px; bottom: 0; width: 64px; height: 27px; transform: translateY(-70px); }
 .dl svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 5px rgba(255, 110, 210, .7)); }
 /* Splashes where it leaves the water and where it dives back in */
 .dl::before, .dl::after {
@@ -1074,18 +1093,18 @@ html.fz .fz-foot::before {
 .dl::before { left: 0; }
 .dl::after { left: 100%; }
 @media (prefers-reduced-motion: no-preference) {
-  .dl i { animation: fz-dx var(--d) var(--w) infinite linear; }
-  .dl b { animation: fz-dy var(--d) var(--w) infinite; }
-  .dl svg { animation: fz-dr var(--d) var(--w) infinite linear; }
-  .dl::before { animation: fz-splash-in var(--d) var(--w) infinite; }
-  .dl::after { animation: fz-splash-out var(--d) var(--w) infinite; }
-  .fz-sea { animation: fz-sea 5s linear infinite; }
+  .run .dl i { animation: fz-dx var(--d) var(--w) infinite linear; }
+  .run .dl b { animation: fz-dy var(--d) var(--w) infinite; }
+  .run .dl svg { animation: fz-dr var(--d) var(--w) infinite linear; }
+  .run .dl::before { animation: fz-splash-in var(--d) var(--w) infinite; }
+  .run .dl::after { animation: fz-splash-out var(--d) var(--w) infinite; }
+  .run .fz-sea { animation: fz-sea 5s linear infinite; }
 }
 @keyframes fz-dx { 0% { transform: translateX(0); } 48%, 100% { transform: translateX(100%); } }
 @keyframes fz-dy {
-  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.25, .7, .45, 1); }
-  24% { transform: translateY(-64px); animation-timing-function: cubic-bezier(.55, 0, .75, .3); }
-  48%, 100% { transform: translateY(0); }
+  0% { transform: translateY(14px); animation-timing-function: cubic-bezier(.25, .7, .45, 1); }
+  24% { transform: translateY(-72px); animation-timing-function: cubic-bezier(.55, 0, .75, .3); }
+  48%, 100% { transform: translateY(14px); }
 }
 @keyframes fz-dr { 0% { rotate: -48deg; } 48%, 100% { rotate: 52deg; } }
 @keyframes fz-splash-in { 0% { opacity: 0; transform: translateY(6px) scale(.5); } 4% { opacity: 1; } 14%, 100% { opacity: 0; transform: translateY(-10px) scale(1.2); } }
