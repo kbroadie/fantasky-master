@@ -10,7 +10,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, askTilt, turned, toggleFantasy, DESKTOP } from "./flip.js";
+import { initFlip, askTilt, turned, toggleFantasy, DESKTOP, hush } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -638,6 +638,17 @@ function setHidden(on) {
 }
 // The same whichever scrolls the page: the window, or main while it's turned
 // over (on request: the bar compacts and hides upside down as it does upright).
+// While the bar compacts or opens (.3s), fantasy mode's own motion steps
+// back: the glint and the tab rainbow hold still (.moving) and the fall draws
+// at half rate, so the bar has the frames to itself.
+let mv = 0;
+function moving() {
+  if (!state.fantasy) return;
+  bar.classList.add("moving");
+  hush(360);
+  clearTimeout(mv);
+  mv = setTimeout(() => bar.classList.remove("moving"), 360);
+}
 function barScroll() {
   if (!hraf) hraf = requestAnimationFrame(() => {
     hraf = 0;
@@ -646,7 +657,7 @@ function barScroll() {
     const y = Math.max(0, Math.min(top, max)), dy = y - lastY;
     lastY = y;
     const on = bar.classList.contains("compact");
-    bar.classList.toggle("compact", on ? y > 4 : y > 16);
+    if (bar.classList.toggle("compact", on ? y > 4 : y > 16) !== on) moving();
     if (y < 120) { down = up = 0; return setHidden(false); }
     if (dy > 0) { down += dy; up = 0; if (down > 12) setHidden(true); }
     else if (dy < 0) { up -= dy; down = 0; if (up > 8) setHidden(false); }
