@@ -475,46 +475,50 @@ export function mountPodiumFx(root) {
 }
 
 /**
- * A plume of the stink gas from a tapped element (on request: last place on
- * the Standings, the secret tap that leads to the Knappett's table, flip.js):
- * a burst of the podium's own puffs that billows up out of it, then, heavier
- * than air, sinks back and thins away, in about two seconds. Drawn on a
- * canvas of its own over the page, kept inside the page's width, and removed
- * when it's done. Nothing under reduced motion.
+ * A puff of the stink gas in a tapped cell (on request: last place on the
+ * Standings, the secret tap that leads to the Knappett's table, flip.js),
+ * kept to the cell (on request): the podium's own puffs burst up from the
+ * bottom of the cell, roll against its top and sides like the podium gas in
+ * its card, sink back and thin away, in about two seconds. Drawn on a canvas
+ * the cell's exact size over it, removed when it's done. Nothing under
+ * reduced motion.
  */
 export function plume(el) {
   if (REDUCED) return;
-  const r = el.getBoundingClientRect(), up = 200, down = 40;
-  const left = Math.max(0, r.left - 70), right = Math.min(document.documentElement.clientWidth, r.right + 70);
-  const W = right - left, H = r.height + up + down, dpr = Math.min(devicePixelRatio || 1, 2);
+  const r = el.getBoundingClientRect(), W = r.width, H = r.height, dpr = Math.min(devicePixelRatio || 1, 2);
   const c = Object.assign(document.createElement("canvas"), { className: "plume", ariaHidden: "true", width: Math.round(W * dpr), height: Math.round(H * dpr) });
-  Object.assign(c.style, { left: `${left + scrollX}px`, top: `${r.top + scrollY - up}px`, width: `${W}px`, height: `${H}px` });
+  Object.assign(c.style, { left: `${r.left + scrollX}px`, top: `${r.top + scrollY}px`, width: `${W}px`, height: `${H}px` });
   document.body.append(c);
-  const x = c.getContext("2d"), puffs = sprites().gas, ox = r.left + r.width / 2 - left, oy = up + r.height * 0.6;
+  const x = c.getContext("2d"), puffs = sprites().gas;
   x.scale(dpr, dpr);
   let ps = [], t = 0, last = 0, spawn = 0;
   const step = (now) => {
     const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
     last = now; t += dt;
-    // The burst: puffs erupt from across the cell for the first moment.
-    for (spawn += t < 0.4 ? dt * 85 : 0; spawn >= 1; spawn--) ps.push({
-      x: ox + rand(-0.35, 0.35) * r.width, y: oy + rand(-6, 6), vx: rand(-45, 45), vy: rand(-270, -120),
-      age: 0, life: rand(1.6, 2.4), s0: rand(30, 56), spr: Math.floor(Math.random() * 4), a: rand(0.24, 0.36), seed: rand(0, 100),
+    // The burst: puffs erupt from along the bottom of the cell for the first moment.
+    for (spawn += t < 0.35 ? dt * 90 : 0; spawn >= 1; spawn--) ps.push({
+      x: rand(0.12, 0.88) * W, y: H - rand(2, 8), vx: rand(-35, 35), vy: rand(-120, -50),
+      age: 0, life: rand(1.6, 2.3), s0: rand(28, 42), spr: Math.floor(Math.random() * 4), a: rand(0.22, 0.32), seed: rand(0, 100),
     });
-    const drag = Math.exp(-1.7 * dt);
+    const drag = Math.exp(-1.8 * dt);
     x.clearRect(0, 0, W, H);
     for (const p of ps) {
       p.age += dt;
-      p.vx += Math.sin(p.y * 0.05 + t * 2 + p.seed) * 26 * dt; // curling
-      p.vy += 90 * dt; // heavier than air: it rises on the burst, then sinks back
+      const k = p.age / p.life, s = p.s0 * (1 + k * 0.8), rad = s * 0.28;
+      p.vx += Math.sin(p.y * 0.08 + t * 2 + p.seed) * 22 * dt; // curling
+      p.vy += 70 * dt; // heavier than air: it rises on the burst, then sinks back
       p.vx *= drag; p.vy *= drag;
       p.x += p.vx * dt; p.y += p.vy * dt;
-      const k = p.age / p.life, s = p.s0 * (1 + k * 1.5);
+      // The cell's walls: the gas rolls along them instead of leaving.
+      if (p.y < rad) { p.y = rad; p.vx += Math.sign(p.vx || p.seed - 50) * Math.abs(p.vy) * 0.4; p.vy = Math.abs(p.vy) * 0.15; }
+      if (p.y > H - rad * 0.6) { p.y = H - rad * 0.6; p.vx += Math.sign(p.vx || p.seed - 50) * Math.abs(p.vy) * 0.4; p.vy = -Math.abs(p.vy) * 0.1; }
+      if (p.x < rad) { p.x = rad; p.vx = Math.abs(p.vx) * 0.3; }
+      if (p.x > W - rad) { p.x = W - rad; p.vx = -Math.abs(p.vx) * 0.3; }
       x.globalAlpha = p.a * Math.min(1, p.age / 0.12) * (k < 0.5 ? 1 : Math.max(0, 1 - (k - 0.5) / 0.5) ** 1.5);
       x.drawImage(puffs[p.spr], p.x - s / 2, p.y - s * 0.4, s, s * 0.8);
     }
     ps = ps.filter((p) => p.age < p.life);
-    if (t < 0.4 || ps.length) requestAnimationFrame(step);
+    if (t < 0.35 || ps.length) requestAnimationFrame(step);
     else c.remove();
   };
   requestAnimationFrame(step);
