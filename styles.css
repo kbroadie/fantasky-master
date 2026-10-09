@@ -1003,7 +1003,7 @@ html.fz-turn, html.fz-side { overflow: hidden; height: 100%; }
 html.fz-turn body, html.fz-side body { position: fixed; inset: 0; overflow: hidden; min-height: 0; transform: rotate(180deg); }
 html.fz-side body { inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; max-width: none; transform: translate(-50%, -50%) rotate(var(--rot)); }
 html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
-html.fz-turn #foot, html.fz-side #foot { display: none; }
+/* (The ducks give way to the dolphins upside down: .fz-foot at the end.) */
 /* Sideways the page scrolls itself (main.js: the browser picks the wrong scroller in a quarter-turned page) */
 html.fz-side * { touch-action: none; }
 /* No quote upside down (on request) */
@@ -1032,3 +1032,52 @@ html.fz-side .tilt-probe { max-width: calc(100vh - 16px); }
   html.fz-side .tt th:last-child { width: 40px; }
   :where(html.fz-side) .bars { --plot: 96px; }
 }
+
+/* Fantasy mode's footer (on request: "dolphins breaching and jumping"), in
+   place of the ducks: three rainbow dolphins leap in turn over a rolling
+   sea, splashing in and out, under a faint rainbow. Inside main, so it
+   scrolls with the page when it's turned. Each dolphin is three nested
+   boxes, moved across (i), up and down (b) and turned to follow the arc
+   (svg), by transforms only; it spends the rest of its cycle under the sea.
+   One still leap under reduced motion. */
+.fz-foot { display: none; }
+html.fz #foot { display: none; }
+html.fz .fz-foot { display: block; position: relative; height: 104px; margin-top: 8px; overflow: hidden; pointer-events: none; }
+html.fz .fz-foot::before {
+  content: ""; position: absolute; left: 50%; bottom: 18px; width: 168px; aspect-ratio: 2; translate: -50% 0; opacity: .45;
+  background: radial-gradient(circle farthest-side at 50% 100%, transparent 70%, #b37bff 71%, #4fd8ff 76%, #6dff9a 81%, #ffe14d 86%, #ffa94d 91%, #ff4fc3 96%, transparent 97%);
+}
+.fz-sea { position: absolute; left: 0; bottom: 0; width: 140%; height: 34px; filter: drop-shadow(0 -2px 6px rgba(79, 216, 255, .45)); }
+.dl { --d: 3.4s; --w: 0s; position: absolute; bottom: 0; height: 100%; width: 30%; }
+.dl:nth-of-type(1) { left: 6%; }
+.dl:nth-of-type(2) { left: 37%; --d: 3.9s; --w: -1.3s; scale: -1 1; }
+.dl:nth-of-type(3) { left: 66%; --d: 3.6s; --w: -2.5s; }
+.dl i { position: absolute; inset: 0; transform: translateX(50%); }
+.dl b { position: absolute; left: -24px; bottom: 2px; width: 48px; height: 23px; transform: translateY(-58px); }
+.dl svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 5px rgba(255, 110, 210, .7)); }
+/* Splashes where it leaves the water and where it dives back in */
+.dl::before, .dl::after {
+  content: ""; position: absolute; bottom: 22px; width: 28px; height: 22px; margin-left: -14px; opacity: 0;
+  background: radial-gradient(circle at 20% 80%, #fff 1.6px, transparent 2.2px), radial-gradient(circle at 45% 35%, #bff6ff 1.8px, transparent 2.4px),
+    radial-gradient(circle at 70% 60%, #fff 1.4px, transparent 2px), radial-gradient(circle at 85% 20%, #ffd6f5 1.2px, transparent 1.8px), radial-gradient(circle at 35% 10%, #fff 1px, transparent 1.6px);
+}
+.dl::before { left: 0; }
+.dl::after { left: 100%; }
+@media (prefers-reduced-motion: no-preference) {
+  .dl i { animation: fz-dx var(--d) var(--w) infinite linear; }
+  .dl b { animation: fz-dy var(--d) var(--w) infinite; }
+  .dl svg { animation: fz-dr var(--d) var(--w) infinite linear; }
+  .dl::before { animation: fz-splash-in var(--d) var(--w) infinite; }
+  .dl::after { animation: fz-splash-out var(--d) var(--w) infinite; }
+  .fz-sea { animation: fz-sea 5s linear infinite; }
+}
+@keyframes fz-dx { 0% { transform: translateX(0); } 48%, 100% { transform: translateX(100%); } }
+@keyframes fz-dy {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.25, .7, .45, 1); }
+  24% { transform: translateY(-64px); animation-timing-function: cubic-bezier(.55, 0, .75, .3); }
+  48%, 100% { transform: translateY(0); }
+}
+@keyframes fz-dr { 0% { rotate: -48deg; } 48%, 100% { rotate: 52deg; } }
+@keyframes fz-splash-in { 0% { opacity: 0; transform: translateY(6px) scale(.5); } 4% { opacity: 1; } 14%, 100% { opacity: 0; transform: translateY(-10px) scale(1.2); } }
+@keyframes fz-splash-out { 0%, 42% { opacity: 0; transform: translateY(6px) scale(.5); } 47% { opacity: 1; } 58%, 100% { opacity: 0; transform: translateY(-10px) scale(1.25); } }
+@keyframes fz-sea { to { transform: translateX(-25%); } }

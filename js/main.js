@@ -142,22 +142,34 @@ function topIn(el) {
 // scroll snapping would. edgeNav still sees the touches.
 const sideTurned = () => Math.abs(turned()) === 90;
 const sideScroller = (el) => [".swiper", ".strip.scroll", ".tt-wrap"].map((q) => el.closest?.(q)).find((s) => s && s.scrollWidth > s.clientWidth + 1);
-let drag = null, coast = 0;
+// Tuned to feel like the browser's own (on request: "doesn't work as effortlessly"):
+// a 6px start, a slight lean to sideways swipes, a light flick enough to
+// change slide, the settle matched to the flick's speed, a long coast, and a
+// tap that stops the page moving doesn't also open what's under it.
+let drag = null, coast = 0, settleRaf = 0, settling = null, eatClick = false;
 document.addEventListener("touchstart", (e) => {
-  cancelAnimationFrame(coast);
+  const moving = !!(coast || settleRaf);
+  cancelAnimationFrame(coast); cancelAnimationFrame(settleRaf);
+  coast = settleRaf = 0;
   if (!sideTurned() || e.touches.length > 1) { drag = null; return; }
   const t = e.touches[0];
-  drag = { x0: t.clientX, y0: t.clientY, x: t.clientX, y: t.clientY, axis: null, el: null, target: e.target, moves: [] };
+  drag = { x0: t.clientX, y0: t.clientY, x: t.clientX, y: t.clientY, axis: null, el: null, target: e.target, moves: [], moving };
 }, { passive: true });
 document.addEventListener("touchmove", (e) => {
   if (!drag) return;
   const t = e.touches[0];
   if (!drag.axis) {
     const [tx, ty] = local(t.clientX - drag.x0, t.clientY - drag.y0);
-    if (Math.hypot(tx, ty) < 8) return;
-    drag.axis = Math.abs(tx) > Math.abs(ty) ? "x" : "y";
-    drag.el = drag.axis === "y" ? $("main") : sideScroller(drag.target);
-    if (drag.el?.classList.contains("swiper")) { drag.from = idxOf(drag.el); drag.el.style.scrollSnapType = "none"; }
+    if (Math.hypot(tx, ty) < 6) return;
+    const across = sideScroller(drag.target);
+    drag.axis = across && Math.abs(tx) > Math.abs(ty) * 0.85 ? "x" : "y";
+    drag.el = drag.axis === "y" ? $("main") : across;
+    if (drag.el?.classList.contains("swiper")) {
+      // Carrying on from a slide still settling: count from where it was going.
+      drag.from = settling?.el === drag.el ? Math.round(settling.to / drag.el.clientWidth) : idxOf(drag.el);
+      if (settling?.el === drag.el) settling = null;
+      drag.el.style.scrollSnapType = "none";
+    }
   }
   const [dx, dy] = local(t.clientX - drag.x, t.clientY - drag.y), d = drag.axis === "x" ? dx : dy;
   drag.x = t.clientX; drag.y = t.clientY;
@@ -165,25 +177,40 @@ document.addEventListener("touchmove", (e) => {
   if (drag.axis === "x") drag.el.scrollLeft -= d; else drag.el.scrollTop -= d;
   drag.moves.push([e.timeStamp, d]);
 }, { passive: true });
+/** Slide a swiper to `to` (px), easing out at about the speed it was flicked (px/ms). */
+function settle(el, to, speed = 0) {
+  const from = el.scrollLeft, dist = Math.abs(to - from), t0 = performance.now();
+  const ms = reducedMotion || dist < 1 ? 0 : Math.max(140, Math.min(320, (3 * dist) / Math.max(Math.abs(speed), 0.9)));
+  settling = { el, to };
+  const frame = (now) => {
+    const k = ms ? Math.min(1, (now - t0) / ms) : 1;
+    el.scrollLeft = from + (to - from) * (1 - (1 - k) ** 3);
+    if (k < 1) settleRaf = requestAnimationFrame(frame);
+    else { settleRaf = 0; settling = null; el.style.scrollSnapType = ""; }
+  };
+  settleRaf = requestAnimationFrame(frame);
+}
 function dragEnd(e) {
   const g = drag;
   drag = null;
-  if (!g?.el) return;
-  // The scrolling speed over the last 100ms (px/ms, positive forwards)
-  const recent = g.moves.filter(([at]) => e.timeStamp - at < 100);
-  const v = recent.length > 1 ? -recent.reduce((a, [, d]) => a + d, 0) / Math.max(16, e.timeStamp - recent[0][0]) : 0;
+  if (!g) return;
+  if (!g.el) {
+    if (g.moving && !g.axis) eatClick = true; // a tap to stop the page, not to open what's under it
+    if (settling) settle(settling.el, settling.to); // a slide that was settling carries on
+    return;
+  }
+  if (settling && settling.el !== g.el) settle(settling.el, settling.to);
+  // The speed over the last 100ms (px/ms, positive forwards), timed from the
+  // move before them, so even one late move counts; capped
+  const k = g.moves.findIndex(([at]) => e.timeStamp - at < 100), span = k < 0 ? [] : g.moves.slice(Math.max(0, k - 1));
+  const raw = span.length > 1 ? -span.slice(1).reduce((a, [, d]) => a + d, 0) / Math.max(16, e.timeStamp - span[0][0]) : 0;
+  const v = Math.max(-8, Math.min(8, raw));
   const el = g.el, x = g.axis === "x", get = () => (x ? el.scrollLeft : el.scrollTop), put = (n) => { if (x) el.scrollLeft = n; else el.scrollTop = n; };
   if (el.classList.contains("swiper")) {
     const w = el.clientWidth, moved = el.scrollLeft / w - g.from, n = el.children.length;
-    const step = moved > 0.5 || (moved > 0 && v > 0.3) ? 1 : moved < -0.5 || (moved < 0 && v < -0.3) ? -1 : 0;
-    const from = el.scrollLeft, to = Math.max(0, Math.min(n - 1, g.from + step)) * w, t0 = performance.now(), ms = reducedMotion ? 0 : 280;
-    const frame = (now) => {
-      const k = ms ? Math.min(1, (now - t0) / ms) : 1;
-      el.scrollLeft = from + (to - from) * (1 - (1 - k) ** 3);
-      if (k < 1) coast = requestAnimationFrame(frame);
-      else el.style.scrollSnapType = "";
-    };
-    coast = requestAnimationFrame(frame);
+    // A flick goes on to the next slide its way, however short; a slow drag past halfway does too.
+    const step = Math.abs(v) > 0.2 ? Math.sign(v) : moved > 0.5 ? 1 : moved < -0.5 ? -1 : 0;
+    settle(el, Math.max(0, Math.min(n - 1, g.from + step)) * w, v);
     return;
   }
   // Anything else coasts on, slowing down
@@ -193,11 +220,13 @@ function dragEnd(e) {
     last = now;
     const before = get();
     put(before + speed * dt);
-    speed *= 0.95 ** (dt / 16);
+    speed *= 0.975 ** (dt / 16);
     if (Math.abs(speed) > 0.02 && get() !== before) coast = requestAnimationFrame(frame);
+    else coast = 0;
   };
   if (speed) coast = requestAnimationFrame(frame);
 }
+document.addEventListener("click", (e) => { if (eatClick) { eatClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
 document.addEventListener("touchend", dragEnd, { passive: true });
 document.addEventListener("touchcancel", dragEnd, { passive: true });
 /** Every page drawn again (fantasy mode on or off), on the same week, episode and contestant. */
@@ -220,7 +249,7 @@ function fit(body) {
   const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
   // Leave room for the footer, so a short slide ends with it at the bottom of the screen.
   const view = turned() ? $("main").clientHeight : innerHeight;
-  const toBottom = view - topIn(body) - pad - ($("#foot")?.offsetHeight || 0);
+  const toBottom = view - topIn(body) - pad - ($("#foot")?.offsetHeight || 0) - ($(".fz-foot")?.offsetHeight || 0); // the ducks, or upside down the dolphins
   body.style.height = `${Math.max(s.offsetHeight, toBottom)}px`;
 }
 const sizes = new ResizeObserver((entries) => {
