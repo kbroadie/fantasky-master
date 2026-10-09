@@ -40,16 +40,15 @@ function leaders(rows, key) {
 }
 
 /**
- * Everyone on the bottom score of a board: the Knappett (on request: last
- * place, ironically celebrated, after Jessica Knappett's literal fall in
- * Series 7). Nobody when the whole board is level.
+ * Everyone on the bottom score of a board: they lead The Knappett (on request:
+ * last place, ironically celebrated, after Jessica Knappett's literal fall in
+ * Series 7, named like The Show and The League). Nobody when the whole board
+ * is level.
  */
 function knappetts(rows, key) {
   const low = Math.min(...rows.map((p) => p[key])), top = Math.max(...rows.map((p) => p[key]));
   return low === top ? [] : rows.filter((p) => p[key] === low).map((p) => p.name);
 }
-/** A person mid-fall, in the task icons' line style (16px grid). */
-const FALL = `<svg class="kn-ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="4" cy="11.2" r="1.6"/><path d="M5.6 10 10 6.6l3.6-2M10 6.6l2-3.6M7.2 8.7 5.4 6.1M7.6 8.4l1.8 3.1M1.5 14h13"/></svg>`;
 
 /** "How scoring works", under the leaders line, opens both of these. */
 // The league's words, unchanged, in their order: the title, the rule, the
@@ -72,27 +71,17 @@ const howCard = (t) => `<div class="card how-card ${t.name.toLowerCase()}">
     <p class="how-range"><b>${esc(t.range)}</b><span>${esc(t.unit)}</span></p>
   </div>`;
 
-/** "Riley leads The Show   Jamie leads The League" ("wins" once the series is over). */
+/** "Riley leads The Show   Jamie leads The League   Alex leads The Knappett" ("wins" once the series is over). */
 function leaderLine(d, rows, w) {
   const show = leaders(rows, "show"), league = leaders(rows, "league"), final = d.complete && w === d.episodes.length;
   const verb = (names) => (final ? (names.length > 1 ? "win" : "wins") : (names.length > 1 ? "lead" : "leads"));
   const who = (names) => `<b>${esc(listing(names))}</b>`;
-  const S = `<span class="st-show">The Show</span>`, L = `<span class="st-league">The League</span>`;
-  if (listing(show) === listing(league)) return `<span>${who(show)} ${verb(show)} ${S} and ${L}</span>`;
-  return `<span>${who(show)} ${verb(show)} ${S}</span><span>${who(league)} ${verb(league)} ${L}</span>`;
-}
-
-/** "Alex is The Show's Knappett   Kevin is The League's Knappett" (or "Alex is the double Knappett"), under the leaders. */
-function knappettLine(rows) {
-  const show = knappetts(rows, "show"), league = knappetts(rows, "league");
-  if (!show.length && !league.length) return "";
-  const who = (n) => `<b>${esc(listing(n))}</b>`, is = (n) => (n.length > 1 ? "are" : "is"), title = (n) => (n.length > 1 ? "Knappetts" : "Knappett");
-  const S = `<span class="st-show">The Show</span>`, L = `<span class="st-league">The League</span>`;
-  // The falling figure leads the first phrase (inside it, so it never wraps onto a line of its own).
-  const line = listing(show) === listing(league)
-    ? `<span>${FALL}${who(show)} ${is(show)} the double ${title(show)}</span>`
-    : [[show, S], [league, L]].filter(([n]) => n.length).map(([n, B], i) => `<span>${i ? "" : FALL}${who(n)} ${is(n)} ${B}’s ${title(n)}</span>`).join("");
-  return `<p class="st-knap">${line}</p>`;
+  const S = `<span class="st-show">The Show</span>`, L = `<span class="st-league">The League</span>`, K = `<span class="st-knap">The Knappett</span>`;
+  // The Knappett, a third "board" led from the bottom: whoever is last on the Show or the League.
+  const kn = [...new Set([...knappetts(rows, "show"), ...knappetts(rows, "league")])];
+  const knap = kn.length ? `<span>${who(kn)} ${verb(kn)} ${K}</span>` : "";
+  if (listing(show) === listing(league)) return `<span>${who(show)} ${verb(show)} ${S} and ${L}</span>${knap}`;
+  return `<span>${who(show)} ${verb(show)} ${S}</span><span>${who(league)} ${verb(league)} ${L}</span>${knap}`;
 }
 
 /**
@@ -106,7 +95,7 @@ export function standingsHero(d, w = stWeek(d)) {
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${esc(fmtDay.format(d.episodes[w - 1].air))}</div>`;
   if (w > d.weeksScored) return `${kicker}<h2 class="ep-title">Episode ${w}</h2><div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</div>${how}`;
   const rows = atWeek(d, w);
-  return `${kicker}<h2 class="ep-title">Episode ${w} Standings</h2><p class="st-leaders">${leaderLine(d, rows, w)}</p>${knappettLine(rows)}${how}`;
+  return `${kicker}<h2 class="ep-title">Episode ${w} Standings</h2><p class="st-leaders">${leaderLine(d, rows, w)}</p>${how}`;
 }
 
 /**

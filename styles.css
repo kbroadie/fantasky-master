@@ -186,14 +186,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .st-leaders b { font-family: var(--ff-name); font-weight: 800; color: var(--gold2); }
 .st-leaders .st-show { color: var(--show-hi); }
 .st-leaders .st-league { color: var(--league-hi); }
-/* The Knappett (last place on a board, ironically celebrated): a line under
-   the leaders, names in the stink fog's muted olive, with a person mid-fall. */
-.st-knap { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 16px; margin-top: 4px; font-size: 14px; color: var(--t2); text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
-.st-knap b { font-family: var(--ff-name); font-weight: 800; color: var(--knap); }
-.st-knap .st-show { color: var(--show-hi); }
-.st-knap .st-league { color: var(--league-hi); }
-.st-leaders .st-show, .st-leaders .st-league, .st-knap .st-show, .st-knap .st-league { white-space: nowrap; } /* a board's name never splits across lines */
-.kn-ico { width: 18px; height: 18px; margin: 0 6px 0 0; vertical-align: -3px; fill: none; stroke: var(--knap); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.st-leaders .st-knap { color: var(--knap); } /* The Knappett: last place, named like the boards, in the stink fog's olive */
+.st-leaders .st-show, .st-leaders .st-league, .st-leaders .st-knap { white-space: nowrap; } /* a board's name never splits across lines */
 /* "How scoring works" under the leaders line opens both explanations below
    it (the hero grows; tap again to close). A gold label with a chevron, so
    it reads as something to tap. */

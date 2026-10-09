@@ -87,7 +87,7 @@ The site has three tabs: **Standings**, **Episodes** and **Cast**.
 
 - Both boards side by side: **Show** on the left, **League** on the right, each from first place down.
 - **How scoring works** explains both boards. Under it, **Read the welcome** brings back the welcome message the site opens with.
-- Whoever's bottom of a board is **the Knappett**, after Jessica Knappett's literal fall in Series 7, named under the leaders with their points in olive. Bottom of both is the **double Knappett**.
+- Whoever's bottom of the Show or the League **leads The Knappett**, after Jessica Knappett's literal fall in Series 7. They're named alongside the leaders, and their points are in olive.
 - Tap **Ep 1**, **Ep 2**… or swipe sideways to see the standings after any episode.
 - **Tap the Show or League heading** to open that board's race: every player's gap to the leader, week by week. Tap a line to follow one player.
 - **Tap any name** to see their points and pick for every episode. Tap the card's title to switch to their race.
