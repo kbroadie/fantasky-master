@@ -8,6 +8,10 @@ Live at **https://kbroadie.github.io/fantasky-master/**.
 
 The app reads **[`data/fantasky_master_data.csv`](data/fantasky_master_data.csv)** every time it loads (always the newest copy). To update the league, use edit mode (below) or edit that file as described in [`data/README.md`](data/README.md); nothing in the app needs changing.
 
+### Wiki sync
+
+About an hour after each Thursday livestream starts, a scheduled GitHub Action (**Wiki sync**, `.github/workflows/wiki-sync.yml`) runs `tools/sync-wiki.mjs`. It fills in that episode's scores from the [Taskmaster Wiki](https://taskmaster.fandom.com) once the wiki's table is complete, and updates the titles of the episodes still to come. It tries again every hour through Friday if the wiki is slow, and commits only what changed, checked with the same rules as CI. It never changes an episode that already has scores, so corrections and DQs made in edit mode stay. Picks still come from edit mode. To run it straight away, open the repository's **Actions** tab, choose **Wiki sync** and **Run workflow**.
+
 ### Edit mode
 
 Tap all seven rubber ducks at the bottom of any tab to open edit mode. The first time on a device it asks for a GitHub key: a [fine-grained token](https://github.com/settings/personal-access-tokens/new) with access to only this repository and **Contents: Read and write**. The key stays in that browser; it's never part of the site.

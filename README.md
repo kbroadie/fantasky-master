@@ -75,7 +75,7 @@ So Show rewards backing a big scorer, while League rewards backing the *winner*,
 
 ## When the table updates
 
-It isn't live. **Some time after each episode airs, the host enters the scores and everyone's picks, then shares the updated page in the group.** Until then, that episode shows only when it aired. If the page looks out of date, refresh it.
+It isn't live. **About an hour after each episode's livestream starts, the site fills in the scores from the [Taskmaster Wiki](https://taskmaster.fandom.com) by itself**, as soon as the wiki has them all (it checks again every hour until it does). The host enters everyone's picks, then shares the updated page in the group. Until the scores are in, that episode shows only when it aired. If the page looks out of date, refresh it.
 
 ---
 
