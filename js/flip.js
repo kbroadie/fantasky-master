@@ -283,16 +283,24 @@ function fall() {
   c.width = w; c.height = h;
   const draw = streaks(c.getContext("2d"), w, h, 1, 1.3, Math.max(4, Math.round(7 * (w * h) / (390 * 844))), [26, 44], true);
   if (reducedMotion) { draw(0); return; }
-  let last = 0;
+  let last = 0, odd = false;
   const step = (now) => {
-    draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
-    last = now;
+    // While hushed (the bar compacting or opening), every other frame: the fall
+    // moves on by the time passed, so it keeps its speed at half the cost.
+    odd = !odd;
+    if (now >= hushed || odd || !last) {
+      draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
+      last = now;
+    }
     fallRaf = requestAnimationFrame(step);
   };
   fallRaf = requestAnimationFrame(step);
 }
 
 function stopFall() { cancelAnimationFrame(fallRaf); fallRaf = 0; }
+let hushed = 0;
+/** For the next ms, draw the fall at half rate, so an animation of the page's own runs smoothly (main.js). */
+export function hush(ms) { hushed = performance.now() + ms; }
 
 /**
  * Where the browser has the permission request and no readings have come yet
