@@ -274,11 +274,14 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .plume { position: absolute; z-index: 30; pointer-events: none; }
 
 /* The Knappett's table, over the Standings while the device is upside down
-   (flip.js): a layer over everything, turned round (.turn) when the browser
-   hasn't turned the page itself, so it reads the right way up in the hand.
-   Its safe areas swap with it. A fade in and out; none under reduced
-   motion. */
+   (flip.js): a layer over everything, turned so it reads the right way up in
+   the hand: round (.turn, its safe areas swapped) when the page stayed
+   portrait, a quarter turn (.side, --rot ±90deg, the layer as tall as the
+   screen is wide) when the page turned to landscape on the way over, as on
+   Android phones. --kh is its height, for fitting the rows. A fade in and
+   out; none under reduced motion. */
 .kflip {
+  --kh: 100dvh;
   position: fixed; inset: 0; z-index: 60; overflow-y: auto; overscroll-behavior: contain;
   padding: env(safe-area-inset-top) 0 max(16px, env(safe-area-inset-bottom));
   background: var(--grain), radial-gradient(90% 40% at 50% 0%, var(--knap-glow), transparent 80%), var(--bg);
@@ -286,14 +289,16 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 }
 .kflip.on { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .25s var(--ease); }
 .kflip.turn { transform: rotate(180deg); padding-top: env(safe-area-inset-bottom); padding-bottom: max(16px, env(safe-area-inset-top)); }
+.kflip.side { --kh: 100vw; inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; padding: 0 0 16px; transform: translate(-50%, -50%) rotate(var(--rot)); }
 body.kflipped { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .kflip, .kflip.on { transition: none; } }
 .kflip-in { max-width: 34rem; margin: 0 auto; }
 .kt-hero { text-align: center; padding-block: 18px 16px; background: var(--grain), radial-gradient(90% 100% at 50% 0%, var(--knap-glow), transparent 80%); }
 .kt-hero .ep-title { margin-bottom: 0; color: var(--t1); text-shadow: 0 0 18px color-mix(in srgb, var(--knap) 45%, transparent); }
 /* The rows fit the screen where they can (15 players on an iPhone), 44px at most */
-.card.kt-board { --row: clamp(34px, calc((100dvh - 236px) / var(--n)), 44px); margin: 12px var(--px) 0; padding: 0; overflow: hidden; border-color: var(--knap-edge); }
+.card.kt-board { --row: clamp(34px, calc((var(--kh) - 236px) / var(--n)), 44px); margin: 12px var(--px) 0; padding: 0; overflow: hidden; border-color: var(--knap-edge); }
 .kt-head, .kt-row { display: grid; grid-template-columns: var(--rk) minmax(0, 1fr) 60px 60px; align-items: center; }
+.kt-row { width: 100%; text-align: left; -webkit-tap-highlight-color: transparent; }
 .card.kt-board { --rk: 36px; }
 .kt-head { height: 34px; white-space: nowrap; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--knap-hi); border-bottom: 2px solid var(--knap); background: linear-gradient(180deg, color-mix(in srgb, var(--knap) 16%, transparent), transparent); }
 .kt-head span:first-child { align-self: stretch; background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold); }
@@ -304,13 +309,37 @@ body.kflipped { overflow: hidden; }
   position: relative; height: var(--row); border-top: 1px solid var(--b-dim);
   background: linear-gradient(90deg, transparent var(--rk), color-mix(in srgb, var(--knap) 9%, transparent) var(--rk), color-mix(in srgb, var(--knap) 19%, transparent) calc(var(--rk) + (100% - var(--rk)) * var(--m)), transparent calc(var(--rk) + (100% - var(--rk)) * var(--m)));
 }
-.kt-head + .kt-row { border-top: 0; }
+.kt-head + .kt-item > .kt-row { border-top: 0; }
 .kt-rk { align-self: stretch; display: grid; place-items: center; font-size: 15px; font-weight: 700; color: var(--t3); background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold); }
-.kt-name { padding-left: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 clamp(16px, 4.4vw, 18px) var(--ff-name); color: var(--t1); }
+.kt-name { display: flex; align-items: center; min-width: 0; padding-left: 12px; font: 800 clamp(16px, 4.4vw, 18px) var(--ff-name); color: var(--t1); }
+.kt-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Each row opens (on request) to the player's weeks: a chevron like the boards', turning over when open */
+.kt-chev { flex: none; width: 9px; height: 5.5px; margin: 1px 0 0 6px; overflow: visible; fill: none; stroke: var(--t4); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s var(--ease); }
+.kt-item.open .kt-chev { transform: rotate(180deg); stroke: var(--knap-hi); }
+.kt-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s var(--ease); }
+.kt-item.open .kt-more { grid-template-rows: 1fr; }
+.kt-more > div { min-height: 0; overflow: hidden; }
+.kt-item.open .kt-row { background-color: color-mix(in srgb, var(--knap) 8%, transparent); }
+.kt-eps { padding: 4px 12px 10px calc(var(--rk) + 12px); border-top: 1px solid var(--knap-edge); background: rgba(10, 8, 10, .35); }
+.kt-ep { display: grid; grid-template-columns: 22px 38px 50px minmax(0, 1fr) 30px; align-items: baseline; gap: 10px; padding: 5px 0; font-size: 13px; color: var(--t2); font-variant-numeric: tabular-nums; }
+.kt-ep + .kt-ep { border-top: 1px solid var(--b-dim); }
+.kt-ep-head { padding: 6px 0 4px; font: 500 11px var(--fm); letter-spacing: .08em; text-transform: uppercase; color: var(--t4); }
+.kt-ep-head span:nth-child(3), .kt-ep-head span:nth-child(5) { text-align: right; }
+.kt-ep.now { color: var(--t1); }
+.kt-epn { font: 500 12px var(--fm); color: var(--t3); }
+.kt-ep.now .kt-epn { color: var(--gold2); }
+.kt-pick { font: 500 12px var(--fm); letter-spacing: .04em; text-transform: uppercase; }
+.kt-pick.none { color: var(--t4); text-transform: none; }
+.kt-gap { text-align: right; }
+.kt-bad { display: flex; flex-wrap: wrap; gap: 0 10px; font-size: 12px; color: var(--t3); }
+.kt-bad b { font-weight: 700; color: var(--knap-hi); }
+.kt-tot { text-align: right; font-size: 14px; font-weight: 800; color: var(--t1); }
+.kt-tot.bad { color: var(--knap-hi); }
+@media (prefers-reduced-motion: reduce) { .kt-more, .kt-chev { transition: none; } }
 .kt-wk { text-align: right; padding-right: 14px; font: 500 12px var(--fm); color: var(--t3); font-variant-numeric: tabular-nums; }
 .kt-pts { text-align: right; padding-right: 14px; font-size: clamp(17px, 4.6vw, 20px); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .kt-pts.lead { color: var(--knap-hi); text-shadow: 0 0 10px color-mix(in srgb, var(--knap) 50%, transparent); }
-.kt-name, .kt-pts, .kt-rk { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
+.kt-name > span, .kt-pts, .kt-rk { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 .kt-back { margin-top: 14px; text-align: center; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--t4); }
 .kt-hero .st-knap { color: var(--knap); white-space: nowrap; }
 

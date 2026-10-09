@@ -8,7 +8,7 @@ import { esc, listing, tier, ord, fmtDay, fmtWhen, smooth, niceStep, state } fro
 import { pickChooser } from "../edit.js";
 import { barsCard, median } from "./cast.js";
 import { raceSvg } from "./episodes.js";
-import { pickStatus } from "../league.js";
+import { pickStatus, KNAP } from "../league.js";
 
 /** The week on show: state.wk, or the latest scored week. */
 export const stWeek = (d) => Math.min(Math.max(1, state.wk || d.weeksScored), d.episodes.length);
@@ -402,25 +402,51 @@ const FALL = "M2 3.5 6.5 8l3-3 4.5 4.5 M10.5 9.5H14V6 M2.5 13.5h11";
  * The Knappett's own table (on request), shown when a phone or tablet is held
  * upside down on the Standings (flip.js), in place of the boards. An Easter
  * egg (on request): nothing else on the site mentions the Knappett. It lists
- * everyone's Knappett points after the week on show (or the latest scored week), most
- * first, with that week's points beside them. Set like the Standings: the
- * hero's kicker and title, then one card of rows, a place column at the left
- * and an olive gap meter behind each row.
+ * everyone's Knappett points after the week on show (or the latest scored
+ * week), most first, with that week's points beside them. Set like the
+ * Standings: the hero's kicker and title, then one card of rows, a place
+ * column at the left and an olive gap meter behind each row. Each row opens
+ * (on request) to that player's week-by-week breakdown (knapMore); `open` is
+ * the player whose row is open.
  */
-export function knapTable(d, w = stWeek(d)) {
+export function knapTable(d, w = stWeek(d), open = null) {
   const wk = Math.min(w, d.weeksScored), final = d.complete && wk === d.episodes.length;
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${wk ? `After episode ${wk}` : "No episodes scored yet"}</div>`;
   const back = `<p class="kt-back">Turn it back over for the standings</p>`;
   if (!wk) return `<div class="hero kt-hero">${kicker}<h2 class="ep-title">The Knappett</h2></div>${back}`;
-  const rows = d.players.map((p) => ({ name: p.name, knap: p.history[wk - 1].knap, week: p.weeks[wk - 1].knap.total }))
+  const rows = d.players.map((p) => ({ p, name: p.name, knap: p.history[wk - 1].knap, week: p.weeks[wk - 1].knap.total }))
     .sort((a, b) => b.knap - a.knap || a.name.localeCompare(b.name));
   const kn = knappetts(rows), top = Math.max(1, rows[0].knap);
   const lead = kn.length ? `<p class="st-leaders"><span><b>${esc(listing(kn))}</b> ${final ? (kn.length > 1 ? "win" : "wins") : (kn.length > 1 ? "lead" : "leads")} <span class="st-knap">The Knappett</span></span></p>` : "";
   const body = rows.map((r, i) => `
-      <div class="kt-row" style="--m:${(r.knap / top).toFixed(3)}"><b class="kt-rk${tier(i + 1)}">${i + 1}</b><span class="kt-name">${esc(r.name)}</span><span class="kt-wk">+${r.week}</span><span class="kt-pts${i === 0 && kn.length ? " lead" : ""}">${r.knap}</span></div>`).join("");
+      <div class="kt-item${r.name === open ? " open" : ""}">
+        <button type="button" class="kt-row" data-kp="${esc(r.name)}" aria-expanded="${r.name === open}" style="--m:${(r.knap / top).toFixed(3)}"><b class="kt-rk${tier(i + 1)}">${i + 1}</b><span class="kt-name"><span>${esc(r.name)}</span><svg class="kt-chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span><span class="kt-wk">+${r.week}</span><span class="kt-pts${i === 0 && kn.length ? " lead" : ""}">${r.knap}</span></button>
+        <div class="kt-more"><div>${knapMore(d, r.p, wk)}</div></div>
+      </div>`).join("");
   return `<div class="hero kt-hero">${kicker}<h2 class="ep-title">The Knappett</h2>${lead}</div>
     <div class="card kt-board" style="--n:${rows.length}">
       <div class="kt-head"><span></span><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${FALL}"/></svg>Player</span><span>Ep ${wk}</span><span>Total</span></div>
       ${body}
     </div>${back}`;
+}
+
+/** A disaster's words, and its plural. */
+const KN_WORDS = { dq: ["DQ", "DQs"], neg: ["minus", "minuses"], zero: ["zero", "zeros"], last: ["last", "last"], stinker: ["stinker", "stinker"] };
+/**
+ * An opened Knappett row: every scored week up to the one on show, newest
+ * first. Each week reads its pick (three letters in the contestant's
+ * colour), how far it finished behind the episode's winner, its disasters
+ * ("DQ +3 · last +2"), and that week's Knappett points (olive when a
+ * disaster added to them).
+ */
+function knapMore(d, p, wk) {
+  const lines = p.weeks.slice(0, wk).reverse().map((x) => {
+    const k = x.knap, bad = Object.keys(KN_WORDS).filter((t) => k[t]).map((t) => {
+      const n = k[t] / KNAP[t];
+      return `<span>${n > 1 ? `${n} ${KN_WORDS[t][1]}` : KN_WORDS[t][0]} <b>+${k[t]}</b></span>`;
+    });
+    const pick = x.pick ? `<span class="kt-pick" style="color:${d.cast[x.pick].color}">${esc(x.pick.slice(0, 3))}</span>` : `<span class="kt-pick none">none</span>`;
+    return `<div class="kt-ep${x.ep === wk ? " now" : ""}"><span class="kt-epn">${x.ep}</span>${pick}<span class="kt-gap">${k.gap}</span><span class="kt-bad">${bad.join("")}</span><b class="kt-tot${bad.length ? " bad" : ""}">${k.total}</b></div>`;
+  }).join("");
+  return `<div class="kt-eps"><div class="kt-ep kt-ep-head"><span>Ep</span><span>Pick</span><span>Behind</span><span>Disasters</span><span>Pts</span></div>${lines}</div>`;
 }
