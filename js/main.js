@@ -651,6 +651,9 @@ function barScroll() {
 addEventListener("scroll", barScroll, { passive: true });
 $("main").addEventListener("scroll", barScroll, { passive: true });
 bar.addEventListener("focusin", () => setHidden(false)); // never hide what the keyboard is on
+// The dolphins' footer (fantasy mode) animates only while it's on screen:
+// its leaps cost even off screen.
+new IntersectionObserver(([e]) => e.target.classList.toggle("run", e.isIntersecting)).observe($(".fz-foot"));
 /** The page was put back at the top (turned over or back): the bar open and shown. */
 function barAtTop() { lastY = 0; down = up = 0; bar.classList.remove("compact"); setHidden(false); }
 
