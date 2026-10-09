@@ -4,6 +4,7 @@
 
 :root {
   --red: #c41818; --red-glow: rgba(196, 24, 24, .35); --red-t: rgba(196, 24, 24, .10);
+  --knap: #a3a86e; /* the stink fog's muted olive: a last place's score on an episode, and the Knappett on the boards */
   --warn: #ff5d55; /* the pick-rule line under a name: bright enough to read at 11px on the dark rows */
   --gold: #b88018; --gold2: #d4a028; --gold3: #ecc040; --gold4: #8a6010;
   --gold-t: rgba(184, 128, 24, .12); --gold-glow: rgba(212, 160, 40, .30);
@@ -185,6 +186,14 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .st-leaders b { font-family: var(--ff-name); font-weight: 800; color: var(--gold2); }
 .st-leaders .st-show { color: var(--show-hi); }
 .st-leaders .st-league { color: var(--league-hi); }
+/* The Knappett (last place on a board, ironically celebrated): a line under
+   the leaders, names in the stink fog's muted olive, with a person mid-fall. */
+.st-knap { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 16px; margin-top: 4px; font-size: 14px; color: var(--t2); text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
+.st-knap b { font-family: var(--ff-name); font-weight: 800; color: var(--knap); }
+.st-knap .st-show { color: var(--show-hi); }
+.st-knap .st-league { color: var(--league-hi); }
+.st-leaders .st-show, .st-leaders .st-league, .st-knap .st-show, .st-knap .st-league { white-space: nowrap; } /* a board's name never splits across lines */
+.kn-ico { width: 18px; height: 18px; margin: 0 6px 0 0; vertical-align: -3px; fill: none; stroke: var(--knap); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 /* "How scoring works" under the leaders line opens both explanations below
    it (the hero grows; tap again to close). A gold label with a chevron, so
    it reads as something to tap. */
@@ -423,6 +432,7 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 @media (prefers-reduced-motion: reduce) { .chev, .pc-more::before, .pc-more::after { transition: none; } }
 .pc-num { text-align: right; font-size: clamp(18px, 4.9vw, 21px); font-weight: 800; letter-spacing: -.02em; }
 .t1 { color: var(--gold2) !important; text-shadow: 0 0 10px var(--gold-glow); }
+.pc-num.kn { color: var(--knap); } /* the Knappett's points: last place, in the fog's olive (gold's opposite) */
 .t2 { color: var(--silver) !important; }
 .t3 { color: var(--bronze) !important; }
 
@@ -651,7 +661,7 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .fx-light { z-index: 3; mix-blend-mode: screen; }
 .fx-gas { z-index: 4; }
 .pod-col.last .fp { filter: saturate(.8) brightness(.93) drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
-.pod-col.last .pod-pts { color: #a3a86e; } /* the fog's own muted olive */
+.pod-col.last .pod-pts { color: var(--knap); } /* the fog's own muted olive */
 .pod-name { font-family: var(--ff-name); font-size: 12px; font-weight: 800; margin-top: 3px; }
 .pod-pts { font-size: clamp(18px, 5vw, 22px); font-weight: 800; line-height: 1; }
 .pod-col.win .pod-pts { color: var(--gold3); text-shadow: 0 0 8px var(--gold-glow); }

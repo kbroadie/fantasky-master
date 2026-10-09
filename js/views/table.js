@@ -39,6 +39,18 @@ function leaders(rows, key) {
   return rows.filter((p) => p[key] === top).map((p) => p.name);
 }
 
+/**
+ * Everyone on the bottom score of a board: the Knappett (on request: last
+ * place, ironically celebrated, after Jessica Knappett's literal fall in
+ * Series 7). Nobody when the whole board is level.
+ */
+function knappetts(rows, key) {
+  const low = Math.min(...rows.map((p) => p[key])), top = Math.max(...rows.map((p) => p[key]));
+  return low === top ? [] : rows.filter((p) => p[key] === low).map((p) => p.name);
+}
+/** A person mid-fall, in the task icons' line style (16px grid). */
+const FALL = `<svg class="kn-ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="4" cy="11.2" r="1.6"/><path d="M5.6 10 10 6.6l3.6-2M10 6.6l2-3.6M7.2 8.7 5.4 6.1M7.6 8.4l1.8 3.1M1.5 14h13"/></svg>`;
+
 /** "How scoring works", under the leaders line, opens both of these. */
 // The league's words, unchanged, in their order: the title, the rule, the
 // range. The crown and trophy are drawn in the same gold line style as the
@@ -70,6 +82,19 @@ function leaderLine(d, rows, w) {
   return `<span>${who(show)} ${verb(show)} ${S}</span><span>${who(league)} ${verb(league)} ${L}</span>`;
 }
 
+/** "Alex is The Show's Knappett   Kevin is The League's Knappett" (or "Alex is the double Knappett"), under the leaders. */
+function knappettLine(rows) {
+  const show = knappetts(rows, "show"), league = knappetts(rows, "league");
+  if (!show.length && !league.length) return "";
+  const who = (n) => `<b>${esc(listing(n))}</b>`, is = (n) => (n.length > 1 ? "are" : "is"), title = (n) => (n.length > 1 ? "Knappetts" : "Knappett");
+  const S = `<span class="st-show">The Show</span>`, L = `<span class="st-league">The League</span>`;
+  // The falling figure leads the first phrase (inside it, so it never wraps onto a line of its own).
+  const line = listing(show) === listing(league)
+    ? `<span>${FALL}${who(show)} ${is(show)} the double ${title(show)}</span>`
+    : [[show, S], [league, L]].filter(([n]) => n.length).map(([n, B], i) => `<span>${i ? "" : FALL}${who(n)} ${is(n)} ${B}’s ${title(n)}</span>`).join("");
+  return `<p class="st-knap">${line}</p>`;
+}
+
 /**
  * The hero: "Episode 4 Standings" and who leads each board; for a week not yet
  * scored, just "Episode 5" and when it airs.
@@ -80,7 +105,8 @@ export function standingsHero(d, w = stWeek(d)) {
   // The kicker, like the episode head's: the series and that week's episode.
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${esc(fmtDay.format(d.episodes[w - 1].air))}</div>`;
   if (w > d.weeksScored) return `${kicker}<h2 class="ep-title">Episode ${w}</h2><div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</div>${how}`;
-  return `${kicker}<h2 class="ep-title">Episode ${w} Standings</h2><p class="st-leaders">${leaderLine(d, atWeek(d, w), w)}</p>${how}`;
+  const rows = atWeek(d, w);
+  return `${kicker}<h2 class="ep-title">Episode ${w} Standings</h2><p class="st-leaders">${leaderLine(d, rows, w)}</p>${knappettLine(rows)}${how}`;
 }
 
 /**
@@ -245,9 +271,10 @@ export function boardChart(d, w, k, width) {
 export function standingsRows(d, w = stWeek(d)) {
   const { show, league } = boards(d, w);
   const top = { show: Math.max(0, ...show.map((p) => p.show)), league: Math.max(0, ...league.map((p) => p.league)) };
+  const low = { show: Math.min(...show.map((p) => p.show)), league: Math.min(...league.map((p) => p.league)) }; // the Knappett's points, in olive
   const half = (p, side) => {
     const k = side === "show" ? "show" : "league", rank = p[`${k}Rank`];
-    const num = `<span class="pc-num${rank === 1 ? " t1" : ""}">${p[k]}</span>`;
+    const num = `<span class="pc-num${rank === 1 ? " t1" : p[k] === low[k] && low[k] < top[k] ? " kn" : ""}">${p[k]}</span>`;
     const name = `<span class="pc-name"><span class="nm">${esc(p.name)}</span><svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span>`;
     const say = `${p.name}, ${ord(rank)} in the ${side === "show" ? "Show" : "League"} with ${p[k]} points`;
     return `<button class="sd ${side === "show" ? "l" : "r"}" type="button" data-side="${side}" data-p="${esc(p.name)}" style="--m:${top[k] ? (p[k] / top[k]).toFixed(3) : 0}" aria-expanded="false" aria-label="${esc(say)}">${name + num}</button>`;
