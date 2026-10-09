@@ -74,6 +74,7 @@ function settle() { clearTimeout(timer); pending = null; }
 
 function onTilt(e) {
   const { beta, gamma } = e;
+  probe.o++; probe.beta = beta; probe.gamma = gamma; probe.show();
   if (beta == null || gamma == null) return;
   oriented = true;
   const b = beta * Math.PI / 180, g = gamma * Math.PI / 180;
@@ -89,8 +90,9 @@ function onTilt(e) {
  * gives the orientation once allowed).
  */
 function onMotion(e) {
-  if (oriented) return;
   const a = e.accelerationIncludingGravity;
+  probe.m++; probe.acc = a; probe.show();
+  if (oriented) return;
   if (!a || a.x == null || a.y == null) return;
   const n = Math.hypot(a.x, a.y, a.z || 0);
   if (n < 6 || n > 14) return; // being shaken, not held
@@ -112,6 +114,7 @@ function judge() {
   if ((a === 90 || a === 270) && Math.abs(ux) > 0.8) sideways[a] = Math.sign(ux);
   const down = uy < -0.57 && -uy > Math.abs(ux) * 1.4;
   const back = uy > -0.26 || Math.abs(ux) > -uy;
+  probe.pose = down ? "upside down" : back ? "upright" : "in between";
   if (held && back) held = false; // a tap closed it: open again only after it's been turned back
   if (down && !held) { const rot = turnFor(ux, uy); if (!on || rot !== turn) want(true, rot); else settle(); }
   else if (back) { if (on) want(false, turn); else settle(); }
@@ -285,7 +288,37 @@ export async function askTilt() {
   asking = false;
 }
 
+/**
+ * A diagnostic, only with ?tilt in the address (on request, to find why a
+ * phone didn't show the table): a small box of what the page is getting from
+ * the sensors and what it makes of it. Nothing otherwise.
+ */
+const probe = { o: 0, m: 0, pose: "–", el: null, at: 0,
+  show() {
+    if (!this.el) return;
+    const now = performance.now();
+    if (now - this.at < 100) return;
+    this.at = now;
+    const f = (v) => (v == null ? "null" : (+v).toFixed(1));
+    const a = this.acc;
+    this.el.textContent = [
+      `orientation events: ${this.o}  β ${f(this.beta)}  γ ${f(this.gamma)}`,
+      `motion events: ${this.m}  ${a ? `x ${f(a.x)}  y ${f(a.y)}  z ${f(a.z)}` : ""}`,
+      `screen angle: ${angle()}  ${screen.orientation?.type || ""}  page: ${state.page}`,
+      `way up: ${up ? up.map((v) => v.toFixed(2)).join(", ") : "–"}  (${oriented ? "orientation" : "motion"})`,
+      `pose: ${this.pose}  table: ${on ? `on, turned ${turn}°` : "off"}${held ? " (tapped shut)" : ""}`,
+      `secure: ${isSecureContext}  permission API: ${ASK}  allowed: ${allowed}`,
+    ].join("\n");
+  },
+};
+
 export function initFlip() {
+  if (new URLSearchParams(location.search).has("tilt")) {
+    probe.el = Object.assign(document.createElement("pre"), { className: "tilt-probe" });
+    document.body.append(probe.el);
+    probe.show();
+    setInterval(() => { probe.at = 0; probe.show(); }, 500);
+  }
   let before = false;
   try { before = localStorage.getItem(KEY) === "1"; } catch {}
   if (!ASK) listen();
