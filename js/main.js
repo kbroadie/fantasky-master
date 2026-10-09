@@ -8,8 +8,9 @@ import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, foot
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
-import { mountPodiumFx } from "./podium-fx.js";
+import { mountPodiumFx, plume } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
+import { initFlip, flipSync, askTilt } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -48,6 +49,7 @@ function loadSeries(key) {
   renderSlides(d);
   if (!$("#foot").children.length) $("#foot").innerHTML = footer();
   countdown();
+  flipSync();
 }
 
 /** Standings: the week strip and one slide per week; an opened player stays opened. */
@@ -84,6 +86,7 @@ function refresh(text) {
   for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get());
   else mark(sw, sw.get(), false);
   if (fk) $(`[data-fk="${CSS.escape(fk)}"]`)?.focus({ preventScroll: true });
+  flipSync();
 }
 
 function show(page) {
@@ -97,6 +100,7 @@ function show(page) {
   if (page === "episodes") jump(EP, state.ep - 1);
   if (page === "cast") jump(CAST, state.cast);
   writeHash();
+  flipSync();
 }
 
 // ── Swipers: a tab strip over a row of scroll-snapped slides ─────────────────
@@ -280,6 +284,9 @@ $("#p-standings").addEventListener("click", (e) => {
   // the week on show opens; a row open in another week closes, without easing.
   const sd = e.target.closest(".pc .sd");
   if (sd) {
+    // Last place (on request): a plume of the stink gas, and on an iPhone the
+    // tap that asks for the tilt, so the upside-down Knappett can be stumbled on.
+    if (sd.hasAttribute("data-kn")) { askTilt(); plume(sd); }
     glideEnd?.(); // settle a row still gliding, so this one starts from where things are
     const row = sd.closest(".pc"), side = sd.dataset.side, open = row.classList.contains("open") && row.dataset.open === side;
     state.open = open ? null : { side, name: sd.dataset.p, wk: +row.closest(".st-slide").dataset.week };
@@ -579,6 +586,7 @@ try {
   try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
   $("#welcome").innerHTML = welcomeCard();
   $("#welcome").hidden = !welcome;
+  initFlip();
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);

@@ -245,12 +245,14 @@ export function boardChart(d, w, k, width) {
 export function standingsRows(d, w = stWeek(d)) {
   const { show, league } = boards(d, w);
   const top = { show: Math.max(0, ...show.map((p) => p.show)), league: Math.max(0, ...league.map((p) => p.league)) };
+  // Last place on each board (not when the board is level): a tap lets off the stink (main.js, flip.js). Unmarked.
+  const low = { show: Math.min(...show.map((p) => p.show)), league: Math.min(...league.map((p) => p.league)) };
   const half = (p, side) => {
     const k = side === "show" ? "show" : "league", rank = p[`${k}Rank`];
     const num = `<span class="pc-num${rank === 1 ? " t1" : ""}">${p[k]}</span>`;
     const name = `<span class="pc-name"><span class="nm">${esc(p.name)}</span><svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span>`;
     const say = `${p.name}, ${ord(rank)} in the ${side === "show" ? "Show" : "League"} with ${p[k]} points`;
-    return `<button class="sd ${side === "show" ? "l" : "r"}" type="button" data-side="${side}" data-p="${esc(p.name)}" style="--m:${top[k] ? (p[k] / top[k]).toFixed(3) : 0}" aria-expanded="false" aria-label="${esc(say)}">${name + num}</button>`;
+    return `<button class="sd ${side === "show" ? "l" : "r"}" type="button" data-side="${side}" data-p="${esc(p.name)}"${p[k] === low[k] && low[k] < top[k] ? " data-kn" : ""} style="--m:${top[k] ? (p[k] / top[k]).toFixed(3) : 0}" aria-expanded="false" aria-label="${esc(say)}">${name + num}</button>`;
   };
   return show.map((l, i) => {
     const r = league[i];
@@ -382,3 +384,43 @@ function journey(d, p, side, w) {
   </div>`;
 }
 
+// ── The Knappett ─────────────────────────────────────────────────────────────
+
+/**
+ * Whoever has the most Knappett points (league.js, §6.12): they lead The
+ * Knappett (on request: doing badly, ironically celebrated, after Jessica
+ * Knappett's literal fall in Series 7). Nobody when everyone is level.
+ */
+function knappetts(rows) {
+  const top = Math.max(...rows.map((p) => p.knap));
+  return rows.every((p) => p.knap === top) ? [] : leaders(rows, "knap");
+}
+/** A line falling, in the task icons' style. */
+const FALL = "M2 3.5 6.5 8l3-3 4.5 4.5 M10.5 9.5H14V6 M2.5 13.5h11";
+
+/**
+ * The Knappett's own table (on request), shown when a phone or tablet is held
+ * upside down on the Standings (flip.js), in place of the boards. An Easter
+ * egg (on request): nothing else on the site mentions the Knappett. It lists
+ * everyone's Knappett points after the week on show (or the latest scored week), most
+ * first, with that week's points beside them. Set like the Standings: the
+ * hero's kicker and title, then one card of rows, a place column at the left
+ * and an olive gap meter behind each row.
+ */
+export function knapTable(d, w = stWeek(d)) {
+  const wk = Math.min(w, d.weeksScored), final = d.complete && wk === d.episodes.length;
+  const kicker = `<div class="kicker">Series ${esc(state.key)} · ${wk ? `After episode ${wk}` : "No episodes scored yet"}</div>`;
+  const back = `<p class="kt-back">Turn it back over for the standings</p>`;
+  if (!wk) return `<div class="hero kt-hero">${kicker}<h2 class="ep-title">The Knappett</h2></div>${back}`;
+  const rows = d.players.map((p) => ({ name: p.name, knap: p.history[wk - 1].knap, week: p.weeks[wk - 1].knap.total }))
+    .sort((a, b) => b.knap - a.knap || a.name.localeCompare(b.name));
+  const kn = knappetts(rows), top = Math.max(1, rows[0].knap);
+  const lead = kn.length ? `<p class="st-leaders"><span><b>${esc(listing(kn))}</b> ${final ? (kn.length > 1 ? "win" : "wins") : (kn.length > 1 ? "lead" : "leads")} <span class="st-knap">The Knappett</span></span></p>` : "";
+  const body = rows.map((r, i) => `
+      <div class="kt-row" style="--m:${(r.knap / top).toFixed(3)}"><b class="kt-rk${tier(i + 1)}">${i + 1}</b><span class="kt-name">${esc(r.name)}</span><span class="kt-wk">+${r.week}</span><span class="kt-pts${i === 0 && kn.length ? " lead" : ""}">${r.knap}</span></div>`).join("");
+  return `<div class="hero kt-hero">${kicker}<h2 class="ep-title">The Knappett</h2>${lead}</div>
+    <div class="card kt-board" style="--n:${rows.length}">
+      <div class="kt-head"><span></span><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${FALL}"/></svg>Player</span><span>Ep ${wk}</span><span>Total</span></div>
+      ${body}
+    </div>${back}`;
+}
