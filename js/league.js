@@ -62,8 +62,6 @@ export function rankWithTies(sorted, key) {
 
 // ── Derivation ───────────────────────────────────────────────────────────────
 
-/** Knappett points for each disaster on a pick (§6.12); the gap behind the episode's winner is 1 a point. */
-export const KNAP = { dq: 3, neg: 3 };
 
 export function derive(raw, now = new Date()) {
   const names = raw.cast.map((c) => c.key);
@@ -101,26 +99,17 @@ export function derive(raw, now = new Date()) {
   }
 
   // Knappett points (§6.12): what each contestant's pickers earn on the
-  // Knappett each scored episode, the board for doing badly. 1 per point
-  // behind the episode's winner, plus 3 for each task they were disqualified
-  // on and 3 for each they scored minus points on (on request: only those;
-  // zeros, last place and a stinker were tried and dropped).
+  // Knappett each scored episode, the board for doing badly: 1 per point
+  // behind the episode's winner, and nothing else (on request; bonuses for
+  // DQs, minus scores, zeros, last place and a stinker were tried and dropped).
   const KN = {};
   for (let e = 1; e <= weeksScored; e++) {
     const top = Math.max(...names.map((n) => EPS[n][e]));
-    KN[e] = Object.fromEntries(names.map((n, i) => {
-      const k = { gap: top - EPS[n][e], dq: 0, neg: 0 };
-      for (const t of raw.tasks) if (t.ep === e) {
-        if (t.dq?.[i]) k.dq += KNAP.dq;
-        else if (t.s[i] < 0) k.neg += KNAP.neg;
-      }
-      k.total = k.gap + k.dq + k.neg;
-      return [n, k];
-    }));
+    KN[e] = Object.fromEntries(names.map((n) => [n, { gap: top - EPS[n][e], total: top - EPS[n][e] }]));
   }
   // A week with no pick scores 0 on the Show, so it's the whole winner's score behind.
   const knapOf = (c, e) => (c && idx[c] !== undefined ? KN[e][c]
-    : { gap: winners[e].top, dq: 0, neg: 0, total: winners[e].top });
+    : { gap: winners[e].top, total: winners[e].top });
 
   // Players: the roster plus anyone with picks.
   const allPlayers = [...new Set([...(raw.players || []), ...Object.keys(raw.picks)])];

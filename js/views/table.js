@@ -402,13 +402,13 @@ const FALL = "M2 3.5 6.5 8l3-3 4.5 4.5 M10.5 9.5H14V6 M2.5 13.5h11";
 /**
  * How the Knappett scores (on request), behind a How scoring works button
  * in the table's hero, like the Standings': one card in the Show and League
- * cards' pattern, olive, its points for each thing in the footer. Only in
- * the upside-down table, so the egg stays hidden.
+ * cards' pattern, its range in the footer like theirs. Only in the
+ * upside-down table, so the egg stays hidden.
  */
 const KNAP_TERM = {
   path: FALL, name: "Knappett",
-  rule: ["The player whose picks finish ", "furthest behind each episode's winner", " wins, with extra points for disqualifications and minus scores. Skipping a poll counts as the winner's whole score behind. Named for Jessica Knappett's fall in Series 7."],
-  tiers: [["1", "per pt behind"], ["3", "per DQ"], ["3", "per minus score"]],
+  rule: ["The player whose picks finish ", "furthest behind each episode's winner", " wins: 1 point for every point behind. Skipping a poll counts as the winner's whole score behind. Named for Jessica Knappett's fall in Series 7."],
+  range: "0–25", unit: "pts per episode",
 };
 
 /**
@@ -450,7 +450,7 @@ function knapWeek(d, wk, how) {
         <div class="kt-more"><div></div></div>
       </div>`).join("");
   return `${hero(lead)}
-    <div class="card kt-board" style="--n:${rows.length}">
+    <div class="card kt-board">
       <div class="kt-head"><span></span><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${FALL}"/></svg>Player</span><span>Ep ${wk}</span><span>Total</span></div>
       ${body}
     </div>`;

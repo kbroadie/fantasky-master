@@ -323,16 +323,13 @@ The site shows it as a red line at the top of the player's opened row on the Sta
 
 ### 6.12 Knappett points
 
-A third board, for doing badly (named after Jessica Knappett's fall in Series 7). It's an Easter egg: the site shows it only when a phone or tablet is held upside down on the Standings (`flip.js`), and nothing else mentions it, README.md included. For each scored episode `e` and contestant `c` (`KN[e][c]` in `league.js`, point values in `KNAP`):
+A third board, for doing badly (named after Jessica Knappett's fall in Series 7). It's an Easter egg: the site shows it only when a phone or tablet is held upside down on the Standings (`flip.js`), and nothing else mentions it, README.md included. For each scored episode `e` and contestant `c` (`KN[e][c]` in `league.js`):
 
 ```
-gap     = top − EPS[c][e]                  top = max over c of EPS[·][e]
-dq      = 3 × (tasks in e where c is disqualified)
-neg     = 3 × (tasks in e where c scored < 0, not DQ)
-KN[e][c] = gap + dq + neg
+KN[e][c] = top − EPS[c][e]                 top = max over c of EPS[·][e]
 ```
 
-A player's week scores `KN[e][pick_e]`. Only DQs and minus scores earn bonus points (zeros, last place and a stinker, last by 5 or more, were tried and dropped on request). A week with no pick scores `top` (0 on the Show is the winner's whole score behind) and no bonus. Knappett points = the sum over scored weeks; `boardsAsOf(w)` carries them as `knap`, and the most Knappett points at the week on show "leads The Knappett" (ties share it; nobody when everyone is level). Tiebreaks don't matter: they decide only 1st.
+A player's week scores `KN[e][pick_e]`. Nothing else counts (on request; bonus points for DQs, minus scores, zeros, last place and a stinker were tried and dropped). A week with no pick scores `top` (0 on the Show is the winner's whole score behind). Knappett points = the sum over scored weeks; `boardsAsOf(w)` carries them as `knap`, and the most Knappett points at the week on show "leads The Knappett" (ties share it; nobody when everyone is level). Tiebreaks don't matter: they decide only 1st.
 
 ---
 
@@ -360,7 +357,7 @@ League points = 2 + 4 + 5 + 3 = **14**.
 **Other outputs:**
 - **Show rank:** Riley is 1st on the Show board.
 - **Pick status:** known = {Richard, Matt, Chloe}, needed = {Isy, Nina}, left = 6, so status = none.
-- **Knappett points:** ep 1 Richard 6 behind Chloe's 19, and a DQ: 6 + 3 = 9; ep 2 Matt tied the top score: 0; ep 3 Chloe won: 0; ep 4 Chloe 5 behind Isy's 24: 5. Total **14**.
+- **Knappett points:** ep 1 Richard 6 behind Chloe's 19: 6; ep 2 Matt tied the top score: 0; ep 3 Chloe won: 0; ep 4 Chloe 5 behind Isy's 24: 5. Total **11**.
 
 ---
 

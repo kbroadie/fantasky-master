@@ -279,19 +279,18 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    the hand: round (.turn, its safe areas swapped) when the page stayed
    portrait, a quarter turn (.side, --rot ±90deg, the layer as tall as the
    screen is wide) when the page turned to landscape on the way over, as on
-   Android phones. --kh is its height, for fitting the rows. Not displayed
+   Android phones. Not displayed
    at all until it shows, then a fade in (none under reduced motion). The
    content scrolls in .kflip-scroll, over the falling background (.kf-fall),
    which stays put. */
 .kflip {
-  --kh: 100dvh;
   position: fixed; inset: 0; z-index: 60; overflow: hidden; background: var(--bg);
   display: none; /* nothing of it in the page until it shows (iOS Safari's memory) */
 }
 .kflip.on { display: block; animation: kf-in .25s var(--ease); }
 @keyframes kf-in { from { opacity: 0; } }
 .kflip.turn { transform: rotate(180deg); }
-.kflip.side { --kh: 100vw; inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; transform: translate(-50%, -50%) rotate(var(--rot)); }
+.kflip.side { inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; transform: translate(-50%, -50%) rotate(var(--rot)); }
 .kflip-scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: env(safe-area-inset-top) 0 max(16px, env(safe-area-inset-bottom)); }
 .kflip.turn .kflip-scroll { padding: env(safe-area-inset-bottom) 0 max(16px, env(safe-area-inset-top)); }
 .kflip.side .kflip-scroll { padding: 0 0 16px; }
@@ -312,8 +311,8 @@ body.kflipped { overflow: hidden; }
 .kt-slide { content-visibility: visible; }
 .kt-hero { text-align: center; padding-block: 18px 16px; background: none; }
 .kt-hero .ep-title { margin-bottom: 0; color: var(--t1); }
-/* The rows fit the screen where they can (15 players on an iPhone), 44px at most */
-.card.kt-board { --row: clamp(34px, calc((var(--kh) - 236px) / var(--n)), 44px); --rk: 36px; margin: 12px var(--px) 0; padding: 0; overflow: hidden; background: rgba(16, 13, 16, .7); } /* see-through, so the fall shows behind the rows */
+/* The rows are the boards' height (on request), 52px */
+.card.kt-board { --row: 52px; --rk: 36px; margin: 12px var(--px) 0; padding: 0; overflow: hidden; background: rgba(16, 13, 16, .7); } /* see-through, so the fall shows behind the rows */
 .kt-head, .kt-row { display: grid; grid-template-columns: var(--rk) minmax(0, 1fr) 60px 60px; align-items: center; }
 .kt-row { width: 100%; text-align: left; -webkit-tap-highlight-color: transparent; }
 .kt-head { height: 34px; white-space: nowrap; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--t2); border-bottom: 2px solid rgba(240, 232, 220, .22); background: linear-gradient(180deg, rgba(240, 232, 220, .06), transparent); }
@@ -327,7 +326,7 @@ body.kflipped { overflow: hidden; }
 }
 .kt-head + .kt-item > .kt-row { border-top: 0; }
 .kt-rk { align-self: stretch; display: grid; place-items: center; font-size: 15px; font-weight: 700; color: var(--t3); background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold); }
-.kt-name { display: flex; align-items: center; min-width: 0; padding-left: 12px; font: 800 clamp(16px, 4.4vw, 18px) var(--ff-name); color: var(--t1); }
+.kt-name { display: flex; align-items: center; min-width: 0; padding-left: 12px; font: 800 clamp(16px, 4.1vw, 20px) var(--ff-name); color: var(--t1); }
 .kt-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Each row opens (on request) to the player's Knappett cards, the same as an opened Standings row's; a chevron like the boards', turning over when open */
 .kt-chev { flex: none; width: 9px; height: 5.5px; margin: 1px 0 0 6px; overflow: visible; fill: none; stroke: var(--t4); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s var(--ease); }
@@ -343,7 +342,7 @@ body.kflipped { overflow: hidden; }
 .kt-item.open .jr-others, .kt-item.open .jr-dot { animation: jr-fade .6s var(--ease) both; }
 @media (prefers-reduced-motion: reduce) { .kt-more, .kt-chev { transition: none; } .kt-item.open .jr-me, .kt-item.open .jr-others, .kt-item.open .jr-dot { animation: none; } }
 .kt-wk { text-align: right; padding-right: 14px; font: 500 12px var(--fm); color: var(--t3); font-variant-numeric: tabular-nums; }
-.kt-pts { text-align: right; padding-right: 14px; font-size: clamp(17px, 4.6vw, 20px); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.kt-pts { text-align: right; padding-right: 14px; font-size: clamp(18px, 4.9vw, 21px); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .kt-pts.lead { color: var(--gold2); text-shadow: 0 0 10px var(--gold-glow); }
 .kt-name > span, .kt-pts, .kt-rk { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 .kt-back { margin-top: 14px; text-align: center; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--t4); }

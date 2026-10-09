@@ -15,17 +15,22 @@
 // rotate upside down, only to the side"; .side), and not at all on a tablet
 // that turned the page itself. Without the sensor (Safari before it's
 // allowed), a screen turned to 180 shows it as it is.
-// iPhone and iPad Safari give the page the tilt only after a tap allows it
-// (DeviceOrientationEvent.requestPermission). The secret tap is a last-place
-// half on the Standings (on request): it runs the Knappett's fall in that
-// cell for a moment (fallIn, from main.js) and, on Safari, asks for motion
-// (askTilt), so whoever taps last place stumbles on the prompt. Once allowed,
-// a later visit asks again on its first tap, which Safari answers by itself
-// if it remembers.
+// The page listens from the start on every device (on request: Android needs
+// no tap, and some Android browsers offer the permission request too, which
+// had held them back until one). iPhone and iPad Safari give the page the
+// tilt only after a tap allows it (DeviceOrientationEvent.requestPermission):
+// the secret tap is a last-place half on the Standings (on request), which
+// runs the Knappett's fall in that cell for a moment (fallIn, from main.js)
+// and, where no readings have come yet, asks for motion (askTilt), so
+// whoever taps last place stumbles on the prompt. Once allowed, a later visit
+// asks again on its first tap, which Safari answers by itself if it
+// remembers.
 import { $, state, reducedMotion } from "./ui.js";
 import { knapTable, knapMore, stWeek } from "./views/table.js";
 
 const ASK = typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function";
+// iPhones and iPads (iPadOS reports itself as a Mac with a touch screen): their motion readings' signs run the other way.
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const KEY = "fm-tilt";
 const HOW_KEY = "fm-knap-how"; // set once the table has been seen, so How scoring works opens only the first time
 const SETTLE = 250; // ms a pose must hold, so a phone swung past upside down doesn't flash the table
@@ -189,7 +194,7 @@ function listen() {
   if (listening) return;
   listening = true;
   addEventListener("deviceorientation", onTilt);
-  if (!ASK) addEventListener("devicemotion", onMotion);
+  if (!IOS) addEventListener("devicemotion", onMotion);
 }
 
 // ── The fall ────────────────────────────────────────────────────────────────
@@ -313,10 +318,14 @@ export function fallIn(el) {
 }
 function stopFall() { cancelAnimationFrame(fallRaf); fallRaf = 0; }
 
-/** On Safari, ask for the tilt; call it in a tap (Safari asks only then). Nothing elsewhere, or once allowed. */
+/**
+ * Where the browser has the permission request and no readings have come yet
+ * (iPhone and iPad Safari), ask for the tilt; call it in a tap (Safari asks
+ * only then). Nothing once readings come, or elsewhere.
+ */
 let asking = false;
 export async function askTilt() {
-  if (allowed || asking) return;
+  if (allowed || asking || oriented || probe.m) return;
   asking = true;
   try {
     if (await DeviceOrientationEvent.requestPermission() === "granted") {
@@ -361,9 +370,9 @@ export function initFlip() {
   }
   let before = false;
   try { before = localStorage.getItem(KEY) === "1"; } catch {}
-  if (!ASK) listen();
-  // Allowed on an earlier visit: ask again on the first tap (Safari answers by itself if it remembers).
-  else if (before) addEventListener("click", askTilt, { once: true, capture: true });
+  listen();
+  // Allowed on an earlier visit: ask again on the first tap if nothing has come (Safari answers by itself if it remembers).
+  if (ASK && before) addEventListener("click", askTilt, { once: true, capture: true });
   screen.orientation?.addEventListener("change", onTurn);
   addEventListener("orientationchange", onTurn);
   // A tap on a row opens that player's weeks (one at a time); a tap anywhere
