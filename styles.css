@@ -48,7 +48,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 /* Every underlined link and button is dotted (on request) */
-a { text-decoration: underline dotted 1.5px; text-underline-offset: 3px; }
+a { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-user-select: none; user-select: none; }
 :focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; border-radius: 4px; }
 strong { color: var(--t1); font-weight: 700; }
@@ -295,11 +295,11 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 }
 .st-quote cite { font-style: normal; white-space: nowrap; }
 /* Underlined while the tilt still needs allowing (Safari), so it reads as a tap (askHint in flip.js) */
-.tilt-ask .st-quote q { text-decoration: underline dotted 1.5px; text-underline-offset: 3px; }
+.tilt-ask .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 /* On a desktop it's right side up and underlined, and a click switches fantasy mode on and off (main.js) */
 @media (hover: hover) and (pointer: fine) {
   .st-quote { transform: none; cursor: pointer; transition: color .2s; }
-  .st-quote q { text-decoration: underline dotted 1.5px; text-underline-offset: 3px; }
+  .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
   .st-quote:hover { color: var(--t2); }
 }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
@@ -605,7 +605,7 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .wl-x.wl-done { display: block; margin: 18px auto 0; padding: 9px 22px; border: 1px solid var(--b-gold); border-radius: 999px; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--gold2); }
 /* "New here? Read the welcome": a quiet line under the How scoring works cards. */
 .st-wl { display: block; margin: 10px auto 0; padding: 6px 8px; font-size: 13px; color: var(--t3); -webkit-tap-highlight-color: transparent; }
-.st-wl span { color: var(--gold2); text-decoration: underline dotted 1.5px; text-underline-offset: 3px; }
+.st-wl span { color: var(--gold2); text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 
 /* ── Cards ─────────────────────────────────────────────────────────── */
 .card {
