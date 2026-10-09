@@ -271,8 +271,6 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 
 /* The tilt diagnostic, only with ?tilt in the address (flip.js) */
 .tilt-probe { position: fixed; left: 8px; bottom: 8px; z-index: 100; margin: 0; padding: 8px 10px; max-width: calc(100vw - 16px); white-space: pre-wrap; font: 400 11px/1.45 var(--fm); color: #9f9; background: rgba(0, 0, 0, .82); border-radius: 8px; pointer-events: none; }
-/* The fall in a tapped last-place cell, for a moment (fallIn in flip.js) */
-.cell-fall { position: absolute; z-index: 30; pointer-events: none; }
 
 /* ── Standings ─────────────────────────────────────────────────────── */
 /* Both boards side by side, in a rounded card like the cards on the other

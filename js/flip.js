@@ -26,10 +26,9 @@
 // no tap, and some Android browsers offer the permission request too, which
 // had held them back until one). iPhone and iPad Safari give the page the
 // tilt only after a tap allows it (DeviceOrientationEvent.requestPermission):
-// the secret tap is a last-place half on the Standings (on request), which
-// runs the fall in that cell for a moment (fallIn, from main.js) and, where
-// no readings have come yet, asks for motion (askTilt), so whoever taps last
-// place stumbles on the prompt. Once allowed, a later visit asks again on its
+// the secret tap is a last-place half on the Standings (on request), which,
+// where no readings have come yet, asks for motion (askTilt, from main.js),
+// so whoever taps last place stumbles on the prompt. Once allowed, a later visit asks again on its
 // first tap, which Safari answers by itself if it remembers.
 import { $, state, reducedMotion } from "./ui.js";
 
@@ -261,36 +260,6 @@ function fall() {
   fallRaf = requestAnimationFrame(step);
 }
 
-/**
- * The secret tap's tease (on request: in place of a plume of the stink gas):
- * the fall, for a moment, in the tapped last-place cell. The same
- * streaks rush up through it, denser and brighter for its size, fading in
- * and out over about two seconds, on a canvas the cell's exact size over it,
- * removed when it's done. Nothing under reduced motion.
- */
-const CELL_MS = 2200;
-export function fallIn(el) {
-  if (reducedMotion) return;
-  const b = el.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
-  const c = Object.assign(document.createElement("canvas"), { className: "cell-fall", width: Math.round(b.width * dpr), height: Math.round(b.height * dpr) });
-  c.setAttribute("aria-hidden", "true");
-  Object.assign(c.style, { left: `${b.left + scrollX}px`, top: `${b.top + scrollY}px`, width: `${b.width}px`, height: `${b.height}px` });
-  document.body.append(c);
-  const x = c.getContext("2d");
-  x.scale(dpr, dpr);
-  const draw = streaks(x, b.width, b.height, 9, 1.8, 1, [16, 20]);
-  let start = 0, last = 0;
-  const step = (now) => {
-    start ||= now;
-    const t = now - start;
-    if (t > CELL_MS) { c.remove(); return; }
-    draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
-    last = now;
-    c.style.opacity = Math.min(1, t / 200, (CELL_MS - t) / 700).toFixed(3);
-    requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
 function stopFall() { cancelAnimationFrame(fallRaf); fallRaf = 0; }
 
 /**

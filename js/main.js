@@ -10,7 +10,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, askTilt, fallIn, turned } from "./flip.js";
+import { initFlip, askTilt, turned } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -317,10 +317,9 @@ $("#p-standings").addEventListener("click", (e) => {
   // the week on show opens; a row open in another week closes, without easing.
   const sd = e.target.closest(".pc .sd");
   if (sd) {
-    // Last place (on request): the fall in the cell for a moment, and on an
-    // iPhone the tap that asks for the tilt, so the upside-down dream can be
-    // stumbled on.
-    if (sd.hasAttribute("data-kn")) { askTilt(); fallIn(sd); }
+    // Last place (on request): on an iPhone, the tap that asks for the tilt,
+    // so the upside-down dream can be stumbled on.
+    if (sd.hasAttribute("data-kn")) askTilt();
     glideEnd?.(); // settle a row still gliding, so this one starts from where things are
     const row = sd.closest(".pc"), side = sd.dataset.side, open = row.classList.contains("open") && row.dataset.open === side;
     state.open = open ? null : { side, name: sd.dataset.p, wk: +row.closest(".st-slide").dataset.week };

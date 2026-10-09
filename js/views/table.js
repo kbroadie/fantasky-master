@@ -254,7 +254,7 @@ export function boardChart(d, w, k, width) {
 export function standingsRows(d, w = stWeek(d)) {
   const { show, league } = boards(d, w);
   const top = { show: Math.max(0, ...show.map((p) => p.show)), league: Math.max(0, ...league.map((p) => p.league)) };
-  // Last place on each board (not when the board is level): a tap runs the fall (main.js, flip.js). Unmarked.
+  // Last place on each board (not when the board is level): a tap asks for the tilt on an iPhone (main.js, flip.js). Unmarked.
   const low = { show: Math.min(...show.map((p) => p.show)), league: Math.min(...league.map((p) => p.league)) };
   // The gap meter: the share of the leader's points, or in fantasy mode how far below the top (the leader, at the bottom, full).
   const meter = (p, k) => (state.fantasy ? (top[k] > low[k] ? (top[k] - p[k]) / (top[k] - low[k]) : 1) : top[k] ? p[k] / top[k] : 0);
