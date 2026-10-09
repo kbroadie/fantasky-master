@@ -33,6 +33,13 @@ export async function fetchTitle(seriesKey, ep) {
   return titleCase(page);
 }
 
+/** Every episode title the series page lists so far, by episode number (one request). */
+export async function fetchTitles(seriesKey) {
+  const text = await wikitext(`Series ${seriesKey}`), out = {};
+  for (let ep = 1; ep <= 10; ep++) { const page = episodePage(text, ep); if (page) out[ep] = titleCase(page); }
+  return out;
+}
+
 /** "This is food glue." → "This Is Food Glue", like the data file's titles. */
 const SMALL = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "in", "of", "on", "or", "the", "to", "vs"]);
 export function titleCase(t) {
@@ -115,7 +122,7 @@ export function parseEpisode(text) {
 /**
  * An episode's scores for the grid, in the series cast's order.
  * cast: [{ key, full }]. Returns { page, title, tasks: [{ no, t, name, scores }],
- * tiebreak (cast key or ""), warnings }.
+ * tiebreak (cast key or ""), warnings, complete }.
  */
 export async function fetchEpisode(seriesKey, ep, cast) {
   const page = episodePage(await wikitext(`Series ${seriesKey}`), ep);
@@ -128,10 +135,16 @@ export async function fetchEpisode(seriesKey, ep, cast) {
   if (missing.length) throw new Error(`Couldn't find ${missing.join(", ")} in the wiki's table`);
   const warnings = [];
   const out = tasks.map((t) => ({ no: t.no, t: t.t, name: t.name, scores: col.map((j) => t.scores[j]) }));
-  if (out.some((t) => t.scores.some((v) => v == null))) warnings.push("Some scores are blank on the wiki; fill them in");
+  const blank = out.some((t) => t.scores.some((v) => v == null));
+  if (blank) warnings.push("Some scores are blank on the wiki; fill them in");
+  let off = [];
   if (totals) {
-    const off = cast.filter((c, i) => totals[col[i]] != null && out.reduce((a, t) => a + (typeof t.scores[i] === "number" ? t.scores[i] : 0), 0) !== totals[col[i]]);
+    off = cast.filter((c, i) => totals[col[i]] != null && out.reduce((a, t) => a + (typeof t.scores[i] === "number" ? t.scores[i] : 0), 0) !== totals[col[i]]);
     if (off.length) warnings.push(`The tasks don't add up to the wiki's total for ${off.map((c) => c.key).join(", ")}; check them`);
   }
-  return { page, title: titleCase(page), tasks: out, tiebreak: tiebreak == null ? "" : cast[col.indexOf(tiebreak)]?.key || "", warnings };
+  // Looks finished: every score in, a total for everyone that the tasks add
+  // up to, and the closing live task (the scheduled sync waits for this, as
+  // the wiki's table fills in while the episode streams).
+  const complete = !blank && !!totals && cast.every((c, i) => totals[col[i]] != null) && !off.length && out.some((t) => t.t === "L");
+  return { page, title: titleCase(page), tasks: out, tiebreak: tiebreak == null ? "" : cast[col.indexOf(tiebreak)]?.key || "", warnings, complete };
 }
