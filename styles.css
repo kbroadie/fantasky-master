@@ -271,91 +271,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 
 /* The tilt diagnostic, only with ?tilt in the address (flip.js) */
 .tilt-probe { position: fixed; left: 8px; bottom: 8px; z-index: 100; margin: 0; padding: 8px 10px; max-width: calc(100vw - 16px); white-space: pre-wrap; font: 400 11px/1.45 var(--fm); color: #9f9; background: rgba(0, 0, 0, .82); border-radius: 8px; pointer-events: none; }
-/* The Knappett's fall in a tapped last-place cell, for a moment (fallIn in flip.js) */
+/* The fall in a tapped last-place cell, for a moment (fallIn in flip.js) */
 .cell-fall { position: absolute; z-index: 30; pointer-events: none; }
-
-/* The Knappett's table, over the Standings while the device is upside down
-   (flip.js): a layer over everything, turned so it reads the right way up in
-   the hand: round (.turn, its safe areas swapped) when the page stayed
-   portrait, a quarter turn (.side, --rot ±90deg, the layer as tall as the
-   screen is wide) when the page turned to landscape on the way over, as on
-   Android phones. Not displayed
-   at all until it shows, then a fade in (none under reduced motion). The
-   content scrolls in .kflip-scroll, over the falling background (.kf-fall),
-   which stays put. */
-.kflip {
-  position: fixed; inset: 0; z-index: 60; overflow: hidden; background: var(--bg);
-  display: none; /* nothing of it in the page until it shows (iOS Safari's memory) */
-}
-.kflip.on { display: block; animation: kf-in .25s var(--ease); }
-@keyframes kf-in { from { opacity: 0; } }
-.kflip.turn { transform: rotate(180deg); }
-.kflip.side { inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; transform: translate(-50%, -50%) rotate(var(--rot)); }
-.kflip-scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: env(safe-area-inset-top) 0 max(16px, env(safe-area-inset-bottom)); }
-.kflip.turn .kflip-scroll { padding: env(safe-area-inset-bottom) 0 max(16px, env(safe-area-inset-top)); }
-.kflip.side .kflip-scroll { padding: 0 0 16px; }
-body.kflipped { overflow: hidden; }
-@media (prefers-reduced-motion: reduce) { .kflip.on { animation: none; } }
-/* Falling (on request: "a background animation that makes the foreground
-   content look like it's continuously falling", in place of the olive):
-   streaks and motes rushing upwards, drawn on a canvas by flip.js only while
-   the table shows (a 1× canvas, not GPU layers: see flip.js). The edges fade
-   into the dark, with the film grain over it. */
-.kf-fall { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.kf-fall canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.kf-fall::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, var(--bg), transparent 18%, transparent 78%, var(--bg)), var(--grain); }
-.kflip-in { position: relative; max-width: 34rem; margin: 0 auto; }
-/* Its episode strip and weeks, like the Standings' (on request): the strip sticks to the top as the table scrolls */
-.kt-strip { position: sticky; top: 0; z-index: 3; }
-.kt-swiper { align-items: flex-start; }
-.kt-slide { content-visibility: visible; }
-.kt-hero { text-align: center; padding-block: 18px 16px; background: none; }
-.kt-hero .ep-title { margin-bottom: 0; color: var(--t1); }
-/* The rows are the boards' height (on request), 52px */
-.card.kt-board { --row: 52px; --rk: 36px; margin: 12px var(--px) 0; padding: 0; overflow: hidden; background: rgba(16, 13, 16, .7); } /* see-through, so the fall shows behind the rows */
-.kt-head, .kt-row { display: grid; grid-template-columns: var(--rk) minmax(0, 1fr) 60px 60px; align-items: center; }
-.kt-row { width: 100%; text-align: left; -webkit-tap-highlight-color: transparent; }
-.kt-head { height: 34px; white-space: nowrap; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--t2); border-bottom: 2px solid rgba(240, 232, 220, .22); background: linear-gradient(180deg, rgba(240, 232, 220, .06), transparent); }
-.kt-head span:first-child { align-self: stretch; background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold); }
-.kt-head span:nth-child(2) { display: flex; align-items: center; gap: 7px; padding-left: 12px; }
-.kt-head svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-.kt-head span:nth-child(n+3) { text-align: right; padding-right: 14px; }
-.kt-row {
-  position: relative; height: var(--row); border-top: 1px solid var(--b-dim);
-  background: linear-gradient(90deg, transparent var(--rk), rgba(240, 232, 220, .04) var(--rk), rgba(240, 232, 220, .1) calc(var(--rk) + (100% - var(--rk)) * var(--m)), transparent calc(var(--rk) + (100% - var(--rk)) * var(--m)));
-}
-.kt-head + .kt-item > .kt-row { border-top: 0; }
-.kt-rk { align-self: stretch; display: grid; place-items: center; font-size: 15px; font-weight: 700; color: var(--t3); background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold); }
-.kt-name { display: flex; align-items: center; min-width: 0; padding-left: 12px; font: 800 clamp(16px, 4.1vw, 20px) var(--ff-name); color: var(--t1); }
-.kt-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Each row opens (on request) to the player's Knappett cards, the same as an opened Standings row's; a chevron like the boards', turning over when open */
-.kt-chev { flex: none; width: 9px; height: 5.5px; margin: 1px 0 0 6px; overflow: visible; fill: none; stroke: var(--t4); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s var(--ease); }
-.kt-item.open .kt-chev { transform: rotate(180deg); stroke: var(--gold2); }
-.kt-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease); }
-.kt-item.open .kt-more { grid-template-rows: 1fr; }
-.kt-more > div { min-height: 0; overflow: hidden; }
-.kt-item.open .kt-row { background-color: rgba(240, 232, 220, .05); }
-.kt-more .xp { --head: 52px; border-top: 1px solid var(--b-gold); }
-.xp-swap b.knap { color: var(--t1); }
-.jr.knap { --c: var(--gold2); }
-.kt-item.open .jr-me { animation: jr-draw .8s var(--ease) both; }
-.kt-item.open .jr-others, .kt-item.open .jr-dot { animation: jr-fade .6s var(--ease) both; }
-@media (prefers-reduced-motion: reduce) { .kt-more, .kt-chev { transition: none; } .kt-item.open .jr-me, .kt-item.open .jr-others, .kt-item.open .jr-dot { animation: none; } }
-.kt-wk { text-align: right; padding-right: 14px; font: 500 12px var(--fm); color: var(--t3); font-variant-numeric: tabular-nums; }
-.kt-pts { text-align: right; padding-right: 14px; font-size: clamp(18px, 4.9vw, 21px); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.kt-pts.lead { color: var(--gold2); text-shadow: 0 0 10px var(--gold-glow); }
-.kt-name > span, .kt-pts, .kt-rk { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
-.kt-back { margin-top: 14px; text-align: center; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--t4); }
-.kt-hero .st-knap { color: var(--t1); white-space: nowrap; }
-/* How scoring works in the table's hero (on request): the Show and League cards' pattern, in the app's warm white, its points in the footer */
-.kt-hero.explain .st-explain { grid-template-rows: 1fr; }
-.kt-hero .how-card { max-width: 30rem; margin: 14px auto 4px; text-align: left; }
-.kt-hero:not(.explain) .how-card, .kt-hero:not(.explain) .how-glint { animation-play-state: paused; }
-.card.how-card.knappett { --hc: #a89f92; --hc-hi: var(--t1); --hc-glow: rgba(240, 232, 220, .12); --hc-deep: var(--s2); --hc-edge: rgba(240, 232, 220, .16); animation-duration: 19s; animation-delay: -11s; }
-.how-range.how-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; }
-.how-range.how-tiers p { display: flex; flex-direction: column; min-width: 0; }
-.how-range.how-tiers b { font-size: 20px; }
-.how-range.how-tiers span { white-space: normal; } /* "per pt behind" wraps on 360px phones rather than run into its neighbour */
 
 /* ── Standings ─────────────────────────────────────────────────────── */
 /* Both boards side by side, in a rounded card like the cards on the other
@@ -990,4 +907,78 @@ body:not(.editing) .ed-bar { display: none; } /* Done hides it; it's reused if e
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* ── Fantasy Fantasky Master (flip.js) ─────────────────────────────────────
+   Upside down, the whole app is a dream where low scores win (on request:
+   "magical fantasy Lisa Frank garden rainbows unicorns"): the same pages,
+   in hot pink, sunshine yellow, turquoise and violet on a deep purple night,
+   the surfaces a little see-through so the rainbow fall (#fz-fall) shows
+   behind everything, and the brand "Fantasy Fantasky Master" with "Fantasy"
+   in rainbow. Gold (the winners' emphasis) is sunshine yellow. An Easter
+   egg: nothing mentions it. */
+html.fz {
+  --bg: #170828; --s1: rgba(36, 10, 62, .84); --s2: rgba(48, 16, 80, .84); --s3: rgba(60, 22, 98, .88);
+  --t1: #fff4fd; --t2: #f6cdf3; --t3: #dcaef2; --t4: #ab8ad8;
+  --gold: #ffc23d; --gold2: #ffe14d; --gold3: #fff07a; --gold4: #ff9be0;
+  --gold-t: rgba(255, 225, 77, .16); --gold-glow: rgba(255, 110, 210, .5);
+  --b-gold: rgba(255, 120, 220, .34); --b-dim: rgba(255, 255, 255, .09);
+  --red: #b04bff; --red-glow: rgba(176, 75, 255, .5); --red-t: rgba(176, 75, 255, .14);
+  --silver: #bfe9ff; --bronze: #ffb26b; --warn: #ff6b9a;
+  --show: #ff3fa4; --show-hi: #ff8fd2; --show-glow: rgba(255, 63, 164, .38); --show-edge: rgba(255, 63, 164, .5);
+  --league: #17d4f0; --league-hi: #8ff1ff; --league-glow: rgba(23, 212, 240, .34); --league-edge: rgba(23, 212, 240, .5);
+  --rainbow: linear-gradient(90deg, #ff4fc3, #ffa94d, #ffe14d, #6dff9a, #4fd8ff, #b37bff, #ff4fc3);
+}
+html.fz body {
+  background: var(--bg);
+  background-image: radial-gradient(60% 40% at 15% 0%, rgba(255, 79, 195, .32), transparent 70%), radial-gradient(60% 40% at 85% 10%, rgba(79, 216, 255, .26), transparent 70%), radial-gradient(70% 50% at 50% 100%, rgba(179, 123, 255, .3), transparent 70%);
+}
+#fz-fall { display: none; }
+html.fz #fz-fall { display: block; position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
+html.fz .topbar::before { background: linear-gradient(180deg, rgba(70, 14, 110, .45), rgba(40, 8, 72, .72)); }
+html.fz .hdr { background: linear-gradient(90deg, rgba(255, 63, 164, .38), rgba(176, 75, 255, .36), rgba(23, 212, 240, .32)); }
+html.fz .hero, html.fz .ep-head { background: var(--grain), radial-gradient(90% 100% at 50% 0%, rgba(255, 90, 200, .26), transparent 80%); }
+html.fz .hero::after, html.fz .ep-head::after { background: var(--rainbow); opacity: .7; }
+/* The brand: "Fantasy" in rainbow over FANTASKY MASTER, the series chip beside it. */
+.fz-word { display: none; }
+html.fz .brand { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: .35em; row-gap: 0; text-shadow: 0 0 14px rgba(255, 110, 210, .6); }
+html.fz .fz-word {
+  display: block; grid-column: 1 / -1; font-size: 1.5em; line-height: 1; letter-spacing: .02em;
+  background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: none; filter: drop-shadow(0 0 6px rgba(255, 120, 220, .55));
+}
+html.fz .fz-name { font-size: .78em; }
+html.fz .series { min-height: 24px; padding: 0 5px; font-size: .78em; }
+html.fz .tab-ind { background: var(--rainbow); }
+/* Turned over (180°, or a quarter turn in a landscape page): the body is a
+   fixed box, turned, and main scrolls inside it (scroller() in main.js);
+   the bar stays at its top. The ducks' footer is left out. */
+html.fz-turn, html.fz-side { overflow: hidden; height: 100%; }
+html.fz-turn body, html.fz-side body { position: fixed; inset: 0; overflow: hidden; min-height: 0; transform: rotate(180deg); }
+html.fz-side body { inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; max-width: none; transform: translate(-50%, -50%) rotate(var(--rot)); }
+html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
+html.fz-turn #foot, html.fz-side #foot { display: none; }
+/* Inside main, a sticky strip's offset counts from below main's padding (the bar's spacer), so it sticks at 0 */
+html.fz-turn .page > .strip, html.fz-side .page > .strip { top: 0; }
+/* The bar and the strips stay solid, so nothing reads through them as the page scrolls under */
+html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .94), rgba(38, 8, 68, .96)); }
+html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
+/* Sideways, the page is landscape but the turned body is as wide as the
+   screen is tall: sizes that follow the screen's width follow its height
+   instead, and a phone keeps its phone layout. */
+html.fz-side .brand { font-size: clamp(12px, 3.5vh, 21px); }
+html.fz-side .how-name { font-size: clamp(20px, 6.2vh, 27px); }
+html.fz-side .pc-name { font-size: clamp(16px, 4.1vh, 20px); }
+html.fz-side .pc-num { font-size: clamp(18px, 4.9vh, 21px); }
+html.fz-side .pk b { font-size: clamp(11px, 3vh, 13px); }
+html.fz-side .strip-tab { padding-inline: clamp(13px, 3.4vh, 18px); }
+html.fz-side .ep-title { font-size: clamp(20px, 5.6vh, 27px); }
+html.fz-side .pod-pts { font-size: clamp(18px, 5vh, 22px); }
+html.fz-side .tilt-probe { max-width: calc(100vh - 16px); }
+@media (min-width: 600px) and (max-height: 599px) {
+  html.fz-side { --px: 16px; }
+  html.fz-side .board { --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
+  html.fz-side .tt th:not(:first-child) { width: 36px; }
+  html.fz-side .tt th:last-child { width: 40px; }
+  :where(html.fz-side) .bars { --plot: 96px; }
 }

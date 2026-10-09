@@ -321,15 +321,24 @@ The site shows it as a red line at the top of the player's opened row on the Sta
 | Per-task extremes | In each task, the highest and lowest scores, flagged only if not all 5 scores are equal. |
 | Player best / worst week | Max / min of the player's scored weekly values: raw `epPts`, or `rankPoints` on the League board (where 5 is best and 1 is worst). |
 
-### 6.12 Knappett points
+### 6.12 Fantasy mode (low scores win)
 
-A third board, for doing badly (named after Jessica Knappett's fall in Series 7). It's an Easter egg: the site shows it only when a phone or tablet is held upside down on the Standings (`flip.js`), and nothing else mentions it, README.md included. For each scored episode `e` and contestant `c` (`KN[e][c]` in `league.js`):
+An Easter egg: when a phone or tablet is held upside down (`flip.js`), the whole app shows the same data as a dream where low scores win ("Fantasy Fantasky Master"). Nothing else mentions it, README.md included. Nothing in `league.js` changes; the views turn the order round (`state.fantasy`):
 
-```
-KN[e][c] = top − EPS[c][e]                 top = max over c of EPS[·][e]
-```
+| Output | Normal | Fantasy mode |
+|---|---|---|
+| Board rank (Show, League) | standard competition rank, highest first | `1 + count of players with a lower total` (ties share), lowest first |
+| Board leader(s) | everyone on the highest total | everyone on the lowest total |
+| Gap meter | `p / top` | `(top − p) / (top − low)` (the lowest full) |
+| Race chart gap | `total − leader's total` (≤ 0) | `−(total − lowest)` (≤ 0), so the lowest runs flat along the top |
+| Episode winner (gold light) | `winner` (tiebreak applied) | every contestant on the episode's lowest score |
+| Stink | last place, 5+ behind the next-lowest | the top scorer, 5+ clear of the next-highest |
+| A pick that "won" (gold bar) | the pick won the episode | the pick scored the episode's lowest |
+| Cast order and rank | series total, highest first | `1 + count of contestants with a lower total`, lowest first |
+| Cast wins | episodes won | episodes on the lowest score |
+| Radar | z-score per axis | −z |
 
-A player's week scores `KN[e][pick_e]`. Nothing else counts (on request; bonus points for DQs, minus scores, zeros, last place and a stinker were tried and dropped). A week with no pick scores `top` (0 on the Show is the winner's whole score behind). Knappett points = the sum over scored weeks; `boardsAsOf(w)` carries them as `knap`, and the most Knappett points at the week on show "leads The Knappett" (ties share it; nobody when everyone is level). Tiebreaks don't matter: they decide only 1st.
+The How scoring works cards read "fewest points" and "worst episode placements". The All-time records card isn't shown.
 
 ---
 
@@ -357,7 +366,6 @@ League points = 2 + 4 + 5 + 3 = **14**.
 **Other outputs:**
 - **Show rank:** Riley is 1st on the Show board.
 - **Pick status:** known = {Richard, Matt, Chloe}, needed = {Isy, Nina}, left = 6, so status = none.
-- **Knappett points:** ep 1 Richard 6 behind Chloe's 19: 6; ep 2 Matt tied the top score: 0; ep 3 Chloe won: 0; ep 4 Chloe 5 behind Isy's 24: 5. Total **11**.
 
 ---
 
