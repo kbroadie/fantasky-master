@@ -1060,18 +1060,18 @@ html.fz-side .tilt-probe { max-width: calc(100vh - 16px); }
 .fz-foot { display: none; }
 html.fz #foot { display: none; }
 html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top: 8px; overflow: hidden; pointer-events: none; }
-/* A double rainbow (on request), as a real one looks: the bright primary
-   (violet inside, red outside) with the sky a little brighter within it, a
-   darker band, then the fainter secondary, its colours the other way round.
-   Every band blends softly into the next, and the whole fades into the haze
-   towards the sea, so it sits far back behind the dolphins. */
+/* A double rainbow (on request): two bows with the same order, red on top
+   down to violet (on request), the outer one fainter, with the sky a little
+   brighter within the inner one. Every band blends softly into the next,
+   and the whole fades into the haze towards the sea, so it sits far back
+   behind the dolphins. It's screened onto what's behind it, so it only ever
+   lightens it, never darkens (on request). */
 html.fz .fz-foot::before {
-  content: ""; position: absolute; left: 50%; bottom: 4px; width: min(76%, 264px); aspect-ratio: 2; translate: -50% 0; opacity: .85;
+  content: ""; position: absolute; left: 50%; bottom: 4px; width: min(76%, 264px); aspect-ratio: 2; translate: -50% 0; opacity: .85; mix-blend-mode: screen;
   background: radial-gradient(circle farthest-side at 50% 100%,
     transparent 46%, rgba(255, 240, 255, .07) 58%, rgba(170, 110, 255, 0) 61%,
-    rgba(170, 110, 255, .5) 63.5%, rgba(80, 150, 255, .55) 66%, rgba(90, 230, 150, .55) 68.5%, rgba(255, 230, 90, .6) 71%, rgba(255, 160, 70, .55) 73.5%, rgba(255, 70, 110, .5) 76%, rgba(255, 70, 110, 0) 78.5%,
-    rgba(20, 0, 40, .12) 81%, rgba(255, 70, 110, 0) 83.5%,
-    rgba(255, 70, 110, .2) 86%, rgba(255, 160, 70, .22) 88.5%, rgba(255, 230, 90, .24) 91%, rgba(90, 230, 150, .22) 93.5%, rgba(80, 150, 255, .2) 96%, rgba(170, 110, 255, .16) 98%, transparent 100%);
+    rgba(170, 110, 255, .5) 63%, rgba(110, 100, 255, .5) 65%, rgba(80, 150, 255, .55) 67%, rgba(90, 230, 150, .55) 69%, rgba(255, 230, 90, .6) 71%, rgba(255, 160, 70, .55) 73.5%, rgba(255, 70, 110, .5) 76%, rgba(255, 70, 110, 0) 78.5%,
+    rgba(170, 110, 255, 0) 84%, rgba(170, 110, 255, .18) 86%, rgba(110, 100, 255, .18) 88%, rgba(80, 150, 255, .2) 90%, rgba(90, 230, 150, .22) 92%, rgba(255, 230, 90, .24) 94%, rgba(255, 160, 70, .22) 96%, rgba(255, 70, 110, .2) 98%, transparent 100%);
   -webkit-mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%);
 }
 /* Haze over the sea, where the rainbow's feet melt away */
