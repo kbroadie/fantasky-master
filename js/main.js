@@ -10,7 +10,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, askTilt, turned } from "./flip.js";
+import { initFlip, askTilt, turned, toggleFantasy, DESKTOP } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -403,7 +403,8 @@ $("#p-standings").addEventListener("click", (e) => {
   }
   // The upside-down quote under the board: on an iPhone, the tap that asks
   // for the tilt, so the upside-down dream can be stumbled on.
-  if (e.target.closest(".st-quote")) { askTilt(); return; }
+  // On a desktop (a mouse, no tilt), clicking it switches fantasy mode on and off (on request).
+  if (e.target.closest(".st-quote")) { if (DESKTOP.matches) toggleFantasy(); else askTilt(); return; }
   // An opened half's card title flips it between Points per episode and The
   // race so far; the choice holds for every row opened after it.
   const swap = e.target.closest(".xp-swap");

@@ -294,6 +294,12 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .st-quote cite { font-style: normal; white-space: nowrap; }
 /* Underlined while the tilt still needs allowing (Safari), so it reads as a tap (askHint in flip.js) */
 .tilt-ask .st-quote q { text-decoration: underline 1px; text-underline-offset: 3px; }
+/* On a desktop it's right side up and underlined, and a click switches fantasy mode on and off (main.js) */
+@media (hover: hover) and (pointer: fine) {
+  .st-quote { transform: none; cursor: pointer; transition: color .2s; }
+  .st-quote q { text-decoration: underline 1px; text-underline-offset: 3px; }
+  .st-quote:hover { color: var(--t2); }
+}
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 /* The head lines up with the rows: the place column's strip, then the Show's
    half over the left half and the League's over the right. */
@@ -1009,7 +1015,7 @@ html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y:
 /* Sideways the page scrolls itself (main.js: the browser picks the wrong scroller in a quarter-turned page) */
 html.fz-side * { touch-action: none; }
 /* No quote upside down (on request) */
-html.fz .st-quote { display: none; }
+@media not all and (hover: hover) and (pointer: fine) { html.fz .st-quote { display: none; } } /* a desktop keeps it, to switch back */
 /* Inside main, a sticky strip's offset counts from below main's padding (the bar's spacer), so it sticks at 0 */
 html.fz-turn .page > .strip, html.fz-side .page > .strip { top: 0; }
 /* The bar and the strips stay solid, so nothing reads through them as the page scrolls under */

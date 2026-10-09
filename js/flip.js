@@ -44,6 +44,11 @@ let oriented = false; // the orientation sensor works (else the accelerometer st
 const sideways = {}; // per landscape screen angle, which of the device's edges is up when it's read that way: +1 its right, −1 its left
 let hooks = { redraw() {}, scrolled() {} }; // from main.js: redraw every page; after the page is turned or put back
 
+/** A desktop: a mouse that hovers, where the quote under the boards is the way in (on request). */
+export const DESKTOP = matchMedia("(hover: hover) and (pointer: fine)");
+/** Fantasy mode on or off, unturned: the desktop's quote under the boards (main.js). */
+export function toggleFantasy() { set(!on, 0); }
+
 /** How far the page is turned (0, 180, 90 or −90): main.js turns screen measurements round by it. */
 export const turned = () => (on ? turn : 0);
 
