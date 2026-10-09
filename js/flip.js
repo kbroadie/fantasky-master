@@ -1,8 +1,9 @@
 // The Knappett's table, upside down (on request: "make the Knappett its own
 // table that replaces the standings table when a phone or tablet is held
-// upside down"). On the Standings, turning the device over shows #kflip, a
-// layer over the page with the Knappett's table (knapTable in table.js);
-// turning it back hides it.
+// upside down"). An Easter egg (on request): nothing on the site mentions
+// it. On the Standings, turning the device over shows #kflip, a layer over
+// the page with the Knappett's table (knapTable in table.js); turning it
+// back hides it.
 //
 // Two ways to know the device is upside down:
 // - The browser turned the page itself (iPads, some Android tablets): the
@@ -12,18 +13,20 @@
 //   you). The page is still the right way up for the device, so the table is
 //   drawn turned round (.turn) to read the right way up in the hand.
 // iPhone and iPad Safari give the page the tilt only after a tap allows it
-// (DeviceOrientationEvent.requestPermission): the line under the Knappett's
-// rule in How scoring works is that tap (state.tilt "ask"). Once allowed, a
-// later visit asks again on its first tap, which Safari answers by itself if
-// it remembers.
-import { $, $$, state } from "./ui.js";
-import { knapTable, flipHint } from "./views/table.js";
+// (DeviceOrientationEvent.requestPermission). The secret tap is a last-place
+// half on the Standings (on request): it lets off a plume of the stink gas
+// (plume in podium-fx.js, main.js) and, on Safari, asks for motion
+// (askTilt), so whoever taps last place stumbles on the prompt. Once allowed,
+// a later visit asks again on its first tap, which Safari answers by itself
+// if it remembers.
+import { $, state } from "./ui.js";
+import { knapTable } from "./views/table.js";
 
 const ASK = typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function";
 const KEY = "fm-tilt";
 const SETTLE = 250; // ms a pose must hold, so a phone swung past upside down doesn't flash the table
 
-let on = false, turn = false, held = false, pending = null, timer = 0, listening = false;
+let on = false, turn = false, held = false, pending = null, timer = 0, listening = false, allowed = !ASK;
 
 const angle = () => screen.orientation?.angle ?? (typeof window.orientation === "number" ? (window.orientation + 360) % 360 : 0);
 
@@ -76,35 +79,29 @@ function listen() {
   addEventListener("deviceorientation", onTilt);
 }
 
-/** Ask Safari for the tilt (in a tap). */
+/** On Safari, ask for the tilt; call it in a tap (Safari asks only then). Nothing elsewhere, or once allowed. */
 let asking = false;
-async function allow() {
-  if (asking) return;
+export async function askTilt() {
+  if (allowed || asking) return;
   asking = true;
   try {
-    const r = await DeviceOrientationEvent.requestPermission();
-    if (r === "granted") {
+    if (await DeviceOrientationEvent.requestPermission() === "granted") {
+      allowed = true;
       try { localStorage.setItem(KEY, "1"); } catch {}
-      state.tilt = "on";
       listen();
     }
-  } catch { /* not in a tap, or refused: the line still asks */ }
+  } catch { /* refused, or not in a tap: the next last-place tap asks again */ }
   asking = false;
-  for (const b of $$(".kn-flip")) b.outerHTML = flipHint();
 }
 
 export function initFlip() {
-  let asked = false;
-  try { asked = localStorage.getItem(KEY) === "1"; } catch {}
-  state.tilt = ASK ? "ask" : "on";
+  let before = false;
+  try { before = localStorage.getItem(KEY) === "1"; } catch {}
   if (!ASK) listen();
   // Allowed on an earlier visit: ask again on the first tap (Safari answers by itself if it remembers).
-  else if (asked) addEventListener("click", () => { if (state.tilt === "ask") allow(); }, { once: true, capture: true });
+  else if (before) addEventListener("click", askTilt, { once: true, capture: true });
   screen.orientation?.addEventListener("change", onTurn);
   addEventListener("orientationchange", onTurn);
-  document.addEventListener("click", (e) => {
-    if (e.target.closest(".kn-flip") && state.tilt === "ask") allow();
-  });
   // A tap on the table closes it until the device is turned back (in case the sensor misjudges how it's held).
   $("#kflip").addEventListener("click", () => { held = true; settle(); set(false); });
 }

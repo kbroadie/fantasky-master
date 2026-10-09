@@ -22,7 +22,7 @@ export function atWeek(d, w) {
   if (w > d.weeksScored) return d.weeksScored ? atWeek(d, d.weeksScored) : d.players;
   return d.players.map((p) => {
     const h = p.history[w - 1];
-    return { ...p, show: h.show, league: h.league, knap: h.knap, showRank: h.showRank, leagueRank: h.leagueRank };
+    return { ...p, show: h.show, league: h.league, showRank: h.showRank, leagueRank: h.leagueRank };
   });
 }
 
@@ -39,23 +39,11 @@ function leaders(rows, key) {
   return rows.filter((p) => p[key] === top).map((p) => p.name);
 }
 
-/**
- * Whoever has the most Knappett points (league.js, §6.12): they lead The
- * Knappett (on request: doing badly, ironically celebrated, after Jessica
- * Knappett's literal fall in Series 7, named like The Show and The League).
- * Nobody when everyone is level.
- */
-function knappetts(rows) {
-  const top = Math.max(...rows.map((p) => p.knap));
-  return rows.every((p) => p.knap === top) ? [] : leaders(rows, "knap");
-}
-
 /** "How scoring works", under the leaders line, opens both of these. */
 // The league's words, unchanged, in their order: the title, the rule, the
 // range. The crown and trophy are drawn in the same gold line style as the
 // task icons (16px grid), not emoji.
 const HOW_ICONS = {
-  fall: "M2 3.5 6.5 8l3-3 4.5 4.5 M10.5 9.5H14V6 M2.5 13.5h11",
   crown: "M3.5 11 2.5 5l3 3L8 3l2.5 5 3-3-1 6z M3.5 13.5h9",
   trophy: "M5 2.5h6v4a3 3 0 0 1-6 0z M5 3.75H3.25a1.9 1.9 0 0 0 2.1 3.1 M11 3.75h1.75a1.9 1.9 0 0 1-2.1 3.1 M8 9.5V12 M5.5 13.5h5 M6.5 12h3",
 };
@@ -63,41 +51,23 @@ const TERMS = [
   { icon: "crown", name: "Show", rule: ["The player with the ", "most points", " at the end of the series wins, regardless of episode placements."], range: "0–25", unit: "pts per episode" },
   { icon: "trophy", name: "League", rule: ["The player with the ", "best episode placements", " throughout the series wins, regardless of points."], range: "1–5", unit: "pts per episode" },
 ];
-/**
- * The Knappett (on request: points for doing badly), across both columns
- * under the pair, its tiers in the footer. Not the league's words: written
- * for the app, in the same pattern.
- */
-const KNAP_TERM = { flip: true, icon: "fall", name: "Knappett", rule: ["The player whose picks finish ", "furthest behind each episode's winner", " wins, with extra points for every disaster. Named for Jessica Knappett's fall in Series 7."] };
-/**
- * Under the Knappett's rule, on phones and tablets: how to see its table
- * (flip.js). On an iPhone or iPad, Safari only gives the page the tilt once
- * a tap has allowed it, so until then this is the button that asks
- * (state.tilt "ask").
- */
-export const flipHint = () => `<button type="button" class="kn-flip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6.5A5 5 0 0 1 12.2 4M13 9.5A5 5 0 0 1 3.8 12 M12.5 1.5v3h-3 M3.5 14.5v-3h3"/></svg><span>Turn your phone upside down for its table${state.tilt === "ask" ? ". <u>Tap to allow motion</u>" : ""}</span></button>`;
-const KNAP_TIERS = [["1", "per pt behind"], ["3", "per DQ"], ["3", "minus score"], ["2", "per zero"], ["2", "last place"], ["+3", "last by 5+"]];
 const howCard = (t) => `<div class="card how-card ${t.name.toLowerCase()}">
     <div class="how-head">
       <span class="how-icon" aria-hidden="true"><svg class="how-ico" viewBox="0 0 16 16"><path d="${HOW_ICONS[t.icon]}"/></svg><i class="how-glint"></i></span>
       <h3 class="how-title"><span class="how-the">The</span><span class="how-name">${esc(t.name)}</span></h3>
     </div>
-    <p class="how-rule">${esc(t.rule[0])}<strong>${esc(t.rule[1])}</strong>${esc(t.rule[2])}${t.flip ? flipHint() : ""}</p>
-    ${t.range ? `<p class="how-range"><b>${esc(t.range)}</b><span>${esc(t.unit)}</span></p>`
-      : `<div class="how-range how-tiers">${KNAP_TIERS.map(([v, u]) => `<p><b>${v}</b><span>${u}</span></p>`).join("")}</div>`}
+    <p class="how-rule">${esc(t.rule[0])}<strong>${esc(t.rule[1])}</strong>${esc(t.rule[2])}</p>
+    <p class="how-range"><b>${esc(t.range)}</b><span>${esc(t.unit)}</span></p>
   </div>`;
 
-/** "Riley leads The Show   Jamie leads The League   Alex leads The Knappett" ("wins" once the series is over). */
+/** "Riley leads The Show   Jamie leads The League" ("wins" once the series is over). */
 function leaderLine(d, rows, w) {
   const show = leaders(rows, "show"), league = leaders(rows, "league"), final = d.complete && w === d.episodes.length;
   const verb = (names) => (final ? (names.length > 1 ? "win" : "wins") : (names.length > 1 ? "lead" : "leads"));
   const who = (names) => `<b>${esc(listing(names))}</b>`;
-  const S = `<span class="st-show">The Show</span>`, L = `<span class="st-league">The League</span>`, K = `<span class="st-knap">The Knappett</span>`;
-  // The Knappett, a third board: the most Knappett points.
-  const kn = knappetts(rows);
-  const knap = kn.length ? `<span>${who(kn)} ${verb(kn)} ${K}</span>` : "";
-  if (listing(show) === listing(league)) return `<span>${who(show)} ${verb(show)} ${S} and ${L}</span>${knap}`;
-  return `<span>${who(show)} ${verb(show)} ${S}</span><span>${who(league)} ${verb(league)} ${L}</span>${knap}`;
+  const S = `<span class="st-show">The Show</span>`, L = `<span class="st-league">The League</span>`;
+  if (listing(show) === listing(league)) return `<span>${who(show)} ${verb(show)} ${S} and ${L}</span>`;
+  return `<span>${who(show)} ${verb(show)} ${S}</span><span>${who(league)} ${verb(league)} ${L}</span>`;
 }
 
 /**
@@ -106,12 +76,11 @@ function leaderLine(d, rows, w) {
  */
 export function standingsHero(d, w = stWeek(d)) {
   const how = `<button type="button" class="st-how" aria-expanded="${state.how}" aria-controls="st-explain-${w}">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button>
-    <div class="st-explain" id="st-explain-${w}"><div><div class="how-grid">${[...TERMS, KNAP_TERM].map(howCard).join("")}</div><button type="button" class="st-wl" aria-controls="welcome">New here? <span>Read the welcome</span></button></div></div>`;
+    <div class="st-explain" id="st-explain-${w}"><div><div class="how-grid">${TERMS.map(howCard).join("")}</div><button type="button" class="st-wl" aria-controls="welcome">New here? <span>Read the welcome</span></button></div></div>`;
   // The kicker, like the episode head's: the series and that week's episode.
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${esc(fmtDay.format(d.episodes[w - 1].air))}</div>`;
   if (w > d.weeksScored) return `${kicker}<h2 class="ep-title">Episode ${w}</h2><div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</div>${how}`;
-  const rows = atWeek(d, w);
-  return `${kicker}<h2 class="ep-title">Episode ${w} Standings</h2><p class="st-leaders">${leaderLine(d, rows, w)}</p>${how}`;
+  return `${kicker}<h2 class="ep-title">Episode ${w} Standings</h2><p class="st-leaders">${leaderLine(d, atWeek(d, w), w)}</p>${how}`;
 }
 
 /**
@@ -276,12 +245,14 @@ export function boardChart(d, w, k, width) {
 export function standingsRows(d, w = stWeek(d)) {
   const { show, league } = boards(d, w);
   const top = { show: Math.max(0, ...show.map((p) => p.show)), league: Math.max(0, ...league.map((p) => p.league)) };
+  // Last place on each board (not when the board is level): a tap lets off the stink (main.js, flip.js). Unmarked.
+  const low = { show: Math.min(...show.map((p) => p.show)), league: Math.min(...league.map((p) => p.league)) };
   const half = (p, side) => {
     const k = side === "show" ? "show" : "league", rank = p[`${k}Rank`];
     const num = `<span class="pc-num${rank === 1 ? " t1" : ""}">${p[k]}</span>`;
     const name = `<span class="pc-name"><span class="nm">${esc(p.name)}</span><svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span>`;
     const say = `${p.name}, ${ord(rank)} in the ${side === "show" ? "Show" : "League"} with ${p[k]} points`;
-    return `<button class="sd ${side === "show" ? "l" : "r"}" type="button" data-side="${side}" data-p="${esc(p.name)}" style="--m:${top[k] ? (p[k] / top[k]).toFixed(3) : 0}" aria-expanded="false" aria-label="${esc(say)}">${name + num}</button>`;
+    return `<button class="sd ${side === "show" ? "l" : "r"}" type="button" data-side="${side}" data-p="${esc(p.name)}"${p[k] === low[k] && low[k] < top[k] ? " data-kn" : ""} style="--m:${top[k] ? (p[k] / top[k]).toFixed(3) : 0}" aria-expanded="false" aria-label="${esc(say)}">${name + num}</button>`;
   };
   return show.map((l, i) => {
     const r = league[i];
@@ -315,8 +286,7 @@ export function rowMore(d, name, side, w = stWeek(d)) {
   const must = mustLine(d, p, w);
   if (state.edit) return must + pickChooser(d, p, w);
   const k = side === "show" ? "show" : "league";
-  const card = { race: raceCard, knap: knapCard }[state.xpView] || pointsCard;
-  return `<div class="xp${must ? " warned" : ""}">${must}${card(d, p, w, k)}</div>`;
+  return `<div class="xp${must ? " warned" : ""}">${must}${state.xpView === "race" ? raceCard(d, p, w, k) : pointsCard(d, p, w, k)}</div>`;
 }
 
 /**
@@ -342,47 +312,20 @@ function pointsCard(d, p, w, k) {
     if (!x.scored) return { tbd: true, dim, color: x.pick && color, tag };
     return { v: x.pick ? x[k] : 0, won: !!x.won, dim, color, tag: tag || "–" };
   };
-  return barsCard(d, at, max, median(all), `var(--${k}-hi)`, swapTitle(k, "bars"));
+  return barsCard(d, at, max, median(all), `var(--${k}-hi)`, swapTitle(k, "points per episode", "race"));
 }
 
-/**
- * An opened half's third card: the player's Knappett points each episode
- * (league.js, §6.12), the same on both halves. Each bar is that week's
- * Knappett points in the pick's colour, the part from disasters (a DQ, minus
- * points, a zero, last place, a stinker) capped in the Knappett's olive and
- * its number olive too; the scale is the series' worst week, so players
- * compare. Every week is shown, the ones not on show faded, as on the
- * points card.
- */
-function knapCard(d, p, w) {
-  const max = Math.max(1, ...d.players.flatMap((q) => q.weeks.filter((x) => x.scored).map((x) => x.knap.total)));
-  const at = (ep) => {
-    const x = p.weeks[ep - 1];
-    if (!x) return null;
-    const dim = ep !== w, color = x.pick ? d.cast[x.pick].color : "var(--t4)", tag = x.pick ? x.pick.slice(0, 3) : null;
-    if (!x.scored) return { tbd: true, dim, color: x.pick && color, tag };
-    const k = x.knap, bad = k.total - k.gap;
-    return { v: k.total, dim, color, tag: tag || "–", split: k.total ? k.gap / k.total : 1, bad: bad > 0 };
-  };
-  return barsCard(d, at, max, null, "var(--knap)", swapTitle("knap", "knap"), `<i class="kn-key"></i>disasters`);
-}
-
-const BOARD = { show: "Show", league: "League", knap: "Knappett" };
+const BOARD = { show: "Show", league: "League" };
 /** The swap icon, as on the series chip. */
 const SWAP = `<svg class="swap" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 4h8M7 1.5 9.5 4 7 6.5M10.5 8h-8M5 5.5 2.5 8 5 10.5"/></svg>`;
 /**
  * An opened half's card title is also its switch (on request): tapping it
- * turns the card from Points per episode to The race so far to Knappett
- * points and back round, with the series chip's swap icon to say
- * so. The choice holds for every row opened after it (state.xpView), so
- * players can be compared in the same view. The board's name is in its
- * colour (Show red, League blue, the Knappett olive).
+ * flips the card between Points per episode and The race so far, with the
+ * series chip's swap icon to say so. The choice holds for every row opened
+ * after it (state.xpView), so players can be compared in the same view.
+ * The board's name is in its colour (Show red, League blue).
  */
-const VIEWS = { bars: ["points per episode", "race"], race: ["race so far", "knap"], knap: ["points", "bars"] };
-const swapTitle = (k, view) => {
-  const [rest, to] = VIEWS[view], next = to === "knap" ? "Knappett points" : to === "race" ? "race so far" : "points per episode";
-  return `<button class="xp-swap" type="button" data-xp="${to}" aria-label="${BOARD[k]} ${rest}: show the ${next} instead"><span><b class="${k}">${BOARD[k]}</b> ${rest}</span>${SWAP}</button>`;
-};
+const swapTitle = (k, rest, to) => `<button class="xp-swap" type="button" data-xp="${to}" aria-label="${BOARD[k]} ${rest}: show the ${to === "race" ? "race so far" : "points per episode"} instead"><span><b class="${k}">${BOARD[k]}</b> ${rest}</span>${SWAP}</button>`;
 
 /**
  * An opened half's other card: the Episodes tab's "The race so far", for
@@ -394,7 +337,7 @@ function raceCard(d, p, w, k) {
   const upTo = Math.min(w, d.weeksScored), pts = (q) => q.history[upTo - 1][k];
   const behind = upTo ? Math.max(...d.players.map(pts)) - pts(p) : null;
   return `<div class="card jr-card">
-      <div class="card-head">${swapTitle(k, "race")}<span class="legend">${behind == null ? "" : `${behind} `}behind the leader</span></div>
+      <div class="card-head">${swapTitle(k, "race so far", "bars")}<span class="legend">${behind == null ? "" : `${behind} `}behind the leader</span></div>
       ${journey(d, p, k, w)}
     </div>`;
 }
@@ -441,10 +384,25 @@ function journey(d, p, side, w) {
   </div>`;
 }
 
+// ── The Knappett ─────────────────────────────────────────────────────────────
+
+/**
+ * Whoever has the most Knappett points (league.js, §6.12): they lead The
+ * Knappett (on request: doing badly, ironically celebrated, after Jessica
+ * Knappett's literal fall in Series 7). Nobody when everyone is level.
+ */
+function knappetts(rows) {
+  const top = Math.max(...rows.map((p) => p.knap));
+  return rows.every((p) => p.knap === top) ? [] : leaders(rows, "knap");
+}
+/** A line falling, in the task icons' style. */
+const FALL = "M2 3.5 6.5 8l3-3 4.5 4.5 M10.5 9.5H14V6 M2.5 13.5h11";
+
 /**
  * The Knappett's own table (on request), shown when a phone or tablet is held
- * upside down on the Standings (flip.js), in place of the boards: everyone's
- * Knappett points after the week on show (or the latest scored week), most
+ * upside down on the Standings (flip.js), in place of the boards. An Easter
+ * egg (on request): nothing else on the site mentions the Knappett. It lists
+ * everyone's Knappett points after the week on show (or the latest scored week), most
  * first, with that week's points beside them. Set like the Standings: the
  * hero's kicker and title, then one card of rows, a place column at the left
  * and an olive gap meter behind each row.
@@ -462,7 +420,7 @@ export function knapTable(d, w = stWeek(d)) {
       <div class="kt-row" style="--m:${(r.knap / top).toFixed(3)}"><b class="kt-rk${tier(i + 1)}">${i + 1}</b><span class="kt-name">${esc(r.name)}</span><span class="kt-wk">+${r.week}</span><span class="kt-pts${i === 0 && kn.length ? " lead" : ""}">${r.knap}</span></div>`).join("");
   return `<div class="hero kt-hero">${kicker}<h2 class="ep-title">The Knappett</h2>${lead}</div>
     <div class="card kt-board" style="--n:${rows.length}">
-      <div class="kt-head"><span></span><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${HOW_ICONS.fall}"/></svg>Player</span><span>Ep ${wk}</span><span>Total</span></div>
+      <div class="kt-head"><span></span><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${FALL}"/></svg>Player</span><span>Ep ${wk}</span><span>Total</span></div>
       ${body}
     </div>${back}`;
 }

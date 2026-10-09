@@ -4,8 +4,6 @@
 
 :root {
   --red: #c41818; --red-glow: rgba(196, 24, 24, .35); --red-t: rgba(196, 24, 24, .10);
-  --knap: #a3a86e; /* the stink fog's muted olive: a last place's score on an episode, and The Knappett */
-  --knap-hi: #cdd296; --knap-glow: rgba(163, 168, 110, .26); --knap-edge: rgba(163, 168, 110, .4);
   --warn: #ff5d55; /* the pick-rule line under a name: bright enough to read at 11px on the dark rows */
   --gold: #b88018; --gold2: #d4a028; --gold3: #ecc040; --gold4: #8a6010;
   --gold-t: rgba(184, 128, 24, .12); --gold-glow: rgba(212, 160, 40, .30);
@@ -14,6 +12,7 @@
      scoring cards, the table's column heads and its theme, the leaders line) */
   --show: #e5484d; --show-hi: #ff8f86; --show-glow: rgba(229, 72, 77, .30); --show-edge: rgba(229, 72, 77, .38);
   --league: #3e7bfa; --league-hi: #93b8ff; --league-glow: rgba(62, 123, 250, .30); --league-edge: rgba(90, 140, 250, .38);
+  --knap: #a3a86e; --knap-hi: #cdd296; --knap-glow: rgba(163, 168, 110, .26); --knap-edge: rgba(163, 168, 110, .4); /* the stink fog's muted olive: the Knappett's table (an Easter egg, flip.js) */
   /* A fine film grain (SVG noise), for textured surfaces */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
@@ -187,8 +186,6 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .st-leaders b { font-family: var(--ff-name); font-weight: 800; color: var(--gold2); }
 .st-leaders .st-show { color: var(--show-hi); }
 .st-leaders .st-league { color: var(--league-hi); }
-.st-leaders .st-knap { color: var(--knap); } /* The Knappett: the most Knappett points, named like the boards, in the stink fog's olive */
-.st-leaders .st-show, .st-leaders .st-league, .st-leaders .st-knap { white-space: nowrap; } /* a board's name never splits across lines */
 /* "How scoring works" under the leaders line opens both explanations below
    it (the hero grows; tap again to close). A gold label with a chevron, so
    it reads as something to tap. */
@@ -215,7 +212,7 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    Paused while closed; still under reduced motion. The words are the
    league's, unchanged, in their order: the title, the rule, the range. The
    cards share rows (subgrid), so each level lines up across both. */
-.how-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(6, auto); gap: 0 10px; max-width: 30rem; margin: 14px auto 4px; text-align: left; }
+.how-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(3, auto); gap: 0 10px; max-width: 30rem; margin: 14px auto 4px; text-align: left; }
 .card.how-card {
   --lx: 0;
   position: relative; display: grid; grid-row: span 3; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr);
@@ -230,12 +227,6 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 }
 .card.how-card.show { --hc: var(--show); --hc-hi: var(--show-hi); --hc-glow: var(--show-glow); --hc-deep: #2a0d10; --hc-edge: var(--show-edge); }
 .card.how-card.league { --hc: var(--league); --hc-hi: var(--league-hi); --hc-glow: var(--league-glow); --hc-deep: #0c1428; --hc-edge: var(--league-edge); animation-duration: 17s; animation-delay: -6s; }
-/* The Knappett: across both columns under the pair, in the stink fog's olive, its tiers in the footer */
-.card.how-card.knappett { --hc: var(--knap); --hc-hi: var(--knap-hi); --hc-glow: var(--knap-glow); --hc-deep: #1a1b0e; --hc-edge: var(--knap-edge); grid-column: 1 / -1; margin-top: 10px; animation-duration: 19s; animation-delay: -11s; }
-.how-range.how-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; }
-.how-range.how-tiers p { display: flex; flex-direction: column; min-width: 0; }
-.how-range.how-tiers b { font-size: 20px; }
-.how-range.how-tiers span { white-space: normal; } /* "per pt behind" wraps on 360px phones rather than run into its neighbour */
 /* The glow drifts across the top: its layer is wider than the card */
 @keyframes how-drift { from { background-position: 0 0, 0% 0, 0 0; } to { background-position: 0 0, 100% 0, 0 0; } }
 .how-head { padding: 14px 12px 0; }
@@ -255,7 +246,6 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   animation: how-glint 11s ease-out infinite;
 }
 .league .how-glint { animation-delay: -5.5s; }
-.knappett .how-glint { animation-delay: -8s; }
 @keyframes how-glint {
   0%, 86% { opacity: 0; transform: scale(.2) rotate(0deg); }
   90% { opacity: 1; transform: scale(1) rotate(40deg); }
@@ -280,13 +270,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   .how-glint { display: none; }
 }
 
-/* The line under the Knappett's rule: turn the phone over for its table
-   (flip.js); on iPhone and iPad the tap that allows the tilt. Phones and
-   tablets only. */
-.kn-flip { display: flex; align-items: flex-start; gap: 7px; margin-top: 10px; text-align: left; font: 500 12px/1.45 var(--ff); color: var(--hc-hi); -webkit-tap-highlight-color: transparent; }
-.kn-flip svg { flex: none; width: 15px; height: 15px; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-.kn-flip u { text-decoration-thickness: 1px; text-underline-offset: 2px; }
-@media (pointer: fine) { .kn-flip { display: none; } }
+/* The stink's plume from a tapped last place (plume in podium-fx.js) */
+.plume { position: absolute; z-index: 30; pointer-events: none; }
 
 /* The Knappett's table, over the Standings while the device is upside down
    (flip.js): a layer over everything, turned round (.turn) when the browser
@@ -327,6 +312,7 @@ body.kflipped { overflow: hidden; }
 .kt-pts.lead { color: var(--knap-hi); text-shadow: 0 0 10px color-mix(in srgb, var(--knap) 50%, transparent); }
 .kt-name, .kt-pts, .kt-rk { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 .kt-back { margin-top: 14px; text-align: center; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--t4); }
+.kt-hero .st-knap { color: var(--knap); white-space: nowrap; }
 
 /* ── Standings ─────────────────────────────────────────────────────── */
 /* Both boards side by side, in a rounded card like the cards on the other
@@ -525,7 +511,6 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .xp-swap b { font-weight: inherit; } /* the board's name in its colour, on request */
 .xp-swap b.show { color: var(--show-hi); }
 .xp-swap b.league { color: var(--league-hi); }
-.xp-swap b.knap { color: var(--knap); }
 .xp-swap .swap { width: 12px; height: 12px; fill: none; stroke: var(--gold2); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .xp .jr-card .jr-plot { height: 152px; } /* the race fills the five rows */
 /* The pick-rule warning at the top of an opened row: the card's plot gives
@@ -711,7 +696,7 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .fx-light { z-index: 3; mix-blend-mode: screen; }
 .fx-gas { z-index: 4; }
 .pod-col.last .fp { filter: saturate(.8) brightness(.93) drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
-.pod-col.last .pod-pts { color: var(--knap); } /* the fog's own muted olive */
+.pod-col.last .pod-pts { color: #a3a86e; } /* the fog's own muted olive */
 .pod-name { font-family: var(--ff-name); font-size: 12px; font-weight: 800; margin-top: 3px; }
 .pod-pts { font-size: clamp(18px, 5vw, 22px); font-weight: 800; line-height: 1; }
 .pod-col.win .pod-pts { color: var(--gold3); text-shadow: 0 0 8px var(--gold-glow); }
@@ -762,10 +747,6 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .bar b { position: absolute; z-index: 3; bottom: calc(var(--axis) + var(--plot) * var(--f) + 4px); font-size: 14px; font-weight: 800; line-height: 1; text-shadow: 0 0 2px var(--s2), 0 0 3px var(--s2), 0 0 4px var(--s2); } /* knocks the median line out behind the number */
 .bar small { position: absolute; bottom: 0; height: var(--axis); padding-top: 5px; font-family: var(--fm); font-size: 11px; line-height: 1.2; color: var(--t4); }
 .bar.won b { color: var(--gold3); }
-/* The Knappett card: the part of a week's bar from disasters capped in olive (above --k of the bar), its number olive too */
-.bar.split i { background: linear-gradient(0deg, color-mix(in srgb, var(--c) 55%, #000), var(--c) calc(var(--k) * 100%), var(--knap) calc(var(--k) * 100%), var(--knap)); }
-.bar.bad b { color: var(--knap); }
-.kn-key { display: inline-block; width: 9px; height: 9px; margin-right: 5px; vertical-align: -1px; border-radius: 2px; background: var(--knap); }
 .bar.tbd i { height: 3px; background: var(--b-gold); }
 /* The series median: a dashed line across the plot, over the bars and under the numbers */
 .bar-med { position: absolute; z-index: 2; left: 6px; right: 6px; bottom: calc(var(--axis) + var(--plot) * var(--f)); border-top: 1px dashed rgba(240, 232, 220, .55); pointer-events: none; }

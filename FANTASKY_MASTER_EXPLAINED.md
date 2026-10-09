@@ -323,7 +323,7 @@ The site shows it as a red line at the top of the player's opened row on the Sta
 
 ### 6.12 Knappett points
 
-A third board, for doing badly (named after Jessica Knappett's fall in Series 7). For each scored episode `e` and contestant `c` (`KN[e][c]` in `league.js`, point values in `KNAP`):
+A third board, for doing badly (named after Jessica Knappett's fall in Series 7). It's an Easter egg: the site shows it only when a phone or tablet is held upside down on the Standings (`flip.js`), and nothing else mentions it, README.md included. For each scored episode `e` and contestant `c` (`KN[e][c]` in `league.js`, point values in `KNAP`):
 
 ```
 gap     = top − EPS[c][e]                  top = max over c of EPS[·][e]
