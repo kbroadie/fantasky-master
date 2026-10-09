@@ -22,7 +22,7 @@
 // (askTilt), so whoever taps last place stumbles on the prompt. Once allowed,
 // a later visit asks again on its first tap, which Safari answers by itself
 // if it remembers.
-import { $, state } from "./ui.js";
+import { $, state, reducedMotion } from "./ui.js";
 import { knapTable, knapMore } from "./views/table.js";
 
 const ASK = typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function";
@@ -31,6 +31,8 @@ const SETTLE = 250; // ms a pose must hold, so a phone swung past upside down do
 
 let on = false, turn = 0, held = false, pending = null, timer = 0, listening = false, allowed = !ASK;
 let up = null; // the way up, in the device's own frame: [x to its right edge, y to its top], from the sensor
+let oriented = false; // the orientation sensor works (else the accelerometer stands in)
+const sideways = {}; // per landscape screen angle, which of the device's edges is up when it's read that way: +1 its right, −1 its left
 let open = null; // the player whose row is open
 let how = false; // How scoring works, open
 
@@ -51,6 +53,7 @@ function set(show, rot = 0) {
   el.setAttribute("aria-hidden", !show);
   document.body.classList.toggle("kflipped", show);
   if (show && !was) $(".kflip-scroll").scrollTop = 0;
+  if (show) fall(); else stopFall();
 }
 
 /** After the pose has held for a moment. */
@@ -65,8 +68,26 @@ function settle() { clearTimeout(timer); pending = null; }
 function onTilt(e) {
   const { beta, gamma } = e;
   if (beta == null || gamma == null) return;
+  oriented = true;
   const b = beta * Math.PI / 180, g = gamma * Math.PI / 180;
   up = [-Math.cos(b) * Math.sin(g), Math.sin(b)];
+  judge();
+}
+
+/**
+ * Phones without a gyroscope may give no orientation at all, but every phone
+ * has an accelerometer: at rest it reads the way up (accelerationIncludingGravity,
+ * pointing up, in the device's frame), so it stands in until an orientation
+ * reading arrives. Not on Safari, whose signs run the other way (and which
+ * gives the orientation once allowed).
+ */
+function onMotion(e) {
+  if (oriented) return;
+  const a = e.accelerationIncludingGravity;
+  if (!a || a.x == null || a.y == null) return;
+  const n = Math.hypot(a.x, a.y, a.z || 0);
+  if (n < 6 || n > 14) return; // being shaken, not held
+  up = [a.x / n, a.y / n];
   judge();
 }
 
@@ -78,6 +99,10 @@ function onTilt(e) {
 function judge() {
   if (!up) return;
   const [ux, uy] = up;
+  // Held sideways in a landscape page, the edge that's up is the page's top:
+  // remember which, rather than trust which way the screen's angle counts.
+  const a = angle();
+  if ((a === 90 || a === 270) && Math.abs(ux) > 0.8) sideways[a] = Math.sign(ux);
   const down = uy < -0.57 && -uy > Math.abs(ux) * 1.4;
   const back = uy > -0.26 || Math.abs(ux) > -uy;
   if (held && back) held = false; // a tap closed it: open again only after it's been turned back
@@ -92,7 +117,12 @@ function judge() {
  * was turned to landscape with the device's top to the left).
  */
 function turnFor(ux, uy) {
-  const a = angle() * Math.PI / 180;
+  // In landscape, the device's edge that was up when it was read sideways is
+  // the page's top; upside down, its top is then to the right (+1: turn the
+  // table clockwise) or the left.
+  const deg = angle();
+  if (sideways[deg]) return sideways[deg] > 0 ? 90 : -90;
+  const a = deg * Math.PI / 180;
   const sx = ux * Math.cos(a) - uy * Math.sin(a), sy = ux * Math.sin(a) + uy * Math.cos(a);
   if (Math.abs(sy) >= Math.abs(sx)) return sy >= 0 ? 0 : 180;
   return sx > 0 ? 90 : -90;
@@ -109,7 +139,55 @@ function listen() {
   if (listening) return;
   listening = true;
   addEventListener("deviceorientation", onTilt);
+  if (!ASK) addEventListener("devicemotion", onMotion);
 }
+
+// ── The fall ────────────────────────────────────────────────────────────────
+// Behind the table, faint streaks and motes rush upwards, so it seems to be
+// falling (on request): three depths, the near ones faster, longer and
+// fainter, like motion blur; some gold. Drawn on one canvas at 1× (the
+// streaks are soft anyway), only while the table shows: it was three tiled
+// layers moving by transform, kept as GPU layers ~50 MB at 3× even while
+// hidden, and iOS Safari stopped drawing parts of the page (on request:
+// "it doesn't fully load on Safari mobile now"). One still frame under
+// reduced motion.
+const DEPTHS = [
+  { n: 46, v: 55, len: [3, 6], w: 1, a: 0.5 },
+  { n: 26, v: 170, len: [12, 20], w: 1.3, a: 0.32 },
+  { n: 12, v: 520, len: [42, 66], w: 1.8, a: 0.15 },
+];
+let fallRaf = 0, motes = [];
+function fall() {
+  stopFall();
+  const c = $(".kf-fall canvas"), w = c.clientWidth, h = c.clientHeight;
+  if (!w || !h) return;
+  c.width = w; c.height = h;
+  const x = c.getContext("2d"), r = (a, b) => a + Math.random() * (b - a), scale = (w * h) / (390 * 844);
+  motes = DEPTHS.flatMap((d, k) => Array.from({ length: Math.round(d.n * scale) }, () => ({ k, x: r(0, w), y: r(0, h), len: r(...d.len), gold: Math.random() < 0.2 })));
+  const draw = (dt) => {
+    x.clearRect(0, 0, w, h);
+    for (const m of motes) {
+      const d = DEPTHS[m.k];
+      m.y -= d.v * dt;
+      if (m.y < -m.len) { m.y += h + m.len; m.x = r(0, w); }
+      // Bright at the head, trailing off below it (it's moving up).
+      const g = x.createLinearGradient(0, m.y, 0, m.y + m.len), col = m.gold ? "232,176,64" : "240,232,220";
+      g.addColorStop(0, `rgba(${col},${d.a})`);
+      g.addColorStop(1, `rgba(${col},0)`);
+      x.fillStyle = g;
+      x.fillRect(m.x, m.y, d.w, m.len);
+    }
+  };
+  if (reducedMotion) { draw(0); return; }
+  let last = 0;
+  const step = (now) => {
+    draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
+    last = now;
+    fallRaf = requestAnimationFrame(step);
+  };
+  fallRaf = requestAnimationFrame(step);
+}
+function stopFall() { cancelAnimationFrame(fallRaf); fallRaf = 0; }
 
 /** On Safari, ask for the tilt; call it in a tap (Safari asks only then). Nothing elsewhere, or once allowed. */
 let asking = false;

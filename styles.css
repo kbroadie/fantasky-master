@@ -277,39 +277,32 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    the hand: round (.turn, its safe areas swapped) when the page stayed
    portrait, a quarter turn (.side, --rot ±90deg, the layer as tall as the
    screen is wide) when the page turned to landscape on the way over, as on
-   Android phones. --kh is its height, for fitting the rows. A fade in and
-   out; none under reduced motion. The content scrolls in .kflip-scroll, over
-   the falling background (.kf-fall), which stays put. */
+   Android phones. --kh is its height, for fitting the rows. Not displayed
+   at all until it shows, then a fade in (none under reduced motion). The
+   content scrolls in .kflip-scroll, over the falling background (.kf-fall),
+   which stays put. */
 .kflip {
   --kh: 100dvh;
   position: fixed; inset: 0; z-index: 60; overflow: hidden; background: var(--bg);
-  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s var(--ease), visibility 0s .25s;
+  display: none; /* nothing of it in the page until it shows (iOS Safari's memory) */
 }
-.kflip.on { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .25s var(--ease); }
+.kflip.on { display: block; animation: kf-in .25s var(--ease); }
+@keyframes kf-in { from { opacity: 0; } }
 .kflip.turn { transform: rotate(180deg); }
 .kflip.side { --kh: 100vw; inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; transform: translate(-50%, -50%) rotate(var(--rot)); }
 .kflip-scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: env(safe-area-inset-top) 0 max(16px, env(safe-area-inset-bottom)); }
 .kflip.turn .kflip-scroll { padding: env(safe-area-inset-bottom) 0 max(16px, env(safe-area-inset-top)); }
 .kflip.side .kflip-scroll { padding: 0 0 16px; }
 body.kflipped { overflow: hidden; }
-@media (prefers-reduced-motion: reduce) { .kflip, .kflip.on { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .kflip.on { animation: none; } }
 /* Falling (on request: "a background animation that makes the foreground
    content look like it's continuously falling", in place of the olive):
-   three layers of faint streaks and motes rush upwards past the table,
-   near ones faster, longer and fainter, like motion blur; each loops by
-   moving exactly one tile of its pattern, so it never jumps. Transforms only;
-   the edges fade into the dark. Still under reduced motion. */
+   streaks and motes rushing upwards, drawn on a canvas by flip.js only while
+   the table shows (a 1× canvas, not GPU layers: see flip.js). The edges fade
+   into the dark, with the film grain over it. */
 .kf-fall { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.kf-fall i { position: absolute; left: 0; right: 0; top: 0; height: calc(100% + var(--t)); background-size: var(--w) var(--t); animation: kf-rise var(--s) linear infinite; will-change: transform; }
-.kf-fall i:nth-child(1) { --w: 110px; --t: 170px; --s: 3.4s;
-  background-image: radial-gradient(1.2px 5px at 20% 15%, rgba(240, 232, 220, .5), transparent), radial-gradient(1px 4px at 70% 55%, rgba(240, 232, 220, .4), transparent), radial-gradient(1.4px 6px at 45% 85%, rgba(232, 176, 64, .45), transparent), radial-gradient(1px 4px at 88% 30%, rgba(240, 232, 220, .35), transparent); }
-.kf-fall i:nth-child(2) { --w: 150px; --t: 260px; --s: 1.6s;
-  background-image: radial-gradient(1.4px 18px at 30% 25%, rgba(240, 232, 220, .32), transparent), radial-gradient(1.2px 14px at 80% 70%, rgba(240, 232, 220, .26), transparent), radial-gradient(1.2px 12px at 55% 95%, rgba(232, 176, 64, .24), transparent); }
-.kf-fall i:nth-child(3) { --w: 210px; --t: 420px; --s: .8s;
-  background-image: radial-gradient(1.8px 60px at 15% 40%, rgba(240, 232, 220, .16), transparent), radial-gradient(1.6px 48px at 65% 80%, rgba(240, 232, 220, .13), transparent), radial-gradient(1.4px 40px at 90% 10%, rgba(240, 232, 220, .1), transparent); }
-@keyframes kf-rise { to { transform: translateY(calc(-1 * var(--t))); } }
+.kf-fall canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .kf-fall::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, var(--bg), transparent 18%, transparent 78%, var(--bg)), var(--grain); }
-@media (prefers-reduced-motion: reduce) { .kf-fall i { animation: none; } }
 .kflip-in { position: relative; max-width: 34rem; margin: 0 auto; }
 .kt-hero { text-align: center; padding-block: 18px 16px; background: none; }
 .kt-hero .ep-title { margin-bottom: 0; color: var(--t1); }
