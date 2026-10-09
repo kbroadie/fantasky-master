@@ -304,6 +304,9 @@ $("#p-standings").addEventListener("click", (e) => {
     syncBoards(false, board);
     return;
   }
+  // The upside-down quote under the board: on an iPhone, the tap that asks
+  // for the tilt, so the upside-down dream can be stumbled on.
+  if (e.target.closest(".st-quote")) { askTilt(); return; }
   // An opened half's card title flips it between Points per episode and The
   // race so far; the choice holds for every row opened after it.
   const swap = e.target.closest(".xp-swap");
@@ -317,9 +320,6 @@ $("#p-standings").addEventListener("click", (e) => {
   // the week on show opens; a row open in another week closes, without easing.
   const sd = e.target.closest(".pc .sd");
   if (sd) {
-    // Last place (on request): on an iPhone, the tap that asks for the tilt,
-    // so the upside-down dream can be stumbled on.
-    if (sd.hasAttribute("data-kn")) askTilt();
     glideEnd?.(); // settle a row still gliding, so this one starts from where things are
     const row = sd.closest(".pc"), side = sd.dataset.side, open = row.classList.contains("open") && row.dataset.open === side;
     state.open = open ? null : { side, name: sd.dataset.p, wk: +row.closest(".st-slide").dataset.week };

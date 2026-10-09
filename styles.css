@@ -285,6 +285,13 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    the next rule or the card's edge), a name and right-aligned points (--sc)
    with --g between. --pe is the head's side padding, now 0: the strip and the
    League's half run to the card's edges. */
+/* A contestant's quote under the board, small, faint and upside down: the secret tap (table.js) */
+.st-quote {
+  display: block; margin: 2px auto 0; padding: 8px 16px; max-width: 34em; border: 0; background: none; color: var(--t4);
+  font: 400 11px/1.45 var(--ff); text-align: center; text-wrap: balance; transform: rotate(180deg);
+  cursor: default; -webkit-tap-highlight-color: transparent;
+}
+.st-quote cite { font-style: normal; white-space: nowrap; }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 /* The head lines up with the rows: the place column's strip, then the Show's
    half over the left half and the League's over the right. */

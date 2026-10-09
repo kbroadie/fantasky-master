@@ -26,9 +26,9 @@
 // no tap, and some Android browsers offer the permission request too, which
 // had held them back until one). iPhone and iPad Safari give the page the
 // tilt only after a tap allows it (DeviceOrientationEvent.requestPermission):
-// the secret tap is a last-place half on the Standings (on request), which,
-// where no readings have come yet, asks for motion (askTilt, from main.js),
-// so whoever taps last place stumbles on the prompt. Once allowed, a later visit asks again on its
+// the secret tap is the small upside-down quote under the Standings boards
+// (on request), which, where no readings have come yet, asks for motion
+// (askTilt, from main.js), so whoever is curious stumbles on the prompt. Once allowed, a later visit asks again on its
 // first tap, which Safari answers by itself if it remembers.
 import { $, state, reducedMotion } from "./ui.js";
 
@@ -277,7 +277,7 @@ export async function askTilt() {
       try { localStorage.setItem(KEY, "1"); } catch {}
       listen();
     }
-  } catch { /* refused, or not in a tap: the next last-place tap asks again */ }
+  } catch { /* refused, or not in a tap: the next tap on the quote asks again */ }
   asking = false;
 }
 

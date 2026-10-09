@@ -165,9 +165,25 @@ export function standingsSlides(d) {
   return d.episodes.map(({ ep: w }) => `
     <section class="slide st-slide" data-week="${w}">
       <div class="hero st-hero${state.how ? " explain" : ""}">${standingsHero(d, w)}</div>
-      ${w > d.weeksScored && !state.edit ? "" : board(d, w)}
+      ${w > d.weeksScored && !state.edit ? "" : board(d, w) + QUOTE}
     </section>`).join("");
 }
+
+/**
+ * Under the board, a contestant's quote, small and upside down, picked at
+ * random for each visit (on request). It's the secret tap: on an iPhone or
+ * iPad, tapping it asks for the tilt (askTilt in flip.js, from main.js), so
+ * whoever is curious stumbles on the upside-down mode. Unmarked.
+ */
+const QUOTES = [
+  ["I changed it because I didn't like the truth.", "Paul Chowdhry, S3"],
+  ["I stand by the point, even if the facts don’t.", "Hugh Dennis, S4"],
+  ["I wasn't looking at it, so it didn't happen.", "Judi Love, S13"],
+  ["It’s not a mistake if you meant to do it.", "Ed Gamble, S9"],
+  ["That’s just how I see the world.", "Lucy Beaumont, S16"],
+];
+const [said, by] = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+const QUOTE = `<button class="st-quote" type="button"><q>${esc(said)}</q> <cite>— ${esc(by)}</cite></button>`;
 
 /**
  * The board: its head, then either the rows or, while a head is pressed
@@ -254,7 +270,6 @@ export function boardChart(d, w, k, width) {
 export function standingsRows(d, w = stWeek(d)) {
   const { show, league } = boards(d, w);
   const top = { show: Math.max(0, ...show.map((p) => p.show)), league: Math.max(0, ...league.map((p) => p.league)) };
-  // Last place on each board (not when the board is level): a tap asks for the tilt on an iPhone (main.js, flip.js). Unmarked.
   const low = { show: Math.min(...show.map((p) => p.show)), league: Math.min(...league.map((p) => p.league)) };
   // The gap meter: the share of the leader's points, or in fantasy mode how far below the top (the leader, at the bottom, full).
   const meter = (p, k) => (state.fantasy ? (top[k] > low[k] ? (top[k] - p[k]) / (top[k] - low[k]) : 1) : top[k] ? p[k] / top[k] : 0);
@@ -263,7 +278,7 @@ export function standingsRows(d, w = stWeek(d)) {
     const num = `<span class="pc-num${rank === 1 ? " t1" : ""}">${p[k]}</span>`;
     const name = `<span class="pc-name"><span class="nm">${esc(p.name)}</span><svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span>`;
     const say = `${p.name}, ${ord(rank)} in the ${side === "show" ? "Show" : "League"} with ${p[k]} points`;
-    return `<button class="sd ${side === "show" ? "l" : "r"}" type="button" data-side="${side}" data-p="${esc(p.name)}"${p[k] === low[k] && low[k] < top[k] ? " data-kn" : ""} style="--m:${meter(p, k).toFixed(3)}" aria-expanded="false" aria-label="${esc(say)}">${name + num}</button>`;
+    return `<button class="sd ${side === "show" ? "l" : "r"}" type="button" data-side="${side}" data-p="${esc(p.name)}" style="--m:${meter(p, k).toFixed(3)}" aria-expanded="false" aria-label="${esc(say)}">${name + num}</button>`;
   };
   return show.map((l, i) => {
     const r = league[i];
