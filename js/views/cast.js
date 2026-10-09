@@ -3,8 +3,14 @@ import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../u
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
 
-/** Contestants by series total, best first. */
-export const castOrder = (d) => [...d.contestants].sort((a, b) => a.rank - b.rank || a.key.localeCompare(b.key));
+/**
+ * Contestants by series total, best first. In fantasy mode (flip.js) low
+ * scores win, so the lowest total is first: the rank runs from the bottom.
+ */
+export const castOrder = (d) => [...d.contestants].sort((a, b) => rankOf(d, a) - rankOf(d, b) || a.key.localeCompare(b.key));
+const rankOf = (d, c) => (state.fantasy ? 1 + d.contestants.filter((o) => o.total < c.total).length : c.rank);
+/** Did c come last in episode ep (fantasy mode's winners)? */
+const lastIn = (d, ep, c) => c.eps[ep - 1] === Math.min(...d.contestants.map((o) => o.eps[ep - 1]));
 
 export const castTabs = (d) => castOrder(d).map((c, i) => `<button class="strip-tab" data-slide="${i}"><span>${esc(c.key)}</span></button>`).join("");
 
@@ -54,16 +60,18 @@ export function barsCard(d, at, max, med, color, title = "Points per episode") {
 }
 
 function slide(d, c, max, med) {
-  const bars = barsCard(d, (ep) => ep > d.weeksScored ? null : { v: c.eps[ep - 1], won: d.winners[ep]?.winner === c.key }, max, med, c.color);
+  const won = (ep) => (state.fantasy ? lastIn(d, ep, c) : d.winners[ep]?.winner === c.key), rank = rankOf(d, c);
+  const wins = state.fantasy ? d.episodes.filter(({ ep }) => ep <= d.weeksScored && lastIn(d, ep, c)).length : c.wins;
+  const bars = barsCard(d, (ep) => ep > d.weeksScored ? null : { v: c.eps[ep - 1], won: won(ep) }, max, med, c.color);
 
   return `
-    <div class="ep-head cd-head${c.rank === 1 ? " fx-stage" : ""}">
-      <div class="cd-img${c.rank === 1 ? " pod-col win" : ""}">${framed(c)}</div>
-      <div class="kicker">${ord(c.rank)} of ${d.contestants.length} · Series ${state.key}</div>
+    <div class="ep-head cd-head${rank === 1 ? " fx-stage" : ""}">
+      <div class="cd-img${rank === 1 ? " pod-col win" : ""}">${framed(c)}</div>
+      <div class="kicker">${ord(rank)} of ${d.contestants.length} · Series ${state.key}</div>
       <h2 class="ep-title">${esc(c.full)}</h2>
-      <div class="ep-sub"><b style="color:${c.color}">${c.total}</b> points · ${c.avg.toFixed(1)} an episode${c.wins ? ` · ${c.wins} win${c.wins > 1 ? "s" : ""}` : ""}</div>
+      <div class="ep-sub"><b style="color:${c.color}">${c.total}</b> points · ${c.avg.toFixed(1)} an episode${wins ? ` · ${wins} win${wins > 1 ? "s" : ""}` : ""}</div>
     </div>
-    ${records(d, c)}
+    ${state.fantasy ? "" : records(d, c)}
     ${bars}
     ${heatStrip(d, c)}
     ${radar(d, c)}
@@ -164,7 +172,8 @@ const SIGMAS = [-2, -1, 0, 1, 2];
 function radar(d, c) {
   const n = KINDS.length, R = 80, cx = 170, cy = 136;
   const eps = Math.max(1, d.weeksScored), st = state.stats;
-  const z = (k) => (st[k].sd ? (c.ty[k] / eps - st[k].mean) / st[k].sd : 0);
+  // In fantasy mode (flip.js) low scores are good, so the shape is turned inside out.
+  const z = (k) => (st[k].sd ? (state.fantasy ? -1 : 1) * (c.ty[k] / eps - st[k].mean) / st[k].sd : 0);
   const r = (k) => Math.min(1, Math.max(0, (z(k) + Z) / (2 * Z)));
   const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
   const at = (i, f) => [cx + Math.cos(ang(i)) * R * f, cy + Math.sin(ang(i)) * R * f];

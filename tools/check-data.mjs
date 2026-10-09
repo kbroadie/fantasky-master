@@ -27,7 +27,6 @@ for (const r of rows) if (r.record === "contestant" && r.portrait_url && !exists
 if (series[22]) {
   const d = derive(series[22], new Date());
   const riley = d.byName.Riley?.history?.[3];
-  if (!riley || riley.knap !== 14) err(`Worked example: Riley's Knappett points after Series 22 ep 4 should be 14, got ${riley?.knap}`);
   if (!riley || riley.show !== 67 || riley.league !== 14) err(`Worked example: Riley after Series 22 ep 4 should be 67 Show / 14 League, got ${riley ? `${riley.show} / ${riley.league}` : "nothing"}`);
   const ep2 = d.rankPts[2];
   const want = { Richard: 5, Matt: 4, Nina: 4, Isy: 2, Chloe: 1 };

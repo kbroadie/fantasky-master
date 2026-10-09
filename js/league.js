@@ -62,9 +62,6 @@ export function rankWithTies(sorted, key) {
 
 // ── Derivation ───────────────────────────────────────────────────────────────
 
-/** Knappett points for each disaster on a pick (§6.12); the gap behind the episode's winner is 1 a point. */
-export const KNAP = { dq: 3, neg: 3 };
-
 export function derive(raw, now = new Date()) {
   const names = raw.cast.map((c) => c.key);
   const idx = Object.fromEntries(names.map((n, i) => [n, i]));
@@ -100,28 +97,6 @@ export function derive(raw, now = new Date()) {
     winners[e] = { winner, tiebreak: tied.length > 1, tied, top: EPS[tied[0]][e] };
   }
 
-  // Knappett points (§6.12): what each contestant's pickers earn on the
-  // Knappett each scored episode, the board for doing badly. 1 per point
-  // behind the episode's winner, plus 3 for each task they were disqualified
-  // on and 3 for each they scored minus points on (on request: only those;
-  // zeros, last place and a stinker were tried and dropped).
-  const KN = {};
-  for (let e = 1; e <= weeksScored; e++) {
-    const top = Math.max(...names.map((n) => EPS[n][e]));
-    KN[e] = Object.fromEntries(names.map((n, i) => {
-      const k = { gap: top - EPS[n][e], dq: 0, neg: 0 };
-      for (const t of raw.tasks) if (t.ep === e) {
-        if (t.dq?.[i]) k.dq += KNAP.dq;
-        else if (t.s[i] < 0) k.neg += KNAP.neg;
-      }
-      k.total = k.gap + k.dq + k.neg;
-      return [n, k];
-    }));
-  }
-  // A week with no pick scores 0 on the Show, so it's the whole winner's score behind.
-  const knapOf = (c, e) => (c && idx[c] !== undefined ? KN[e][c]
-    : { gap: winners[e].top, dq: 0, neg: 0, total: winners[e].top });
-
   // Players: the roster plus anyone with picks.
   const allPlayers = [...new Set([...(raw.players || []), ...Object.keys(raw.picks)])];
   const pickOf = (p, e) => raw.picks[p]?.[e - 1] || null;
@@ -129,13 +104,12 @@ export function derive(raw, now = new Date()) {
   const inactive = allPlayers.filter((p) => !active.includes(p));
 
   function boardsAsOf(w) {
-    const show = {}, league = {}, knap = {};
+    const show = {}, league = {};
     for (const p of allPlayers) {
-      show[p] = 0; league[p] = 0; knap[p] = 0;
+      show[p] = 0; league[p] = 0;
       for (let e = 1; e <= w; e++) {
         const c = pickOf(p, e);
         if (c && idx[c] !== undefined) { show[p] += EPS[c][e]; league[p] += rankPts[e][c]; }
-        knap[p] += knapOf(c, e).total;
       }
     }
     const rank = (pts) => {
@@ -143,7 +117,7 @@ export function derive(raw, now = new Date()) {
         (active.includes(b) - active.includes(a)) || pts[b] - pts[a]);
       return rankWithTies(sorted, (p) => `${active.includes(p)}:${pts[p]}`);
     };
-    return { show, league, knap, showRank: rank(show), leagueRank: rank(league) };
+    return { show, league, showRank: rank(show), leagueRank: rank(league) };
   }
 
   const history = Array.from({ length: weeksScored }, (_, i) => boardsAsOf(i + 1));
@@ -160,18 +134,17 @@ export function derive(raw, now = new Date()) {
         show: c && scored ? EPS[c][e] : null,
         league: c && scored ? rankPts[e][c] : null,
         won: !!(c && scored && winners[e].winner === c),
-        knap: scored ? knapOf(c, e) : null,
       });
     }
     const played = weeks.filter((w) => w.show != null);
     const byShow = [...played].sort((a, b) => b.show - a.show);
     return {
       name: p, weeks,
-      show: cur.show[p], league: cur.league[p], knap: cur.knap[p],
+      show: cur.show[p], league: cur.league[p],
       showRank: cur.showRank.get(p), leagueRank: cur.leagueRank.get(p),
       showDelta: prev.showRank.get(p) - cur.showRank.get(p),
       leagueDelta: prev.leagueRank.get(p) - cur.leagueRank.get(p),
-      history: history.map((h) => ({ show: h.show[p], league: h.league[p], knap: h.knap[p], showRank: h.showRank.get(p), leagueRank: h.leagueRank.get(p) })),
+      history: history.map((h) => ({ show: h.show[p], league: h.league[p], showRank: h.showRank.get(p), leagueRank: h.leagueRank.get(p) })),
       hits: played.filter((w) => w.won).length,
       best: byShow[0] || null,
       worst: byShow.at(-1) || null,
@@ -216,7 +189,7 @@ export function derive(raw, now = new Date()) {
   });
 
   return {
-    raw, names, idx, cast, episodes, EPS, TY, rankPts, placing, winners, KN,
+    raw, names, idx, cast, episodes, EPS, TY, rankPts, placing, winners,
     weeksAired, weeksScored, nextEp, players, byName, inactive, contestants, weekly, allPlayers,
     complete: weeksAired === EPISODES,
     epTasks: (e) => raw.tasks.filter((t) => t.ep === e),

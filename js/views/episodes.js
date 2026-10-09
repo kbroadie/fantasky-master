@@ -34,9 +34,14 @@ function slide(d, e) {
   }
 
   const w = d.winners[e.ep], wk = d.weekly[e.ep], pts = (n) => d.EPS[n][e.ep];
-  const called = wk.hits.length;
-  const line = `Won by ${named(d.cast[w.winner])} with <b>${w.top}</b>${w.tiebreak ? " after a tiebreak" : ""}`
-    + ` · ${called ? `${called} of ${wk.voters} called it` : "nobody called it"}`;
+  // Fantasy mode (flip.js): low scores win, so the episode is won by last place (all of them, if tied).
+  const scores = d.names.map(pts), low = Math.min(...scores), high = Math.max(...scores);
+  const champs = state.fantasy ? d.names.filter((n) => pts(n) === low) : [w.winner];
+  const called = state.fantasy ? champs.reduce((a, n) => a + wk.by[n].length, 0) : wk.hits.length;
+  const line = state.fantasy
+    ? `Won by ${champs.map((n) => named(d.cast[n])).join(" and ")} with <b>${low}</b> · ${called ? `${called} of ${wk.voters} called it` : "nobody called it"}`
+    : `Won by ${named(d.cast[w.winner])} with <b>${w.top}</b>${w.tiebreak ? " after a tiebreak" : ""}`
+      + ` · ${called ? `${called} of ${wk.voters} called it` : "nobody called it"}`;
 
   const order = seated(d);
   const col = order.map((n) => d.idx[n]);
@@ -44,12 +49,15 @@ function slide(d, e) {
   // least 5 behind the next-lowest score (sharing last place counts, and
   // all of them get it). The winner gets the gold light. Both effects are
   // drawn by podium-fx.js.
-  const low = Math.min(...d.names.map(pts));
-  const above = Math.min(...d.names.map(pts).filter((v) => v > low));
-  const isLast = (n) => n !== w.winner && pts(n) === low && Number.isFinite(above) && above - low >= 5;
+  // In fantasy mode it's the other way round: last place gets the gold
+  // light, and the top scorer the stink, when 5 or more clear of the next.
+  const above = Math.min(...scores.filter((v) => v > low)), below = Math.max(...scores.filter((v) => v < high));
+  const isLast = state.fantasy
+    ? (n) => !champs.includes(n) && pts(n) === high && Number.isFinite(below) && high - below >= 5
+    : (n) => n !== w.winner && pts(n) === low && Number.isFinite(above) && above - low >= 5;
 
   const pod = order.map((n) => {
-    const backers = wk.by[n].length, win = n === w.winner, last = isLast(n);
+    const backers = wk.by[n].length, win = champs.includes(n), last = isLast(n);
     return `
     <div class="pod-col${win ? " win" : last ? " last" : ""}"${last ? ` aria-label="${esc(n)}, last place"` : ""}>
       ${framed(d.cast[n])}
@@ -66,9 +74,9 @@ function slide(d, e) {
       <tbody>${tasks.map((t) => {
         const s = col.map((i) => t.s[i]), hi = Math.max(...s), lo = Math.min(...s);
         return `<tr><td><span class="tn">${icon(t.t)}<span class="tname" title="${esc(t.n)}">${esc(t.n)}</span></span></td>${s.map((v) =>
-          `<td class="sc${hi > lo && v === hi ? " best" : hi > lo && v === lo ? " worst" : ""}">${v}</td>`).join("")}</tr>`;
+          `<td class="sc${hi > lo && v === (state.fantasy ? lo : hi) ? " best" : hi > lo && v === (state.fantasy ? hi : lo) ? " worst" : ""}">${v}</td>`).join("")}</tr>`;
       }).join("")}
-      <tr class="tot"><td>Total</td>${order.map((n) => `<td class="${n === w.winner ? "best" : ""}">${pts(n)}</td>`).join("")}</tr></tbody>
+      <tr class="tot"><td>Total</td>${order.map((n) => `<td class="${champs.includes(n) ? "best" : ""}">${pts(n)}</td>`).join("")}</tr></tbody>
     </table></div>`;
 
   return head(line) + `<div class="ep-body"><div class="pod">${pod}</div>${state.edit ? edTable(d, e, order) : table}${raceChart(d, e.ep)}</div>`;
@@ -110,6 +118,10 @@ function raceChart(d, cur) {
  * close finishes stay apart and a deep slump doesn't make the chart a canyon.
  */
 export function raceSvg({ names, cur, end, last, total, color, label, unit, cls = () => "", exact = false, width = 340, minPlot = 0, measure = false }) {
+  // Fantasy mode (flip.js): the leader is the lowest, so the race is run on
+  // the totals turned negative; the totals shown stay as they are.
+  const shown = total;
+  if (state.fantasy) total = (n, e) => -shown(n, e);
   const eps = Array.from({ length: end }, (_, i) => i + 1);
   // The gap to the leader after each episode: 0 for the leader, negative below.
   const best = Object.fromEntries(eps.map((e) => [e, Math.max(...names.map((n) => total(n, e)))]));
@@ -153,7 +165,7 @@ export function raceSvg({ names, cur, end, last, total, color, label, unit, cls 
   // little room for the labels (late episodes) does the axis tighten just
   // enough to keep them to the right.
   const NAME = Math.max(...names.map((m) => label(m).length)) * 26 / 3, DIG = 7.4; // 26 for three letters
-  const num = (m) => (gap(m, end) ? `−${-gap(m, end)}` : `${total(m, end)}`);
+  const num = (m) => (gap(m, end) ? `−${-gap(m, end)}` : `${shown(m, end)}`);
   const numW = Math.max(...names.map((m) => num(m).length)) * DIG, per = Math.min(WRAP, Math.max(...rows.map((r) => r.length)));
   // Exact charts keep the labels in a fixed column at the right, the same
   // place every week: the number right-aligned, then the names (so a long
@@ -212,12 +224,12 @@ export function raceSvg({ names, cur, end, last, total, color, label, unit, cls 
       + `<text class="rc-name rc-total${exact && !gap(name, end) ? " top" : ""}" x="${f1(numX(lx))}" y="${f1(ty + 4)}" text-anchor="end">${num(name)}</text>`;
     const hits = pts.map(([a, b], i) => {
       const e = i + 1, gg = gap(name, e);
-      const say = `Ep ${e} · ${name} · ${total(name, e)} ${unit} · ${gg ? `${-gg} behind ${listing(leaders(e))}` : leaders(e).length > 1 ? "joint leader" : "leading"} (${ord(rank(e, name))})`;
+      const say = `Ep ${e} · ${name} · ${shown(name, e)} ${unit} · ${gg ? `${-gg} behind ${listing(leaders(e))}` : leaders(e).length > 1 ? "joint leader" : "leading"} (${ord(rank(e, name))})`;
       return `<circle class="rc-hit" cx="${f1(a)}" cy="${f1(b)}" r="12" data-say="${esc(say)}"><title>${esc(say)}</title></circle>`;
     }).join("");
     // (Exact) how far behind they are at the week on show, for the legend.
     return `<g data-who="${esc(name)}"${exact ? ` data-behind="${-gap(name, cur)}"` : ""}${cls(name) ? ` class="${cls(name)}"` : ""}>${path}${dots}${lead}${text}${hits}</g>`;
   }).join("");
-  const summary = ends.map((m) => `${m} ${gap(m, end) ? `${-gap(m, end)} behind` : `leads on ${total(m, end)}`}`).join(", ");
+  const summary = ends.map((m) => `${m} ${gap(m, end) ? `${-gap(m, end)} behind` : `leads on ${shown(m, end)}`}`).join(", ");
   return `<svg viewBox="0 0 ${W} ${H}"${exact ? ` width="${W}" height="${H}"` : ""} role="img" aria-label="${esc(`${unit[0].toUpperCase()}${unit.slice(1)} behind the leader after episode ${end}: ${summary}`)}">${grid}${xAxis}${lines}</svg>`;
 }

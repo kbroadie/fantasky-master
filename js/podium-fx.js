@@ -113,9 +113,9 @@ class Scene {
   }
 
   layout() {
-    // The canvases fill the card's padding box (inside its border).
-    const outer = this.pod.getBoundingClientRect();
-    const box = { left: outer.left + this.pod.clientLeft, top: outer.top + this.pod.clientTop };
+    // The canvases fill the card's padding box (inside its border). Positions
+    // are measured within the card (offsets), not on the screen, so they hold
+    // when the page is turned over (fantasy mode, flip.js).
     this.w = this.pod.clientWidth;
     this.h = this.pod.clientHeight;
     if (!this.w) return;
@@ -125,8 +125,10 @@ class Scene {
       c.height = Math.round(this.h * DPR);
     }
     const rect = (el) => {
-      const r = el.getBoundingClientRect();
-      return { x: r.left - box.left, y: r.top - box.top, w: r.width, h: r.height, cx: r.left - box.left + r.width / 2, cy: r.top - box.top + r.height / 2 };
+      let x = 0, y = 0;
+      for (let n = el; n && n !== this.pod; n = n.offsetParent) { x += n.offsetLeft; y += n.offsetTop; }
+      const w = el.offsetWidth, h = el.offsetHeight;
+      return { x, y, w, h, cx: x + w / 2, cy: y + h / 2 };
     };
     const cols = [...this.pod.querySelectorAll(".pod-col")];
     this.frames = cols.map((col) => ({ ...rect(col.querySelector(".fp")), win: col.classList.contains("win"), last: col.classList.contains("last") }));

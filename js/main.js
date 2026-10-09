@@ -10,7 +10,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, flipSync, askTilt, fallIn } from "./flip.js";
+import { initFlip, askTilt, turned } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -49,7 +49,6 @@ function loadSeries(key) {
   renderSlides(d);
   if (!$("#foot").children.length) $("#foot").innerHTML = footer();
   countdown();
-  flipSync();
 }
 
 /** Standings: the week strip and one slide per week; an opened player stays opened. */
@@ -86,7 +85,6 @@ function refresh(text) {
   for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get());
   else mark(sw, sw.get(), false);
   if (fk) $(`[data-fk="${CSS.escape(fk)}"]`)?.focus({ preventScroll: true });
-  flipSync();
 }
 
 function show(page) {
@@ -95,12 +93,11 @@ function show(page) {
   $(".tabs").style.setProperty("--i", i);
   $$(".tab").forEach((t, j) => t.setAttribute("aria-selected", j === i));
   $$(".page").forEach((p, j) => p.classList.toggle("active", j === i));
-  scrollTo(0, 0);
+  toTop();
   if (page === "standings") { jump(ST, ST.get()); queueLight(); }
   if (page === "episodes") jump(EP, state.ep - 1);
   if (page === "cast") jump(CAST, state.cast);
   writeHash();
-  flipSync();
 }
 
 // ── Swipers: a tab strip over a row of scroll-snapped slides ─────────────────
@@ -110,6 +107,41 @@ const EP = { body: "#ep-body", tabs: "#ep-tabs", get: () => state.ep - 1, set: (
 const CAST = { body: "#cast-body", tabs: "#cast-tabs", get: () => state.cast, set: (i) => { state.cast = i; } };
 
 const idxOf = (body) => Math.round(body.scrollLeft / body.clientWidth);
+
+// ── Turned over (fantasy mode, flip.js) ──────────────────────────────────────
+// Upside down the whole page may be turned round (180°, or a quarter turn in
+// a landscape page): the body is then a fixed, rotated box and main scrolls
+// inside it, and anything measured on the screen is turned back into the
+// page's own directions.
+
+/** What scrolls the page: the window, or main while the page is turned. */
+const scroller = () => (turned() ? $("main") : window);
+/** Back to the top of the page (smoothly, unless reduced motion). */
+function toTop(smooth = false) {
+  const sc = scroller();
+  if ((sc === window ? scrollY : sc.scrollTop) > 0) sc.scrollTo({ top: 0, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
+}
+/** A movement on the screen (dx, dy) in the page's own directions. */
+function local(dx, dy) {
+  const t = turned();
+  return t === 180 ? [-dx, -dy] : t === 90 ? [dy, -dx] : t === -90 ? [-dy, dx] : [dx, dy];
+}
+/** An element's top in the page (from the scroller's top), whichever way it's turned. */
+function topIn(el) {
+  let y = 0;
+  for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
+  return y;
+}
+/** Every page drawn again (fantasy mode on or off), on the same week, episode and contestant. */
+function redraw() {
+  const key = $("#cast-tabs .on")?.textContent;
+  renderStandings(state.d);
+  renderSlides(state.d);
+  const i = castOrder(state.d).findIndex((c) => c.key === key);
+  if (i >= 0) state.cast = i;
+  for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); else mark(sw, sw.get(), false);
+  writeHash();
+}
 /**
  * The row is as tall as the slide on screen, but never stops short of the
  * bottom of the screen, so you can swipe anywhere below a short slide.
@@ -119,7 +151,8 @@ function fit(body) {
   if (!s) return;
   const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
   // Leave room for the footer, so a short slide ends with it at the bottom of the screen.
-  const toBottom = innerHeight - (body.getBoundingClientRect().top + scrollY) - pad - ($("#foot")?.offsetHeight || 0);
+  const view = turned() ? $("main").clientHeight : innerHeight;
+  const toBottom = view - topIn(body) - pad - ($("#foot")?.offsetHeight || 0);
   body.style.height = `${Math.max(s.offsetHeight, toBottom)}px`;
 }
 const sizes = new ResizeObserver((entries) => {
@@ -147,13 +180,13 @@ function edgeNav(el, can, onEdge) {
   let x0 = null, y0 = 0, prev = false, next = false;
   el.addEventListener("touchstart", (e) => {
     if (e.target.closest(".strip")) { x0 = null; return; } // a tab strip scrolls sideways itself
-    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    [x0, y0] = [e.touches[0].clientX, e.touches[0].clientY];
     prev = can.prev(); next = can.next();
   }, { passive: true });
   el.addEventListener("touchcancel", () => { x0 = null; }, { passive: true });
   el.addEventListener("touchend", (e) => {
     if (x0 == null) return;
-    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    const [dx, dy] = local(e.changedTouches[0].clientX - x0, e.changedTouches[0].clientY - y0);
     x0 = null;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     if (prev && dx > 0) onEdge(-1);
@@ -236,13 +269,13 @@ $("#p-standings").addEventListener("click", (e) => {
     $("#welcome").hidden = true;
     try { localStorage.setItem("fm-welcome", "closed"); } catch {}
     fit($("#st-body"));
-    if (scrollY) scrollTo(0, 0);
+    toTop();
     return;
   }
   if (e.target.closest(".st-wl")) {
     $("#welcome").hidden = false;
     fit($("#st-body"));
-    scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    toTop(true);
     return;
   }
   // "How scoring works": open both explanations; tap again to close. It stays
@@ -271,6 +304,9 @@ $("#p-standings").addEventListener("click", (e) => {
     syncBoards(false, board);
     return;
   }
+  // The upside-down quote under the board: on an iPhone, the tap that asks
+  // for the tilt, so the upside-down dream can be stumbled on.
+  if (e.target.closest(".st-quote")) { askTilt(); return; }
   // An opened half's card title flips it between Points per episode and The
   // race so far; the choice holds for every row opened after it.
   const swap = e.target.closest(".xp-swap");
@@ -284,10 +320,6 @@ $("#p-standings").addEventListener("click", (e) => {
   // the week on show opens; a row open in another week closes, without easing.
   const sd = e.target.closest(".pc .sd");
   if (sd) {
-    // Last place (on request): the Knappett's fall in the cell for a moment,
-    // and on an iPhone the tap that asks for the tilt, so the upside-down
-    // Knappett can be stumbled on.
-    if (sd.hasAttribute("data-kn")) { askTilt(); fallIn(sd); }
     glideEnd?.(); // settle a row still gliding, so this one starts from where things are
     const row = sd.closest(".pc"), side = sd.dataset.side, open = row.classList.contains("open") && row.dataset.open === side;
     state.open = open ? null : { side, name: sd.dataset.p, wk: +row.closest(".st-slide").dataset.week };
@@ -387,8 +419,10 @@ function openRow(row, side) {
 function placeLine(row) {
   const chev = row.querySelector(`.sd[data-side="${row.dataset.open}"] .chev`);
   if (!chev) return;
-  const c = chev.getBoundingClientRect();
-  row.style.setProperty("--cx", `${(c.left + c.width / 2 - row.getBoundingClientRect().left).toFixed(1)}px`);
+  // Measured on the screen, then turned into the row's own direction if the page is turned (fantasy mode).
+  const c = chev.getBoundingClientRect(), r = row.getBoundingClientRect(), cx = c.left + c.width / 2, cy = c.top + c.height / 2, t = turned();
+  const x = t === 180 ? r.right - cx : t === 90 ? cy - r.top : t === -90 ? r.bottom - cy : cx - r.left;
+  row.style.setProperty("--cx", `${x.toFixed(1)}px`);
 }
 /** Bring a week's slide in line with state.open: that player's half open if it's this week, nothing else. */
 function syncOpen(slide) {
@@ -500,11 +534,14 @@ function setHidden(on) {
   bar.classList.toggle("hidden", on);
   document.body.classList.toggle("bar-hidden", on);
 }
-addEventListener("scroll", () => {
+// The same whichever scrolls the page: the window, or main while it's turned
+// over (on request: the bar compacts and hides upside down as it does upright).
+function barScroll() {
   if (!hraf) hraf = requestAnimationFrame(() => {
     hraf = 0;
-    const max = document.documentElement.scrollHeight - innerHeight;
-    const y = Math.max(0, Math.min(scrollY, max)), dy = y - lastY;
+    const sc = scroller(), top = sc === window ? scrollY : sc.scrollTop;
+    const max = sc === window ? document.documentElement.scrollHeight - innerHeight : sc.scrollHeight - sc.clientHeight;
+    const y = Math.max(0, Math.min(top, max)), dy = y - lastY;
     lastY = y;
     const on = bar.classList.contains("compact");
     bar.classList.toggle("compact", on ? y > 4 : y > 16);
@@ -512,8 +549,12 @@ addEventListener("scroll", () => {
     if (dy > 0) { down += dy; up = 0; if (down > 12) setHidden(true); }
     else if (dy < 0) { up -= dy; down = 0; if (up > 8) setHidden(false); }
   });
-}, { passive: true });
+}
+addEventListener("scroll", barScroll, { passive: true });
+$("main").addEventListener("scroll", barScroll, { passive: true });
 bar.addEventListener("focusin", () => setHidden(false)); // never hide what the keyboard is on
+/** The page was put back at the top (turned over or back): the bar open and shown. */
+function barAtTop() { lastY = 0; down = up = 0; bar.classList.remove("compact"); setHidden(false); }
 
 // A strip that scrolls sideways (Standings' weeks, Episodes) fades at the edge
 // where more tabs are hidden (.more-l / .more-r), so it reads as scrollable.
@@ -531,7 +572,7 @@ document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("s
 let lraf = 0;
 function cardLight() {
   lraf = 0;
-  if (reducedMotion || state.page !== "standings") return;
+  if (reducedMotion || state.page !== "standings" || turned()) return;
   const cards = $(ST.body).children[ST.get()]?.querySelectorAll(".st-hero.explain .how-card") || []; // only the week on show
   if (!cards.length) return;
   const mid = innerHeight / 2;
@@ -587,7 +628,7 @@ try {
   try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
   $("#welcome").innerHTML = welcomeCard();
   $("#welcome").hidden = !welcome;
-  initFlip();
+  initFlip({ redraw, scrolled: barAtTop });
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);

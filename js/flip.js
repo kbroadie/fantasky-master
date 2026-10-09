@@ -1,68 +1,69 @@
-// The Knappett's table, upside down (on request: "make the Knappett its own
-// table that replaces the standings table when a phone or tablet is held
-// upside down"). An Easter egg (on request): nothing on the site mentions
-// it. On the Standings, turning the device over shows #kflip, a layer over
-// the page with the Knappett's table (knapTable in table.js); turning it
-// back hides it.
+// Fantasy Fantasky Master, upside down (on request: "make the upside down
+// layout identical to that of the normal view… change only the color
+// scheme, keep the falling animation background, and change the emphases and
+// orders to make the low scores the winners"; "call it Fantasy Fantasky
+// Master… a dream world where low scores are good"). An Easter egg: nothing on
+// the site mentions it. Turning the device over turns the whole app round
+// (every tab) and puts it in fantasy mode (state.fantasy, html.fz): the views
+// rank low scores first and give them the winners' emphasis (table.js,
+// episodes.js, cast.js), the colours are a Lisa Frank dream (styles.css), the
+// brand reads "Fantasy Fantasky Master", and the fall rushes past behind it
+// all. Turning it back puts everything back.
 //
 // The tilt sensor (deviceorientation) says when the device is upside down:
-// the way up, in the device's own frame, points to its bottom edge. The
-// table is then turned however far it takes to read the right way up in the
-// hand, from the way up on the screen (the device's frame turned by the
-// screen's own angle): 180° on a phone that kept the page portrait (.turn),
-// 90° either way on one that turned the page to landscape on the way over
-// and stays there, as Android phones do (on request: "my Android doesn't
-// rotate upside down, only to the side"; .side), and not at all on a tablet
-// that turned the page itself. Without the sensor (Safari before it's
-// allowed), a screen turned to 180 shows it as it is.
-// iPhone and iPad Safari give the page the tilt only after a tap allows it
-// (DeviceOrientationEvent.requestPermission). The secret tap is a last-place
-// half on the Standings (on request): it runs the Knappett's fall in that
-// cell for a moment (fallIn, from main.js) and, on Safari, asks for motion
-// (askTilt), so whoever taps last place stumbles on the prompt. Once allowed,
-// a later visit asks again on its first tap, which Safari answers by itself
-// if it remembers.
+// the way up, in the device's own frame, points to its bottom edge. The page
+// is then turned however far it takes to read the right way up in the hand,
+// from the way up on the screen (the device's frame turned by the screen's
+// own angle): 180° on a phone that kept the page portrait (html.fz-turn), 90°
+// either way on one that turned the page to landscape on the way over and
+// stays there, as Android phones do (html.fz-side), and not at all on a
+// tablet that turned the page itself. Turned, the body is a fixed, rotated
+// box and main scrolls inside it (scroller() in main.js), as a transformed
+// page can't scroll the window the right way round. Without the sensor
+// (Safari before it's allowed), a screen turned to 180 is the sign.
+//
+// The page listens from the start on every device (on request: Android needs
+// no tap, and some Android browsers offer the permission request too, which
+// had held them back until one). iPhone and iPad Safari give the page the
+// tilt only after a tap allows it (DeviceOrientationEvent.requestPermission):
+// the secret tap is the small upside-down quote under the Standings boards
+// (on request), which, where no readings have come yet, asks for motion
+// (askTilt, from main.js), so whoever is curious stumbles on the prompt. Once allowed, a later visit asks again on its
+// first tap, which Safari answers by itself if it remembers.
 import { $, state, reducedMotion } from "./ui.js";
-import { knapTable, knapMore, stWeek } from "./views/table.js";
 
 const ASK = typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function";
+// iPhones and iPads (iPadOS reports itself as a Mac with a touch screen): their motion readings' signs run the other way.
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const KEY = "fm-tilt";
-const HOW_KEY = "fm-knap-how"; // set once the table has been seen, so How scoring works opens only the first time
-const SETTLE = 250; // ms a pose must hold, so a phone swung past upside down doesn't flash the table
+const SETTLE = 250; // ms a pose must hold, so a phone swung past upside down doesn't flip the app
 
-let on = false, turn = 0, held = false, pending = null, timer = 0, listening = false, allowed = !ASK;
+let on = false, turn = 0, pending = null, timer = 0, listening = false, allowed = !ASK;
 let up = null; // the way up, in the device's own frame: [x to its right edge, y to its top], from the sensor
 let oriented = false; // the orientation sensor works (else the accelerometer stands in)
 const sideways = {}; // per landscape screen angle, which of the device's edges is up when it's read that way: +1 its right, −1 its left
-let open = null; // the player whose row is open (in the week on show)
-let wk = 1; // the week on show in the table (its own, like the Standings' strip and swiper)
-let how = false; // How scoring works, open
+let hooks = { redraw() {}, scrolled() {} }; // from main.js: redraw every page; after the page is turned or put back
+
+/** How far the page is turned (0, 180, 90 or −90): main.js turns screen measurements round by it. */
+export const turned = () => (on ? turn : 0);
 
 const angle = () => screen.orientation?.angle ?? (typeof window.orientation === "number" ? (window.orientation + 360) % 360 : 0);
 
-/** Show or hide the table; `rot` is how far it's turned, clockwise (0, 90, 180 or −90). */
+/** Into fantasy mode or out of it; `rot` is how far the page is turned, clockwise (0, 90, 180 or −90). */
 function set(show, rot = 0) {
-  if (show && (state.page !== "standings" || !state.d)) show = false;
+  if (show && !state.d) show = false;
   if (show === on && (!show || rot === turn)) return;
-  const was = on;
+  const was = on, html = document.documentElement;
   on = show; if (show) turn = rot;
-  const el = $("#kflip");
-  el.style.setProperty("--rot", `${turn}deg`);
-  el.classList.toggle("turn", turn === 180);
-  el.classList.toggle("side", Math.abs(turn) === 90);
-  el.classList.toggle("on", show);
-  el.setAttribute("aria-hidden", !show);
-  document.body.classList.toggle("kflipped", show);
-  if (show && !was) {
-    // How scoring works starts open the first time a device sees the table (on request), closed after.
-    let seen = false;
-    try { seen = localStorage.getItem(HOW_KEY) === "1"; localStorage.setItem(HOW_KEY, "1"); } catch {}
-    open = null; how = !seen;
-    // It opens on the Standings' week, or the latest scored one before it.
-    wk = Math.min(stWeek(state.d), Math.max(1, state.d.weeksScored));
-    render();
-    $(".kflip-scroll").scrollTop = 0;
-  } else if (show) toWeek(wk, false); // turned another way: the swiper is a new width
+  // Start the turned page at the top (the window and the bar as they are at the top).
+  if (show !== was || show) { scrollTo(0, 0); hooks.scrolled(); }
+  html.style.setProperty("--rot", `${turn}deg`);
+  html.classList.toggle("fz", show);
+  html.classList.toggle("fz-turn", show && turn === 180);
+  html.classList.toggle("fz-side", show && Math.abs(turn) === 90);
+  state.fantasy = show;
+  if (show !== was) hooks.redraw();
+  else hooks.scrolled();
   if (show) fall(); else stopFall();
 }
 
@@ -74,43 +75,6 @@ function want(show, rot) {
   timer = setTimeout(() => { pending = null; set(show, rot); }, SETTLE);
 }
 function settle() { clearTimeout(timer); pending = null; }
-
-// ── Weeks ───────────────────────────────────────────────────────────────────
-// Like the Standings (on request): the episode strip over a swiper of weeks.
-// A tap on the strip scrolls to that week; a swipe shows the neighbouring
-// week alongside as it moves, and where it settles is the week on show. An
-// opened row closes when the week changes.
-
-/** Draw the table (all its weeks) and show the week on show. */
-function render() {
-  $(".kflip-in").innerHTML = knapTable(state.d, how);
-  open = null;
-  toWeek(wk, false);
-}
-/** Scroll the swiper to week w (smoothly, unless just drawn), and mark its tab. */
-function toWeek(w, smooth = true) {
-  const sw = $(".kt-swiper");
-  if (!sw) return;
-  sw.scrollTo({ left: (w - 1) * sw.clientWidth, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
-  mark(w);
-}
-function mark(w) {
-  const strip = $(".kt-strip"), t = strip?.children[w - 1];
-  if (!t) return;
-  for (const b of strip.children) b.classList.toggle("on", b === t);
-  strip.scrollTo({ left: t.offsetLeft - (strip.clientWidth - t.offsetWidth) / 2, behavior: "auto" });
-}
-/** The swiper settled on a week: it's the week on show; any opened row closes. */
-function onSwipe() {
-  const sw = $(".kt-swiper"), w = Math.round(sw.scrollLeft / Math.max(1, sw.clientWidth)) + 1;
-  if (w === wk) return;
-  wk = w;
-  mark(w);
-  if (open) {
-    open = null;
-    for (const r of $("#kflip").querySelectorAll(".kt-item.open")) { r.classList.remove("open"); r.firstElementChild.setAttribute("aria-expanded", "false"); }
-  }
-}
 
 function onTilt(e) {
   const { beta, gamma } = e;
@@ -155,21 +119,20 @@ function judge() {
   const down = uy < -0.57 && -uy > Math.abs(ux) * 1.4;
   const back = uy > -0.26 || Math.abs(ux) > -uy;
   probe.pose = down ? "upside down" : back ? "upright" : "in between";
-  if (held && back) held = false; // a tap closed it: open again only after it's been turned back
-  if (down && !held) { const rot = turnFor(ux, uy); if (!on || rot !== turn) want(true, rot); else settle(); }
+  if (down) { const rot = turnFor(ux, uy); if (!on || rot !== turn) want(true, rot); else settle(); }
   else if (back) { if (on) want(false, turn); else settle(); }
   else settle();
 }
 
 /**
- * How far to turn the table, clockwise, so its top is up: the way up on the
+ * How far to turn the page, clockwise, so its top is up: the way up on the
  * screen is the device's own turned by the screen's angle (90 when the page
  * was turned to landscape with the device's top to the left).
  */
 function turnFor(ux, uy) {
   // In landscape, the device's edge that was up when it was read sideways is
   // the page's top; upside down, its top is then to the right (+1: turn the
-  // table clockwise) or the left.
+  // page clockwise) or the left.
   const deg = angle();
   if (sideways[deg]) return sideways[deg] > 0 ? 90 : -90;
   const a = deg * Math.PI / 180;
@@ -181,22 +144,23 @@ function turnFor(ux, uy) {
 /** The page turned: with the sensor, judge again; without it, a page turned to 180 is the sign. */
 function onTurn() {
   if (up) { settle(); if (on) set(true, turnFor(...up)); judge(); return; }
-  if (angle() === 180) { if (!held) set(true, 0); }
-  else { held = false; if (on) set(false); }
+  if (angle() === 180) set(true, 0);
+  else if (on) set(false);
 }
 
 function listen() {
   if (listening) return;
   listening = true;
   addEventListener("deviceorientation", onTilt);
-  if (!ASK) addEventListener("devicemotion", onMotion);
+  if (!IOS) addEventListener("devicemotion", onMotion);
 }
 
 // ── The fall ────────────────────────────────────────────────────────────────
-// Behind the table, faint streaks and motes rush upwards, so it seems to be
-// falling (on request): three depths, the near ones faster, longer and
-// fainter, like motion blur; some gold. Drawn on one canvas at 1× (the
-// streaks are soft anyway), only while the table shows: it was three tiled
+// Behind the page, faint streaks and motes in rainbow colours rush upwards,
+// so it seems to be falling (on request): three depths, the near ones faster,
+// longer and fainter, like motion blur, with stick figures and dreamy emoji
+// tumbling among them. Drawn on one canvas at 1× (the streaks are soft
+// anyway), only while Fantasy mode shows: it was three tiled
 // layers moving by transform, kept as GPU layers ~50 MB at 3× even while
 // hidden, and iOS Safari stopped drawing parts of the page (on request:
 // "it doesn't fully load on Safari mobile now"). One still frame under
@@ -215,18 +179,33 @@ const DEPTHS = [
  * over their heads and legs kicking, drawn as faint hairline figures, some
  * gold, `size` px tall.
  */
-function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44]) {
+// Fantasy mode's fall is a rainbow (on request: "magical fantasy Lisa Frank garden rainbows unicorns"):
+// streaks in every colour, and unicorns, rainbows, butterflies, flowers and
+// hearts tumbling with the stick figures.
+const RAINBOW = ["255,92,205", "255,160,60", "255,232,90", "120,240,150", "90,210,255", "175,130,255"];
+const DREAMS = ["🦄", "🌈", "🦋", "🌸", "💖", "⭐", "🦄", "🌷"];
+function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44], rainbow = false) {
   const r = (a, b) => a + Math.random() * (b - a), scale = (w * h) / (390 * 844) * dense;
-  const motes = DEPTHS.flatMap((d, k) => Array.from({ length: Math.max(dense > 1 ? 1 : 0, Math.round(d.n * scale)) }, () => ({ k, x: r(0, w), y: r(0, h), len: r(...d.len), gold: Math.random() < 0.2 })));
-  const fig = (y) => ({ x: r(0.1, 0.9) * w, y, s: r(...size), vy: -r(25, 95), vx: r(-12, 12), rot: r(0, Math.PI * 2), spin: r(0.6, 2.2) * (Math.random() < 0.5 ? -1 : 1), ph: r(0, 9), gold: Math.random() < 0.25 });
+  const hue = (gold) => (rainbow ? RAINBOW[Math.floor(Math.random() * RAINBOW.length)] : gold ? "232,176,64" : "240,232,220");
+  const motes = DEPTHS.flatMap((d, k) => Array.from({ length: Math.max(dense > 1 ? 1 : 0, Math.round(d.n * scale)) }, () => ({ k, x: r(0, w), y: r(0, h), len: r(...d.len), col: hue(Math.random() < 0.2) })));
+  const fig = (y) => ({ x: r(0.1, 0.9) * w, y, s: r(...size), vy: -r(25, 95), vx: r(-12, 12), rot: r(0, Math.PI * 2), spin: r(0.6, 2.2) * (Math.random() < 0.5 ? -1 : 1), ph: r(0, 9), col: hue(Math.random() < 0.25),
+    dream: rainbow && Math.random() < 0.6 ? DREAMS[Math.floor(Math.random() * DREAMS.length)] : null });
   const figures = Array.from({ length: figs }, () => fig(r(0, h)));
   let t = 0;
   /** A stick figure, 20 units tall around its middle: head, body, arms flailing overhead, legs kicking. */
   const person = (f) => {
-    const k = f.s / 20, a = Math.min(1, 0.62 * bright) * (f.s / size[1]) ** 0.5, col = f.gold ? "232,176,64" : "240,232,220";
+    const k = f.s / 20, a = Math.min(1, 0.62 * bright) * (f.s / size[1]) ** 0.5, col = f.col;
     x.save();
     x.translate(f.x, f.y);
     x.rotate(f.rot);
+    if (f.dream) { // a unicorn, rainbow, butterfly…
+      x.globalAlpha = Math.min(1, a * 1.3);
+      x.font = `${Math.round(f.s)}px system-ui, sans-serif`;
+      x.textAlign = "center"; x.textBaseline = "middle";
+      x.fillText(f.dream, 0, 0);
+      x.restore();
+      return;
+    }
     x.scale(k, k);
     x.strokeStyle = `rgba(${col},${a.toFixed(3)})`;
     x.lineWidth = 1.8 / k;
@@ -251,7 +230,7 @@ function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44]) {
       m.y -= d.v * dt;
       if (m.y < -m.len) { m.y += h + m.len; m.x = r(0, w); }
       // Bright at the head, trailing off below it (it's moving up).
-      const g = x.createLinearGradient(0, m.y, 0, m.y + m.len), col = m.gold ? "232,176,64" : "240,232,220";
+      const g = x.createLinearGradient(0, m.y, 0, m.y + m.len), col = m.col;
       g.addColorStop(0, `rgba(${col},${Math.min(1, d.a * bright)})`);
       g.addColorStop(1, `rgba(${col},0)`);
       x.fillStyle = g;
@@ -267,10 +246,10 @@ function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44]) {
 let fallRaf = 0;
 function fall() {
   stopFall();
-  const c = $(".kf-fall canvas"), w = c.clientWidth, h = c.clientHeight;
+  const c = $("#fz-fall"), w = c.clientWidth, h = c.clientHeight;
   if (!w || !h) return;
   c.width = w; c.height = h;
-  const draw = streaks(c.getContext("2d"), w, h, 1, 1, Math.max(3, Math.round(5 * (w * h) / (390 * 844))));
+  const draw = streaks(c.getContext("2d"), w, h, 1, 1.3, Math.max(4, Math.round(7 * (w * h) / (390 * 844))), [26, 44], true);
   if (reducedMotion) { draw(0); return; }
   let last = 0;
   const step = (now) => {
@@ -281,42 +260,16 @@ function fall() {
   fallRaf = requestAnimationFrame(step);
 }
 
-/**
- * The secret tap's tease (on request: in place of a plume of the stink gas):
- * the Knappett's fall, for a moment, in the tapped last-place cell. The same
- * streaks rush up through it, denser and brighter for its size, fading in
- * and out over about two seconds, on a canvas the cell's exact size over it,
- * removed when it's done. Nothing under reduced motion.
- */
-const CELL_MS = 2200;
-export function fallIn(el) {
-  if (reducedMotion) return;
-  const b = el.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
-  const c = Object.assign(document.createElement("canvas"), { className: "cell-fall", width: Math.round(b.width * dpr), height: Math.round(b.height * dpr) });
-  c.setAttribute("aria-hidden", "true");
-  Object.assign(c.style, { left: `${b.left + scrollX}px`, top: `${b.top + scrollY}px`, width: `${b.width}px`, height: `${b.height}px` });
-  document.body.append(c);
-  const x = c.getContext("2d");
-  x.scale(dpr, dpr);
-  const draw = streaks(x, b.width, b.height, 9, 1.8, 1, [16, 20]);
-  let start = 0, last = 0;
-  const step = (now) => {
-    start ||= now;
-    const t = now - start;
-    if (t > CELL_MS) { c.remove(); return; }
-    draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
-    last = now;
-    c.style.opacity = Math.min(1, t / 200, (CELL_MS - t) / 700).toFixed(3);
-    requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
 function stopFall() { cancelAnimationFrame(fallRaf); fallRaf = 0; }
 
-/** On Safari, ask for the tilt; call it in a tap (Safari asks only then). Nothing elsewhere, or once allowed. */
+/**
+ * Where the browser has the permission request and no readings have come yet
+ * (iPhone and iPad Safari), ask for the tilt; call it in a tap (Safari asks
+ * only then). Nothing once readings come, or elsewhere.
+ */
 let asking = false;
 export async function askTilt() {
-  if (allowed || asking) return;
+  if (allowed || asking || oriented || probe.m) return;
   asking = true;
   try {
     if (await DeviceOrientationEvent.requestPermission() === "granted") {
@@ -324,13 +277,13 @@ export async function askTilt() {
       try { localStorage.setItem(KEY, "1"); } catch {}
       listen();
     }
-  } catch { /* refused, or not in a tap: the next last-place tap asks again */ }
+  } catch { /* refused, or not in a tap: the next tap on the quote asks again */ }
   asking = false;
 }
 
 /**
  * A diagnostic, only with ?tilt in the address (on request, to find why a
- * phone didn't show the table): a small box of what the page is getting from
+ * phone didn't flip): a small box of what the page is getting from
  * the sensors and what it makes of it. Nothing otherwise.
  */
 const probe = { o: 0, m: 0, pose: "–", el: null, at: 0,
@@ -346,13 +299,14 @@ const probe = { o: 0, m: 0, pose: "–", el: null, at: 0,
       `motion events: ${this.m}  ${a ? `x ${f(a.x)}  y ${f(a.y)}  z ${f(a.z)}` : ""}`,
       `screen angle: ${angle()}  ${screen.orientation?.type || ""}  page: ${state.page}`,
       `way up: ${up ? up.map((v) => v.toFixed(2)).join(", ") : "–"}  (${oriented ? "orientation" : "motion"})`,
-      `pose: ${this.pose}  table: ${on ? `on, turned ${turn}°` : "off"}${held ? " (tapped shut)" : ""}`,
+      `pose: ${this.pose}  fantasy: ${on ? `on, turned ${turn}°` : "off"}`,
       `secure: ${isSecureContext}  permission API: ${ASK}  allowed: ${allowed}`,
     ].join("\n");
   },
 };
 
-export function initFlip() {
+export function initFlip(h) {
+  hooks = { ...hooks, ...h };
   if (new URLSearchParams(location.search).has("tilt")) {
     probe.el = Object.assign(document.createElement("pre"), { className: "tilt-probe" });
     document.body.append(probe.el);
@@ -361,56 +315,9 @@ export function initFlip() {
   }
   let before = false;
   try { before = localStorage.getItem(KEY) === "1"; } catch {}
-  if (!ASK) listen();
-  // Allowed on an earlier visit: ask again on the first tap (Safari answers by itself if it remembers).
-  else if (before) addEventListener("click", askTilt, { once: true, capture: true });
+  listen();
+  // Allowed on an earlier visit: ask again on the first tap if nothing has come (Safari answers by itself if it remembers).
+  if (ASK && before) addEventListener("click", askTilt, { once: true, capture: true });
   screen.orientation?.addEventListener("change", onTurn);
   addEventListener("orientationchange", onTurn);
-  // A tap on a row opens that player's weeks (one at a time); a tap anywhere
-  // else closes the table until the device is turned back (in case the
-  // sensor misjudges how it's held).
-  $("#kflip").addEventListener("scroll", (e) => { if (e.target.classList?.contains("kt-swiper")) onSwipe(); }, true);
-  $("#kflip").addEventListener("click", (e) => {
-    // The strip: that week.
-    const tab = e.target.closest(".kt-strip .strip-tab");
-    if (tab) { wk = +tab.dataset.slide + 1; toWeek(wk); return; }
-    // How scoring works opens and closes the Knappett's card, on every week.
-    const hw = e.target.closest(".kt-how");
-    if (hw) {
-      how = !how;
-      for (const b of $("#kflip").querySelectorAll(".kt-how")) {
-        b.setAttribute("aria-expanded", how);
-        b.closest(".kt-hero").classList.toggle("explain", how);
-      }
-      return;
-    }
-    if (e.target.closest(".kt-hero .st-explain")) return; // reading the card
-    // An opened row's card title switches it between points and the race, as on the Standings.
-    const swap = e.target.closest(".xp-swap");
-    if (swap) {
-      state.xpView = swap.dataset.xp;
-      const item = swap.closest(".kt-item");
-      item.querySelector(".kt-more > div").innerHTML = knapMore(state.d, state.d.byName[open], +item.closest(".kt-slide").dataset.week);
-      return;
-    }
-    if (e.target.closest(".kt-more")) return; // reading a card
-    const row = e.target.closest(".kt-row");
-    if (!row) { held = true; settle(); set(false); return; }
-    const slide = row.closest(".kt-slide");
-    open = open === row.dataset.kp ? null : row.dataset.kp;
-    for (const r of slide.querySelectorAll(".kt-row")) {
-      const me = r.dataset.kp === open;
-      // The opened row's card is drawn as it opens; a closing one keeps its card until it has folded away.
-      if (me) r.nextElementSibling.firstElementChild.innerHTML = knapMore(state.d, state.d.byName[open], +slide.dataset.week);
-      r.parentElement.classList.toggle("open", me);
-      r.setAttribute("aria-expanded", me);
-    }
-  });
-}
-
-/** The page changed (a tab, the series, the week, an edit): close the table, or redraw it. */
-export function flipSync() {
-  if (!on) return;
-  if (state.page !== "standings") set(false);
-  else { wk = Math.min(wk, state.d.episodes.length); render(); }
 }
