@@ -183,7 +183,8 @@ const QUOTES = [
   ["That’s just how I see the world.", "Lucy Beaumont, S16"],
 ];
 const [said, by] = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-const QUOTE = `<button class="st-quote" type="button"><q>${esc(said)}</q> <cite>— ${esc(by)}</cite></button>`;
+/** The quote; on a desktop one copy (with class dq) sits under every tab instead (main.js). */
+export const QUOTE = `<button class="st-quote" type="button"><q>${esc(said)}</q> <cite>— ${esc(by)}</cite></button>`;
 
 /**
  * The board: its head, then either the rows or, while a head is pressed

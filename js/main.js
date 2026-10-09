@@ -5,7 +5,7 @@ import { loadText, parseCSV, buildSeries } from "./csv.js";
 import { initEdit } from "./edit.js";
 import { derive, currentSeriesKey } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
-import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard } from "./views/table.js";
+import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, QUOTE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
@@ -48,6 +48,8 @@ function loadSeries(key) {
   renderStandings(d);
   renderSlides(d);
   if (!$("#foot").children.length) $("#foot").innerHTML = footer();
+  // On a desktop the quote sits under every tab, so fantasy mode switches from anywhere (on request)
+  if (!$("#dq").children.length) $("#dq").innerHTML = QUOTE;
   countdown();
 }
 
@@ -249,7 +251,7 @@ function fit(body) {
   const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
   // Leave room for the footer, so a short slide ends with it at the bottom of the screen.
   const view = turned() ? $("main").clientHeight : innerHeight;
-  const toBottom = view - topIn(body) - pad - ($("#foot")?.offsetHeight || 0) - ($(".fz-foot")?.offsetHeight || 0); // the ducks, or upside down the dolphins
+  const toBottom = view - topIn(body) - pad - ($("#foot")?.offsetHeight || 0) - ($(".fz-foot")?.offsetHeight || 0) - ($("#dq")?.offsetHeight || 0); // the ducks, or upside down the dolphins, and a desktop's quote
   body.style.height = `${Math.max(s.offsetHeight, toBottom)}px`;
 }
 const sizes = new ResizeObserver((entries) => {
@@ -358,6 +360,8 @@ $("#series").addEventListener("click", () => {
   show(state.page);
 });
 
+// A desktop's quote under every tab switches fantasy mode (on request)
+$("#dq").addEventListener("click", (e) => { if (e.target.closest(".st-quote")) toggleFantasy(); });
 $("#p-standings").addEventListener("click", (e) => {
   // The welcome card: ✕ (or Close at its end) hides it for good on this
   // device, back at the top of the page; "Read the welcome" under the How
