@@ -269,8 +269,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   .how-glint { display: none; }
 }
 
-/* The stink's puff in a tapped last-place cell, kept to the cell (plume in podium-fx.js) */
-.plume { position: absolute; z-index: 30; pointer-events: none; }
+/* The Knappett's fall in a tapped last-place cell, for a moment (fallIn in flip.js) */
+.cell-fall { position: absolute; z-index: 30; pointer-events: none; }
 
 /* The Knappett's table, over the Standings while the device is upside down
    (flip.js): a layer over everything, turned so it reads the right way up in

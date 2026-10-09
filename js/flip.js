@@ -17,8 +17,8 @@
 // allowed), a screen turned to 180 shows it as it is.
 // iPhone and iPad Safari give the page the tilt only after a tap allows it
 // (DeviceOrientationEvent.requestPermission). The secret tap is a last-place
-// half on the Standings (on request): it lets off a plume of the stink gas
-// (plume in podium-fx.js, main.js) and, on Safari, asks for motion
+// half on the Standings (on request): it runs the Knappett's fall in that
+// cell for a moment (fallIn, from main.js) and, on Safari, asks for motion
 // (askTilt), so whoever taps last place stumbles on the prompt. Once allowed,
 // a later visit asks again on its first tap, which Safari answers by itself
 // if it remembers.
@@ -156,15 +156,15 @@ const DEPTHS = [
   { n: 26, v: 170, len: [12, 20], w: 1.3, a: 0.32 },
   { n: 12, v: 520, len: [42, 66], w: 1.8, a: 0.15 },
 ];
-let fallRaf = 0, motes = [];
-function fall() {
-  stopFall();
-  const c = $(".kf-fall canvas"), w = c.clientWidth, h = c.clientHeight;
-  if (!w || !h) return;
-  c.width = w; c.height = h;
-  const x = c.getContext("2d"), r = (a, b) => a + Math.random() * (b - a), scale = (w * h) / (390 * 844);
-  motes = DEPTHS.flatMap((d, k) => Array.from({ length: Math.round(d.n * scale) }, () => ({ k, x: r(0, w), y: r(0, h), len: r(...d.len), gold: Math.random() < 0.2 })));
-  const draw = (dt) => {
+/**
+ * The streaks for a canvas w × h (CSS px): returns draw(dt), which moves them
+ * on by dt seconds and paints them. `dense` multiplies how many there are for
+ * the area, and `bright` how strongly they show.
+ */
+function streaks(x, w, h, dense = 1, bright = 1) {
+  const r = (a, b) => a + Math.random() * (b - a), scale = (w * h) / (390 * 844) * dense;
+  const motes = DEPTHS.flatMap((d, k) => Array.from({ length: Math.max(dense > 1 ? 1 : 0, Math.round(d.n * scale)) }, () => ({ k, x: r(0, w), y: r(0, h), len: r(...d.len), gold: Math.random() < 0.2 })));
+  return (dt) => {
     x.clearRect(0, 0, w, h);
     for (const m of motes) {
       const d = DEPTHS[m.k];
@@ -172,12 +172,20 @@ function fall() {
       if (m.y < -m.len) { m.y += h + m.len; m.x = r(0, w); }
       // Bright at the head, trailing off below it (it's moving up).
       const g = x.createLinearGradient(0, m.y, 0, m.y + m.len), col = m.gold ? "232,176,64" : "240,232,220";
-      g.addColorStop(0, `rgba(${col},${d.a})`);
+      g.addColorStop(0, `rgba(${col},${Math.min(1, d.a * bright)})`);
       g.addColorStop(1, `rgba(${col},0)`);
       x.fillStyle = g;
       x.fillRect(m.x, m.y, d.w, m.len);
     }
   };
+}
+let fallRaf = 0;
+function fall() {
+  stopFall();
+  const c = $(".kf-fall canvas"), w = c.clientWidth, h = c.clientHeight;
+  if (!w || !h) return;
+  c.width = w; c.height = h;
+  const draw = streaks(c.getContext("2d"), w, h);
   if (reducedMotion) { draw(0); return; }
   let last = 0;
   const step = (now) => {
@@ -186,6 +194,37 @@ function fall() {
     fallRaf = requestAnimationFrame(step);
   };
   fallRaf = requestAnimationFrame(step);
+}
+
+/**
+ * The secret tap's tease (on request: in place of a plume of the stink gas):
+ * the Knappett's fall, for a moment, in the tapped last-place cell. The same
+ * streaks rush up through it, denser and brighter for its size, fading in
+ * and out over about two seconds, on a canvas the cell's exact size over it,
+ * removed when it's done. Nothing under reduced motion.
+ */
+const CELL_MS = 2200;
+export function fallIn(el) {
+  if (reducedMotion) return;
+  const b = el.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+  const c = Object.assign(document.createElement("canvas"), { className: "cell-fall", width: Math.round(b.width * dpr), height: Math.round(b.height * dpr) });
+  c.setAttribute("aria-hidden", "true");
+  Object.assign(c.style, { left: `${b.left + scrollX}px`, top: `${b.top + scrollY}px`, width: `${b.width}px`, height: `${b.height}px` });
+  document.body.append(c);
+  const x = c.getContext("2d");
+  x.scale(dpr, dpr);
+  const draw = streaks(x, b.width, b.height, 9, 1.8);
+  let start = 0, last = 0;
+  const step = (now) => {
+    start ||= now;
+    const t = now - start;
+    if (t > CELL_MS) { c.remove(); return; }
+    draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
+    last = now;
+    c.style.opacity = Math.min(1, t / 200, (CELL_MS - t) / 700).toFixed(3);
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 function stopFall() { cancelAnimationFrame(fallRaf); fallRaf = 0; }
 

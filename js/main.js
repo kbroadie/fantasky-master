@@ -8,9 +8,9 @@ import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, foot
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
-import { mountPodiumFx, plume } from "./podium-fx.js";
+import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, flipSync, askTilt } from "./flip.js";
+import { initFlip, flipSync, askTilt, fallIn } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -284,9 +284,10 @@ $("#p-standings").addEventListener("click", (e) => {
   // the week on show opens; a row open in another week closes, without easing.
   const sd = e.target.closest(".pc .sd");
   if (sd) {
-    // Last place (on request): a plume of the stink gas, and on an iPhone the
-    // tap that asks for the tilt, so the upside-down Knappett can be stumbled on.
-    if (sd.hasAttribute("data-kn")) { askTilt(); plume(sd); }
+    // Last place (on request): the Knappett's fall in the cell for a moment,
+    // and on an iPhone the tap that asks for the tilt, so the upside-down
+    // Knappett can be stumbled on.
+    if (sd.hasAttribute("data-kn")) { askTilt(); fallIn(sd); }
     glideEnd?.(); // settle a row still gliding, so this one starts from where things are
     const row = sd.closest(".pc"), side = sd.dataset.side, open = row.classList.contains("open") && row.dataset.open === side;
     state.open = open ? null : { side, name: sd.dataset.p, wk: +row.closest(".st-slide").dataset.week };
