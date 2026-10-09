@@ -89,7 +89,7 @@ function onTilt(e) {
   const { beta, gamma } = e;
   probe.o++; probe.beta = beta; probe.gamma = gamma; probe.show();
   if (beta == null || gamma == null) return;
-  oriented = true;
+  if (!oriented) { oriented = true; askHint(); }
   const b = beta * Math.PI / 180, g = gamma * Math.PI / 180;
   up = [-Math.cos(b) * Math.sin(g), Math.sin(b)];
   judge();
@@ -194,6 +194,28 @@ const DEPTHS = [
 // hearts tumbling with the stick figures.
 const RAINBOW = ["255,92,205", "255,160,60", "255,232,90", "120,240,150", "90,210,255", "175,130,255"];
 const DREAMS = ["🦄", "🌈", "🦋", "🌸", "💖", "⭐", "🦄", "🌷"];
+// Drawn once each and then stamped, as images: setting a font and drawing
+// emoji or a fresh gradient every frame was most of the fall's cost, and it
+// runs alongside the page's own scrolling.
+const sprites = new Map();
+function sprite(key, w, h, paint) {
+  if (!sprites.has(key)) {
+    const c = Object.assign(document.createElement("canvas"), { width: w, height: h });
+    paint(c.getContext("2d"));
+    sprites.set(key, c);
+  }
+  return sprites.get(key);
+}
+/** An emoji at 48px, drawn once. */
+const dreamImg = (e) => sprite(e, 56, 56, (g) => { g.font = "48px system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(e, 28, 30); });
+/** A streak in colour col: bright at its head, trailing off below; 64px tall, stretched to its length. */
+const streakImg = (col, a) => sprite(`${col}/${a}`, 1, 64, (g) => {
+  const gr = g.createLinearGradient(0, 0, 0, 64);
+  gr.addColorStop(0, `rgba(${col},${a})`);
+  gr.addColorStop(1, `rgba(${col},0)`);
+  g.fillStyle = gr;
+  g.fillRect(0, 0, 1, 64);
+});
 function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44], rainbow = false) {
   const r = (a, b) => a + Math.random() * (b - a), scale = (w * h) / (390 * 844) * dense;
   const hue = (gold) => (rainbow ? RAINBOW[Math.floor(Math.random() * RAINBOW.length)] : gold ? "232,176,64" : "240,232,220");
@@ -210,9 +232,8 @@ function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44], rain
     x.rotate(f.rot);
     if (f.dream) { // a unicorn, rainbow, butterfly…
       x.globalAlpha = a * 0.55; // faint enough that text over it always reads
-      x.font = `${Math.round(f.s)}px system-ui, sans-serif`;
-      x.textAlign = "center"; x.textBaseline = "middle";
-      x.fillText(f.dream, 0, 0);
+      const z = f.s * 56 / 48;
+      x.drawImage(dreamImg(f.dream), -z / 2, -z / 2, z, z);
       x.restore();
       return;
     }
@@ -240,11 +261,7 @@ function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44], rain
       m.y -= d.v * dt;
       if (m.y < -m.len) { m.y += h + m.len; m.x = r(0, w); }
       // Bright at the head, trailing off below it (it's moving up).
-      const g = x.createLinearGradient(0, m.y, 0, m.y + m.len), col = m.col;
-      g.addColorStop(0, `rgba(${col},${Math.min(1, d.a * bright)})`);
-      g.addColorStop(1, `rgba(${col},0)`);
-      x.fillStyle = g;
-      x.fillRect(m.x, m.y, d.w, m.len);
+      x.drawImage(streakImg(m.col, Math.min(1, d.a * bright).toFixed(3)), m.x, m.y, d.w, m.len);
     }
     for (const [i, f] of figures.entries()) {
       f.y += f.vy * dt; f.x += f.vx * dt; f.rot += f.spin * dt;
@@ -278,12 +295,19 @@ function stopFall() { cancelAnimationFrame(fallRaf); fallRaf = 0; }
  * only then). Nothing once readings come, or elsewhere.
  */
 let asking = false;
+/**
+ * While the tilt still needs allowing (Safari, before a tap allows it and
+ * before any reading), the quote under the boards is underlined (on
+ * request), so it looks like something to tap: html.tilt-ask.
+ */
+function askHint() { document.documentElement.classList.toggle("tilt-ask", ASK && !allowed && !oriented); }
 export async function askTilt() {
   if (allowed || asking || oriented || probe.m) return;
   asking = true;
   try {
     if (await DeviceOrientationEvent.requestPermission() === "granted") {
       allowed = true;
+      askHint();
       try { localStorage.setItem(KEY, "1"); } catch {}
       listen();
     }
@@ -326,6 +350,7 @@ export function initFlip(h) {
   let before = false;
   try { before = localStorage.getItem(KEY) === "1"; } catch {}
   listen();
+  askHint();
   // Allowed on an earlier visit: ask again on the first tap if nothing has come (Safari answers by itself if it remembers).
   if (ASK && before) addEventListener("click", askTilt, { once: true, capture: true });
   screen.orientation?.addEventListener("change", onTurn);
