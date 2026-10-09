@@ -209,7 +209,7 @@ function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44], rain
     x.translate(f.x, f.y);
     x.rotate(f.rot);
     if (f.dream) { // a unicorn, rainbow, butterfly…
-      x.globalAlpha = Math.min(1, a * 1.3);
+      x.globalAlpha = a * 0.55; // faint enough that text over it always reads
       x.font = `${Math.round(f.s)}px system-ui, sans-serif`;
       x.textAlign = "center"; x.textBaseline = "middle";
       x.fillText(f.dream, 0, 0);
