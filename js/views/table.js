@@ -53,11 +53,12 @@ const TERMS = [
 ];
 const howCard = (t) => `<div class="card how-card ${t.name.toLowerCase()}">
     <div class="how-head">
-      <span class="how-icon" aria-hidden="true"><svg class="how-ico" viewBox="0 0 16 16"><path d="${HOW_ICONS[t.icon]}"/></svg><i class="how-glint"></i></span>
+      <span class="how-icon" aria-hidden="true"><svg class="how-ico" viewBox="0 0 16 16"><path d="${t.path || HOW_ICONS[t.icon]}"/></svg><i class="how-glint"></i></span>
       <h3 class="how-title"><span class="how-the">The</span><span class="how-name">${esc(t.name)}</span></h3>
     </div>
     <p class="how-rule">${esc(t.rule[0])}<strong>${esc(t.rule[1])}</strong>${esc(t.rule[2])}</p>
-    <p class="how-range"><b>${esc(t.range)}</b><span>${esc(t.unit)}</span></p>
+    ${t.tiers ? `<div class="how-range how-tiers">${t.tiers.map(([v, u]) => `<p><b>${v}</b><span>${u}</span></p>`).join("")}</div>`
+      : `<p class="how-range"><b>${esc(t.range)}</b><span>${esc(t.unit)}</span></p>`}
   </div>`;
 
 /** "Riley leads The Show   Jamie leads The League" ("wins" once the series is over). */
@@ -397,6 +398,17 @@ function knappetts(rows) {
 }
 /** A line falling, in the task icons' style. */
 const FALL = "M2 3.5 6.5 8l3-3 4.5 4.5 M10.5 9.5H14V6 M2.5 13.5h11";
+/**
+ * How the Knappett scores (on request), behind a How scoring works button
+ * in the table's hero, like the Standings': one card in the Show and League
+ * cards' pattern, olive, its points for each thing in the footer. Only in
+ * the upside-down table, so the egg stays hidden.
+ */
+const KNAP_TERM = {
+  path: FALL, name: "Knappett",
+  rule: ["The player whose picks finish ", "furthest behind each episode's winner", " wins, with extra points for every disaster. Skipping a poll counts as the winner's whole score behind. Named for Jessica Knappett's fall in Series 7."],
+  tiers: [["1", "per pt behind"], ["3", "per DQ"], ["3", "minus score"], ["2", "per zero"], ["2", "last place"], ["+3", "last by 5+"]],
+};
 
 /**
  * The Knappett's own table (on request), shown when a phone or tablet is held
@@ -409,11 +421,14 @@ const FALL = "M2 3.5 6.5 8l3-3 4.5 4.5 M10.5 9.5H14V6 M2.5 13.5h11";
  * (on request) to that player's week-by-week breakdown (knapMore); `open` is
  * the player whose row is open.
  */
-export function knapTable(d, w = stWeek(d), open = null) {
+export function knapTable(d, w = stWeek(d), open = null, how = false) {
   const wk = Math.min(w, d.weeksScored), final = d.complete && wk === d.episodes.length;
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${wk ? `After episode ${wk}` : "No episodes scored yet"}</div>`;
   const back = `<p class="kt-back">Turn it back over for the standings</p>`;
-  if (!wk) return `<div class="hero kt-hero">${kicker}<h2 class="ep-title">The Knappett</h2></div>${back}`;
+  const explain = `<button type="button" class="st-how kt-how" aria-expanded="${how}" aria-controls="kt-explain">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button>
+    <div class="st-explain" id="kt-explain"><div>${howCard(KNAP_TERM)}</div></div>`;
+  const hero = (inner) => `<div class="hero kt-hero${how ? " explain" : ""}">${kicker}<h2 class="ep-title">The Knappett</h2>${inner}${explain}</div>`;
+  if (!wk) return `${hero("")}${back}`;
   const rows = d.players.map((p) => ({ p, name: p.name, knap: p.history[wk - 1].knap, week: p.weeks[wk - 1].knap.total }))
     .sort((a, b) => b.knap - a.knap || a.name.localeCompare(b.name));
   const kn = knappetts(rows), top = Math.max(1, rows[0].knap);
@@ -423,7 +438,7 @@ export function knapTable(d, w = stWeek(d), open = null) {
         <button type="button" class="kt-row" data-kp="${esc(r.name)}" aria-expanded="${r.name === open}" style="--m:${(r.knap / top).toFixed(3)}"><b class="kt-rk${tier(i + 1)}">${i + 1}</b><span class="kt-name"><span>${esc(r.name)}</span><svg class="kt-chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span><span class="kt-wk">+${r.week}</span><span class="kt-pts${i === 0 && kn.length ? " lead" : ""}">${r.knap}</span></button>
         <div class="kt-more"><div>${knapMore(d, r.p, wk)}</div></div>
       </div>`).join("");
-  return `<div class="hero kt-hero">${kicker}<h2 class="ep-title">The Knappett</h2>${lead}</div>
+  return `${hero(lead)}
     <div class="card kt-board" style="--n:${rows.length}">
       <div class="kt-head"><span></span><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${FALL}"/></svg>Player</span><span>Ep ${wk}</span><span>Total</span></div>
       ${body}

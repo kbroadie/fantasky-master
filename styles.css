@@ -342,6 +342,15 @@ body.kflipped { overflow: hidden; }
 .kt-name > span, .kt-pts, .kt-rk { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 .kt-back { margin-top: 14px; text-align: center; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--t4); }
 .kt-hero .st-knap { color: var(--knap); white-space: nowrap; }
+/* How scoring works in the table's hero (on request): the Show and League cards' pattern, olive, its points in the footer */
+.kt-hero.explain .st-explain { grid-template-rows: 1fr; }
+.kt-hero .how-card { max-width: 30rem; margin: 14px auto 4px; text-align: left; }
+.kt-hero:not(.explain) .how-card, .kt-hero:not(.explain) .how-glint { animation-play-state: paused; }
+.card.how-card.knappett { --hc: var(--knap); --hc-hi: var(--knap-hi); --hc-glow: var(--knap-glow); --hc-deep: #1a1b0e; --hc-edge: var(--knap-edge); animation-duration: 19s; animation-delay: -11s; }
+.how-range.how-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; }
+.how-range.how-tiers p { display: flex; flex-direction: column; min-width: 0; }
+.how-range.how-tiers b { font-size: 20px; }
+.how-range.how-tiers span { white-space: normal; } /* "per pt behind" wraps on 360px phones rather than run into its neighbour */
 
 /* ── Standings ─────────────────────────────────────────────────────── */
 /* Both boards side by side, in a rounded card like the cards on the other

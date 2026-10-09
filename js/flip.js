@@ -32,6 +32,7 @@ const SETTLE = 250; // ms a pose must hold, so a phone swung past upside down do
 let on = false, turn = 0, held = false, pending = null, timer = 0, listening = false, allowed = !ASK;
 let up = null; // the way up, in the device's own frame: [x to its right edge, y to its top], from the sensor
 let open = null; // the player whose row is open
+let how = false; // How scoring works, open
 
 const angle = () => screen.orientation?.angle ?? (typeof window.orientation === "number" ? (window.orientation + 360) % 360 : 0);
 
@@ -42,7 +43,7 @@ function set(show, rot = 0) {
   const was = on;
   on = show; if (show) turn = rot;
   const el = $("#kflip");
-  if (show && !was) { open = null; el.firstElementChild.innerHTML = knapTable(state.d); }
+  if (show && !was) { open = null; how = false; el.firstElementChild.innerHTML = knapTable(state.d); }
   el.style.setProperty("--rot", `${turn}deg`);
   el.classList.toggle("turn", turn === 180);
   el.classList.toggle("side", Math.abs(turn) === 90);
@@ -137,6 +138,15 @@ export function initFlip() {
   // else closes the table until the device is turned back (in case the
   // sensor misjudges how it's held).
   $("#kflip").addEventListener("click", (e) => {
+    // How scoring works opens and closes the Knappett's card.
+    const hw = e.target.closest(".kt-how");
+    if (hw) {
+      how = !how;
+      hw.setAttribute("aria-expanded", how);
+      hw.closest(".kt-hero").classList.toggle("explain", how);
+      return;
+    }
+    if (e.target.closest(".kt-explain, #kt-explain")) return; // reading the card
     const row = e.target.closest(".kt-row");
     if (!row) { held = true; settle(); set(false); return; }
     open = open === row.dataset.kp ? null : row.dataset.kp;
@@ -152,5 +162,5 @@ export function initFlip() {
 export function flipSync() {
   if (!on) return;
   if (state.page !== "standings") set(false);
-  else $("#kflip").firstElementChild.innerHTML = knapTable(state.d, undefined, open);
+  else $("#kflip").firstElementChild.innerHTML = knapTable(state.d, undefined, open, how);
 }
