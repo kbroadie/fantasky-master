@@ -27,6 +27,7 @@ import { knapTable, knapMore } from "./views/table.js";
 
 const ASK = typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function";
 const KEY = "fm-tilt";
+const HOW_KEY = "fm-knap-how"; // set once the table has been seen, so How scoring works opens only the first time
 const SETTLE = 250; // ms a pose must hold, so a phone swung past upside down doesn't flash the table
 
 let on = false, turn = 0, held = false, pending = null, timer = 0, listening = false, allowed = !ASK;
@@ -45,7 +46,13 @@ function set(show, rot = 0) {
   const was = on;
   on = show; if (show) turn = rot;
   const el = $("#kflip");
-  if (show && !was) { open = null; how = false; $(".kflip-in").innerHTML = knapTable(state.d); }
+  if (show && !was) {
+    // How scoring works starts open the first time a device sees the table (on request), closed after.
+    let seen = false;
+    try { seen = localStorage.getItem(HOW_KEY) === "1"; localStorage.setItem(HOW_KEY, "1"); } catch {}
+    open = null; how = !seen;
+    $(".kflip-in").innerHTML = knapTable(state.d, undefined, null, how);
+  }
   el.style.setProperty("--rot", `${turn}deg`);
   el.classList.toggle("turn", turn === 180);
   el.classList.toggle("side", Math.abs(turn) === 90);
@@ -159,12 +166,42 @@ const DEPTHS = [
 /**
  * The streaks for a canvas w × h (CSS px): returns draw(dt), which moves them
  * on by dt seconds and paints them. `dense` multiplies how many there are for
- * the area, and `bright` how strongly they show.
+ * the area, and `bright` how strongly they show. With them fall stick figures
+ * (on request), `figs` of them: fellow fallers tumbling slowly past (most
+ * falling a little slower than the view, so they drift up), arms flailing
+ * over their heads and legs kicking, drawn as faint hairline figures, some
+ * gold, `size` px tall.
  */
-function streaks(x, w, h, dense = 1, bright = 1) {
+function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44]) {
   const r = (a, b) => a + Math.random() * (b - a), scale = (w * h) / (390 * 844) * dense;
   const motes = DEPTHS.flatMap((d, k) => Array.from({ length: Math.max(dense > 1 ? 1 : 0, Math.round(d.n * scale)) }, () => ({ k, x: r(0, w), y: r(0, h), len: r(...d.len), gold: Math.random() < 0.2 })));
+  const fig = (y) => ({ x: r(0.1, 0.9) * w, y, s: r(...size), vy: -r(25, 95), vx: r(-12, 12), rot: r(0, Math.PI * 2), spin: r(0.6, 2.2) * (Math.random() < 0.5 ? -1 : 1), ph: r(0, 9), gold: Math.random() < 0.25 });
+  const figures = Array.from({ length: figs }, () => fig(r(0, h)));
+  let t = 0;
+  /** A stick figure, 20 units tall around its middle: head, body, arms flailing overhead, legs kicking. */
+  const person = (f) => {
+    const k = f.s / 20, a = Math.min(1, 0.62 * bright) * (f.s / size[1]) ** 0.5, col = f.gold ? "232,176,64" : "240,232,220";
+    x.save();
+    x.translate(f.x, f.y);
+    x.rotate(f.rot);
+    x.scale(k, k);
+    x.strokeStyle = `rgba(${col},${a.toFixed(3)})`;
+    x.lineWidth = 1.8 / k;
+    x.lineCap = x.lineJoin = "round";
+    const limb = (ox, oy, ang, len) => { x.moveTo(ox, oy); x.lineTo(ox + Math.cos(ang) * len, oy + Math.sin(ang) * len); };
+    const flap = Math.sin(t * 9 + f.ph), kick = Math.sin(t * 7 + f.ph);
+    x.beginPath();
+    x.arc(0, -7, 2.8, 0, Math.PI * 2);
+    x.moveTo(0, -4.2); x.lineTo(0, 4);
+    limb(0, -1.6, -2.85 + flap * 0.3, 6); // arms up and out, flailing
+    limb(0, -1.6, -0.3 - flap * 0.3, 6);
+    limb(0, 4, 2.2 + kick * 0.4, 7); // legs apart, kicking
+    limb(0, 4, 0.95 - kick * 0.4, 7);
+    x.stroke();
+    x.restore();
+  };
   return (dt) => {
+    t += dt;
     x.clearRect(0, 0, w, h);
     for (const m of motes) {
       const d = DEPTHS[m.k];
@@ -177,6 +214,11 @@ function streaks(x, w, h, dense = 1, bright = 1) {
       x.fillStyle = g;
       x.fillRect(m.x, m.y, d.w, m.len);
     }
+    for (const [i, f] of figures.entries()) {
+      f.y += f.vy * dt; f.x += f.vx * dt; f.rot += f.spin * dt;
+      if (f.y < -f.s) figures[i] = fig(h + f.s); // gone past: another comes up from below
+      person(figures[i]);
+    }
   };
 }
 let fallRaf = 0;
@@ -185,7 +227,7 @@ function fall() {
   const c = $(".kf-fall canvas"), w = c.clientWidth, h = c.clientHeight;
   if (!w || !h) return;
   c.width = w; c.height = h;
-  const draw = streaks(c.getContext("2d"), w, h);
+  const draw = streaks(c.getContext("2d"), w, h, 1, 1, Math.max(3, Math.round(5 * (w * h) / (390 * 844))));
   if (reducedMotion) { draw(0); return; }
   let last = 0;
   const step = (now) => {
@@ -213,7 +255,7 @@ export function fallIn(el) {
   document.body.append(c);
   const x = c.getContext("2d");
   x.scale(dpr, dpr);
-  const draw = streaks(x, b.width, b.height, 9, 1.8);
+  const draw = streaks(x, b.width, b.height, 9, 1.8, 1, [16, 20]);
   let start = 0, last = 0;
   const step = (now) => {
     start ||= now;
