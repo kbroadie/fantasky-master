@@ -414,36 +414,46 @@ const KNAP_TERM = {
 /**
  * The Knappett's own table (on request), shown when a phone or tablet is held
  * upside down on the Standings (flip.js), in place of the boards. An Easter
- * egg (on request): nothing else on the site mentions the Knappett. It lists
- * everyone's Knappett points after the week on show (or the latest scored
- * week), most first, with that week's points beside them. Set like the
- * Standings: the hero's kicker and title, then one card of rows, a place
- * column at the left and an olive gap meter behind each row. Each row opens
- * (on request) to that player's week-by-week breakdown (knapMore); `open` is
- * the player whose row is open.
+ * egg (on request): nothing else on the site mentions the Knappett. Like the
+ * Standings (on request): the episode strip (weekTabs) over a swiper of
+ * weeks, one slide each (knapWeek); flip.js binds them. `how` opens How
+ * scoring works on every slide.
  */
-export function knapTable(d, w = stWeek(d), open = null, how = false) {
-  const wk = Math.min(w, d.weeksScored), final = d.complete && wk === d.episodes.length;
-  const kicker = `<div class="kicker">Series ${esc(state.key)} · ${wk ? `After episode ${wk}` : "No episodes scored yet"}</div>`;
-  const back = `<p class="kt-back">Turn it back over for the standings</p>`;
-  const explain = `<button type="button" class="st-how kt-how" aria-expanded="${how}" aria-controls="kt-explain">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button>
-    <div class="st-explain" id="kt-explain"><div>${howCard(KNAP_TERM)}</div></div>`;
+export function knapTable(d, how = false) {
+  return `<div class="strip scroll kt-strip">${weekTabs(d)}</div>
+    <div class="swiper kt-swiper">${d.episodes.map(({ ep }) => `<section class="slide kt-slide" data-week="${ep}">${knapWeek(d, ep, how)}</section>`).join("")}</div>
+    <p class="kt-back">Turn it back over for the standings</p>`;
+}
+
+/**
+ * One week of the Knappett: everyone's Knappett points after that week, most
+ * first, with that week's points beside them. Set like the Standings: the
+ * hero's kicker and title, then one card of rows, a place column at the left
+ * and a gap meter behind each row. Each row opens (on request) to that
+ * player's cards (knapMore, drawn by flip.js as it opens). A week not yet
+ * scored is just its hero and when it airs, as on the Standings.
+ */
+function knapWeek(d, wk, how) {
+  const scored = wk <= d.weeksScored, final = d.complete && wk === d.episodes.length;
+  const kicker = `<div class="kicker">Series ${esc(state.key)} · ${scored ? `After episode ${wk}` : `Episode ${wk}`}</div>`;
+  const explain = `<button type="button" class="st-how kt-how" aria-expanded="${how}" aria-controls="kt-explain-${wk}">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button>
+    <div class="st-explain" id="kt-explain-${wk}"><div>${howCard(KNAP_TERM)}</div></div>`;
   const hero = (inner) => `<div class="hero kt-hero${how ? " explain" : ""}">${kicker}<h2 class="ep-title">The Knappett</h2>${inner}${explain}</div>`;
-  if (!wk) return `${hero("")}${back}`;
+  if (!scored) return hero(`<div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[wk - 1].air))}</div>`);
   const rows = d.players.map((p) => ({ p, name: p.name, knap: p.history[wk - 1].knap, week: p.weeks[wk - 1].knap.total }))
     .sort((a, b) => b.knap - a.knap || a.name.localeCompare(b.name));
   const kn = knappetts(rows), top = Math.max(1, rows[0].knap);
   const lead = kn.length ? `<p class="st-leaders"><span><b>${esc(listing(kn))}</b> ${final ? (kn.length > 1 ? "win" : "wins") : (kn.length > 1 ? "lead" : "leads")} <span class="st-knap">The Knappett</span></span></p>` : "";
   const body = rows.map((r, i) => `
-      <div class="kt-item${r.name === open ? " open" : ""}">
-        <button type="button" class="kt-row" data-kp="${esc(r.name)}" aria-expanded="${r.name === open}" style="--m:${(r.knap / top).toFixed(3)}"><b class="kt-rk${tier(i + 1)}">${i + 1}</b><span class="kt-name"><span>${esc(r.name)}</span><svg class="kt-chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span><span class="kt-wk">+${r.week}</span><span class="kt-pts${i === 0 && kn.length ? " lead" : ""}">${r.knap}</span></button>
-        <div class="kt-more"><div>${r.name === open ? knapMore(d, r.p, wk) : ""}</div></div>
+      <div class="kt-item">
+        <button type="button" class="kt-row" data-kp="${esc(r.name)}" aria-expanded="false" style="--m:${(r.knap / top).toFixed(3)}"><b class="kt-rk${tier(i + 1)}">${i + 1}</b><span class="kt-name"><span>${esc(r.name)}</span><svg class="kt-chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span><span class="kt-wk">+${r.week}</span><span class="kt-pts${i === 0 && kn.length ? " lead" : ""}">${r.knap}</span></button>
+        <div class="kt-more"><div></div></div>
       </div>`).join("");
   return `${hero(lead)}
     <div class="card kt-board" style="--n:${rows.length}">
       <div class="kt-head"><span></span><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${FALL}"/></svg>Player</span><span>Ep ${wk}</span><span>Total</span></div>
       ${body}
-    </div>${back}`;
+    </div>`;
 }
 
 /**

@@ -306,6 +306,10 @@ body.kflipped { overflow: hidden; }
 .kf-fall canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .kf-fall::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, var(--bg), transparent 18%, transparent 78%, var(--bg)), var(--grain); }
 .kflip-in { position: relative; max-width: 34rem; margin: 0 auto; }
+/* Its episode strip and weeks, like the Standings' (on request): the strip sticks to the top as the table scrolls */
+.kt-strip { position: sticky; top: 0; z-index: 3; }
+.kt-swiper { align-items: flex-start; }
+.kt-slide { content-visibility: visible; }
 .kt-hero { text-align: center; padding-block: 18px 16px; background: none; }
 .kt-hero .ep-title { margin-bottom: 0; color: var(--t1); }
 /* The rows fit the screen where they can (15 players on an iPhone), 44px at most */
