@@ -949,6 +949,9 @@ html.fz .fz-word {
 }
 html.fz .fz-name { font-size: .78em; }
 html.fz .series { min-height: 24px; padding: 0 5px; font-size: .78em; }
+/* Compact, the bar is one thin line, so the brand is too: "FANTASY FANTASKY MASTER 22" */
+html.fz .compact .brand { grid-template-columns: auto auto auto; }
+html.fz .compact .fz-word { grid-column: auto; font-size: 1.2em; }
 html.fz .tab-ind { background: var(--rainbow); }
 /* Turned over (180°, or a quarter turn in a landscape page): the body is a
    fixed box, turned, and main scrolls inside it (scroller() in main.js);

@@ -535,11 +535,14 @@ function setHidden(on) {
   bar.classList.toggle("hidden", on);
   document.body.classList.toggle("bar-hidden", on);
 }
-addEventListener("scroll", () => {
+// The same whichever scrolls the page: the window, or main while it's turned
+// over (on request: the bar compacts and hides upside down as it does upright).
+function barScroll() {
   if (!hraf) hraf = requestAnimationFrame(() => {
     hraf = 0;
-    const max = document.documentElement.scrollHeight - innerHeight;
-    const y = Math.max(0, Math.min(scrollY, max)), dy = y - lastY;
+    const sc = scroller(), top = sc === window ? scrollY : sc.scrollTop;
+    const max = sc === window ? document.documentElement.scrollHeight - innerHeight : sc.scrollHeight - sc.clientHeight;
+    const y = Math.max(0, Math.min(top, max)), dy = y - lastY;
     lastY = y;
     const on = bar.classList.contains("compact");
     bar.classList.toggle("compact", on ? y > 4 : y > 16);
@@ -547,7 +550,9 @@ addEventListener("scroll", () => {
     if (dy > 0) { down += dy; up = 0; if (down > 12) setHidden(true); }
     else if (dy < 0) { up -= dy; down = 0; if (up > 8) setHidden(false); }
   });
-}, { passive: true });
+}
+addEventListener("scroll", barScroll, { passive: true });
+$("main").addEventListener("scroll", barScroll, { passive: true });
 bar.addEventListener("focusin", () => setHidden(false)); // never hide what the keyboard is on
 /** The page was put back at the top (turned over or back): the bar open and shown. */
 function barAtTop() { lastY = 0; down = up = 0; bar.classList.remove("compact"); setHidden(false); }
