@@ -132,6 +132,74 @@ function topIn(el) {
   for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
   return y;
 }
+
+// Sideways (a quarter turn, html.fz-side), Chrome's own touch scrolling picks
+// the scroller by the swipe's direction on the screen rather than in the
+// turned page, so nothing scrolls (measured; upside down, at 180°, the axes
+// only flip and it works). There the page scrolls itself (touch-action: none
+// in the CSS): a drag moves main, or the sideways scroller under the finger,
+// a flick carries on, and a swiper settles on the next slide or back, as
+// scroll snapping would. edgeNav still sees the touches.
+const sideTurned = () => Math.abs(turned()) === 90;
+const sideScroller = (el) => [".swiper", ".strip.scroll", ".tt-wrap"].map((q) => el.closest?.(q)).find((s) => s && s.scrollWidth > s.clientWidth + 1);
+let drag = null, coast = 0;
+document.addEventListener("touchstart", (e) => {
+  cancelAnimationFrame(coast);
+  if (!sideTurned() || e.touches.length > 1) { drag = null; return; }
+  const t = e.touches[0];
+  drag = { x0: t.clientX, y0: t.clientY, x: t.clientX, y: t.clientY, axis: null, el: null, target: e.target, moves: [] };
+}, { passive: true });
+document.addEventListener("touchmove", (e) => {
+  if (!drag) return;
+  const t = e.touches[0];
+  if (!drag.axis) {
+    const [tx, ty] = local(t.clientX - drag.x0, t.clientY - drag.y0);
+    if (Math.hypot(tx, ty) < 8) return;
+    drag.axis = Math.abs(tx) > Math.abs(ty) ? "x" : "y";
+    drag.el = drag.axis === "y" ? $("main") : sideScroller(drag.target);
+    if (drag.el?.classList.contains("swiper")) { drag.from = idxOf(drag.el); drag.el.style.scrollSnapType = "none"; }
+  }
+  const [dx, dy] = local(t.clientX - drag.x, t.clientY - drag.y), d = drag.axis === "x" ? dx : dy;
+  drag.x = t.clientX; drag.y = t.clientY;
+  if (!drag.el) return;
+  if (drag.axis === "x") drag.el.scrollLeft -= d; else drag.el.scrollTop -= d;
+  drag.moves.push([e.timeStamp, d]);
+}, { passive: true });
+function dragEnd(e) {
+  const g = drag;
+  drag = null;
+  if (!g?.el) return;
+  // The scrolling speed over the last 100ms (px/ms, positive forwards)
+  const recent = g.moves.filter(([at]) => e.timeStamp - at < 100);
+  const v = recent.length > 1 ? -recent.reduce((a, [, d]) => a + d, 0) / Math.max(16, e.timeStamp - recent[0][0]) : 0;
+  const el = g.el, x = g.axis === "x", get = () => (x ? el.scrollLeft : el.scrollTop), put = (n) => { if (x) el.scrollLeft = n; else el.scrollTop = n; };
+  if (el.classList.contains("swiper")) {
+    const w = el.clientWidth, moved = el.scrollLeft / w - g.from, n = el.children.length;
+    const step = moved > 0.5 || (moved > 0 && v > 0.3) ? 1 : moved < -0.5 || (moved < 0 && v < -0.3) ? -1 : 0;
+    const from = el.scrollLeft, to = Math.max(0, Math.min(n - 1, g.from + step)) * w, t0 = performance.now(), ms = reducedMotion ? 0 : 280;
+    const frame = (now) => {
+      const k = ms ? Math.min(1, (now - t0) / ms) : 1;
+      el.scrollLeft = from + (to - from) * (1 - (1 - k) ** 3);
+      if (k < 1) coast = requestAnimationFrame(frame);
+      else el.style.scrollSnapType = "";
+    };
+    coast = requestAnimationFrame(frame);
+    return;
+  }
+  // Anything else coasts on, slowing down
+  let speed = reducedMotion ? 0 : v, last = performance.now();
+  const frame = (now) => {
+    const dt = now - last;
+    last = now;
+    const before = get();
+    put(before + speed * dt);
+    speed *= 0.95 ** (dt / 16);
+    if (Math.abs(speed) > 0.02 && get() !== before) coast = requestAnimationFrame(frame);
+  };
+  if (speed) coast = requestAnimationFrame(frame);
+}
+document.addEventListener("touchend", dragEnd, { passive: true });
+document.addEventListener("touchcancel", dragEnd, { passive: true });
 /** Every page drawn again (fantasy mode on or off), on the same week, episode and contestant. */
 function redraw() {
   const key = $("#cast-tabs .on")?.textContent;

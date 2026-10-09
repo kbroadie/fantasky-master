@@ -944,11 +944,12 @@ html.fz .topbar::before { background: linear-gradient(180deg, rgba(70, 14, 110, 
 html.fz .hdr { background: linear-gradient(90deg, rgba(255, 63, 164, .38), rgba(176, 75, 255, .36), rgba(23, 212, 240, .32)); }
 html.fz .hero, html.fz .ep-head { background: var(--grain), radial-gradient(90% 100% at 50% 0%, rgba(255, 90, 200, .26), transparent 80%); }
 html.fz .hero::after, html.fz .ep-head::after { background: var(--rainbow); opacity: .7; }
-/* The brand: "Fantasy" in rainbow over FANTASKY MASTER, the series chip beside it. */
+/* The brand: "Fantasy" in rainbow Pacifico, a bubbly script (on request: "something girly"), over FANTASKY MASTER, the series chip beside it. */
 .fz-word { display: none; }
 html.fz .brand { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: .35em; row-gap: 0; text-shadow: 0 0 14px rgba(255, 110, 210, .6); }
 html.fz .fz-word {
-  display: block; grid-column: 1 / -1; font-size: 1.5em; line-height: 1; letter-spacing: .02em;
+  display: block; grid-column: 1 / -1; justify-self: start; margin: -.2em 0 -.12em; padding: 0 .12em 0 .04em;
+  font-family: "Pacifico", cursive; font-size: 1.6em; line-height: 1.3; letter-spacing: 0;
   background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent;
   text-shadow: none; filter: drop-shadow(0 0 6px rgba(255, 120, 220, .55));
 }
@@ -956,7 +957,7 @@ html.fz .fz-name { font-size: .78em; }
 html.fz .series { min-height: 24px; padding: 0 5px; font-size: .78em; }
 /* Compact, the bar is one thin line, so the brand is too: "FANTASY FANTASKY MASTER 22" */
 html.fz .compact .brand { grid-template-columns: auto auto auto; }
-html.fz .compact .fz-word { grid-column: auto; font-size: 1.2em; }
+html.fz .compact .fz-word { grid-column: auto; margin-block: -.3em; font-size: 1.25em; }
 html.fz .tab-ind { background: var(--rainbow); }
 /* Turned over (180°, or a quarter turn in a landscape page): the body is a
    fixed box, turned, and main scrolls inside it (scroller() in main.js);
@@ -966,6 +967,10 @@ html.fz-turn body, html.fz-side body { position: fixed; inset: 0; overflow: hidd
 html.fz-side body { inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; max-width: none; transform: translate(-50%, -50%) rotate(var(--rot)); }
 html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
 html.fz-turn #foot, html.fz-side #foot { display: none; }
+/* Sideways the page scrolls itself (main.js: the browser picks the wrong scroller in a quarter-turned page) */
+html.fz-side * { touch-action: none; }
+/* No quote upside down (on request) */
+html.fz .st-quote { display: none; }
 /* Inside main, a sticky strip's offset counts from below main's padding (the bar's spacer), so it sticks at 0 */
 html.fz-turn .page > .strip, html.fz-side .page > .strip { top: 0; }
 /* The bar and the strips stay solid, so nothing reads through them as the page scrolls under */

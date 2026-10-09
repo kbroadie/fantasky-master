@@ -76,6 +76,15 @@ function want(show, rot) {
 }
 function settle() { clearTimeout(timer); pending = null; }
 
+// The word "Fantasy" is in Pacifico, used nowhere else: it's fetched once the
+// sensor first reads, so it's in before the device is turned over.
+let warmed = false;
+function warm() {
+  if (warmed) return;
+  warmed = true;
+  document.fonts?.load("1em Pacifico").catch(() => {});
+}
+
 function onTilt(e) {
   const { beta, gamma } = e;
   probe.o++; probe.beta = beta; probe.gamma = gamma; probe.show();
@@ -110,6 +119,7 @@ function onMotion(e) {
  * its side. Back up only once clearly so (less than 15°, or sideways).
  */
 function judge() {
+  warm();
   if (!up) return;
   const [ux, uy] = up;
   // Held sideways in a landscape page, the edge that's up is the page's top:
