@@ -321,6 +321,22 @@ The site shows it as a red line at the top of the player's opened row on the Sta
 | Per-task extremes | In each task, the highest and lowest scores, flagged only if not all 5 scores are equal. |
 | Player best / worst week | Max / min of the player's scored weekly values: raw `epPts`, or `rankPoints` on the League board (where 5 is best and 1 is worst). |
 
+### 6.12 Knappett points
+
+A third board, for doing badly (named after Jessica Knappett's fall in Series 7). For each scored episode `e` and contestant `c` (`KN[e][c]` in `league.js`, point values in `KNAP`):
+
+```
+gap     = top − EPS[c][e]                  top = max over c of EPS[·][e]
+dq      = 3 × (tasks in e where c is disqualified)
+neg     = 3 × (tasks in e where c scored < 0, not DQ)
+zero    = 2 × (tasks in e where c scored 0, not DQ)
+last    = 2  if EPS[c][e] = min over c of EPS[·][e] and not all five are level, else 0
+stinker = 3  if last and (next-lowest total − EPS[c][e]) ≥ 5, else 0
+KN[e][c] = gap + dq + neg + zero + last + stinker
+```
+
+A player's week scores `KN[e][pick_e]`. A week with no pick scores `top` (0 on the Show is the winner's whole score behind) and no disasters. Knappett points = the sum over scored weeks; `boardsAsOf(w)` carries them as `knap`, and the most Knappett points at the week on show "leads The Knappett" (ties share it; nobody when everyone is level). The stinker is the Episodes tab's stink gas (`isLast` in `episodes.js`). Tiebreaks don't matter: they decide only 1st.
+
 ---
 
 ## 7. Worked example (Series 22, player "Riley")
@@ -347,6 +363,7 @@ League points = 2 + 4 + 5 + 3 = **14**.
 **Other outputs:**
 - **Show rank:** Riley is 1st on the Show board.
 - **Pick status:** known = {Richard, Matt, Chloe}, needed = {Isy, Nina}, left = 6, so status = none.
+- **Knappett points:** ep 1 Richard 6 behind Chloe's 19, a DQ, tied last with Isy on 13 (4 behind Matt, so no stinker): 6 + 3 + 2 = 11; ep 2 Matt, a zero on a task: 2; ep 3 Chloe won: 0; ep 4 Chloe 5 behind Isy's 24: 5. Total **18**.
 
 ---
 

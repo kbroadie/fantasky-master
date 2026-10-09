@@ -65,6 +65,29 @@ So Show rewards backing a big scorer, while League rewards backing the *winner*,
 | 4 | Chloe | 19 | 3rd | 19 | 3 |
 | | | | **Total** | **67** | **14** |
 
+### The Knappett: points for doing badly
+
+A third, ironic table, named after Jessica Knappett's literal fall in Series 7. The same picks earn **Knappett points** for every way they let you down, and whoever has the most **leads The Knappett**:
+
+| Each episode | Knappett points |
+|---|:-:|
+| Every point your pick finished behind the episode's winner | 1 |
+| Each task your pick was disqualified on | 3 |
+| Each task your pick scored minus points on | 3 |
+| Each task your pick scored 0 on (not a DQ) | 2 |
+| Your pick came last in the episode (a tie for last counts) | 2 |
+| …and lost by 5 or more (the stink gas on the Episodes tab) | 3 more |
+
+**No vote** counts as scoring 0 on the Show, so you're the winner's whole score behind (and nothing more).
+
+Riley, Series 22, Episodes 1–4:
+- **Episode 1:** Richard was 6 behind Chloe, was disqualified on a task and tied for last, for 6 + 3 + 2 = **11**.
+- **Episode 2:** Matt scored 0 on a task, so **2**.
+- **Episode 3:** Chloe won, so **0**.
+- **Episode 4:** Chloe was 5 behind Isy, so **5**.
+
+That's **18** in all.
+
 ### A few more rules
 
 - **Picks only count once the host has entered that episode's results.** Voting early is fine; those picks show as "…" on the site until then.
@@ -86,11 +109,11 @@ The site has three tabs: **Standings**, **Episodes** and **Cast**.
 **Standings**
 
 - Both boards side by side: **Show** on the left, **League** on the right, each from first place down.
-- **How scoring works** explains both boards. Under it, **Read the welcome** brings back the welcome message the site opens with.
-- Whoever's bottom of the Show or the League **leads The Knappett**, after Jessica Knappett's literal fall in Series 7. They're named alongside the leaders, and their points are in olive.
+- **How scoring works** explains the Show, the League and the Knappett. Under it, **Read the welcome** brings back the welcome message the site opens with.
+- Whoever has the most Knappett points **leads The Knappett**, named alongside the leaders. **How scoring works** explains all three tables.
 - Tap **Ep 1**, **Ep 2**… or swipe sideways to see the standings after any episode.
 - **Tap the Show or League heading** to open that board's race: every player's gap to the leader, week by week. Tap a line to follow one player.
-- **Tap any name** to see their points and pick for every episode. Tap the card's title to switch to their race.
+- **Tap any name** to see their points and pick for every episode. Tap the card's title to switch to their race, then to their Knappett points (the olive part of each bar is from disasters).
 - If you open a row and see a red **"Must pick: …"** line, every remaining poll is needed to fit in the contestants that player hasn't picked yet. It becomes **"Can't fit all: …"** if they no longer can, and **"Never picked: …"** once the series is over.
 
 **Episodes**

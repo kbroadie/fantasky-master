@@ -34,7 +34,7 @@ function median(xs) {
  * The series median is a dashed line, keyed in the head. A win's number is
  * gold; there are no crowns (removed on request).
  */
-export function barsCard(d, at, max, med, color, title = "Points per episode") { // title: text, or a head element (a player's switch)
+export function barsCard(d, at, max, med, color, title = "Points per episode", legend = null) { // title: text, or a head element (a player's switch)
   const f = (v) => (v / max).toFixed(4);
   let tagged = false;
   const bars = d.episodes.map((e) => {
@@ -42,13 +42,14 @@ export function barsCard(d, at, max, med, color, title = "Points per episode") {
     if (x?.tag) tagged = true;
     // Not scored yet (or after the week on show): no bar, but a pick already made shows its letters.
     if (!x || x.tbd) return `<div class="bar tbd${x?.dim ? " dim" : ""}"${x?.color ? ` style="--c:${x.color}"` : ""}><i></i>${x?.tag ? `<em>${esc(x.tag)}</em>` : ""}<small>${e.ep}</small></div>`;
-    return `<div class="bar${x.won ? " won" : ""}${x.dim ? " dim" : ""}" style="--f:${f(x.v)}${x.color ? `;--c:${x.color}` : ""}"><i></i><b>${x.v}</b>${x.tag ? `<em>${esc(x.tag)}</em>` : ""}<small>${e.ep}</small></div>`;
+    // A split bar (the Knappett card): the part from disasters is capped in olive above --k of it.
+    return `<div class="bar${x.won ? " won" : ""}${x.dim ? " dim" : ""}${x.split != null ? " split" : ""}${x.bad ? " bad" : ""}" style="--f:${f(x.v)}${x.color ? `;--c:${x.color}` : ""}${x.split != null ? `;--k:${x.split.toFixed(4)}` : ""}"><i></i><b>${x.v}</b>${x.tag ? `<em>${esc(x.tag)}</em>` : ""}<small>${e.ep}</small></div>`;
   }).join("");
   const medText = med == null ? "" : Number.isInteger(med) ? med : med.toFixed(1);
   const medLine = med == null ? "" : `<div class="bar-med" style="--f:${f(med)}" aria-hidden="true"></div>`;
   return `
     <div class="card">
-      <div class="card-head">${title.startsWith("<") ? title : `<span>${title}</span>`}<span class="legend">${med == null ? "" : `<i class="med-key"></i>median ${medText}`}</span></div>
+      <div class="card-head">${title.startsWith("<") ? title : `<span>${title}</span>`}<span class="legend">${legend ?? (med == null ? "" : `<i class="med-key"></i>median ${medText}`)}</span></div>
       <div class="bars${tagged ? " tagged" : ""}" style="--c:${color}">${medLine}${bars}</div>
     </div>`;
 }
