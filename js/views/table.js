@@ -8,7 +8,7 @@ import { esc, listing, tier, ord, fmtDay, fmtWhen, smooth, niceStep, state } fro
 import { pickChooser } from "../edit.js";
 import { barsCard, median } from "./cast.js";
 import { raceSvg } from "./episodes.js";
-import { pickStatus, KNAP } from "../league.js";
+import { pickStatus } from "../league.js";
 
 /** The week on show: state.wk, or the latest scored week. */
 export const stWeek = (d) => Math.min(Math.max(1, state.wk || d.weeksScored), d.episodes.length);
@@ -316,7 +316,7 @@ function pointsCard(d, p, w, k) {
   return barsCard(d, at, max, median(all), `var(--${k}-hi)`, swapTitle(k, "points per episode", "race"));
 }
 
-const BOARD = { show: "Show", league: "League" };
+const BOARD = { show: "Show", league: "League", knap: "Knappett" };
 /** The swap icon, as on the series chip. */
 const SWAP = `<svg class="swap" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 4h8M7 1.5 9.5 4 7 6.5M10.5 8h-8M5 5.5 2.5 8 5 10.5"/></svg>`;
 /**
@@ -332,13 +332,14 @@ const swapTitle = (k, rest, to) => `<button class="xp-swap" type="button" data-x
  * An opened half's other card: the Episodes tab's "The race so far", for
  * that board: every player's gap to the board's leader, only the opened
  * player's line highlighted (journey), and how far behind the leader they
- * are that week in the legend.
+ * are that week in the legend ("4 behind the leader"; just "4 behind" for
+ * the Knappett, whose longer name leaves no room).
  */
 function raceCard(d, p, w, k) {
   const upTo = Math.min(w, d.weeksScored), pts = (q) => q.history[upTo - 1][k];
   const behind = upTo ? Math.max(...d.players.map(pts)) - pts(p) : null;
   return `<div class="card jr-card">
-      <div class="card-head">${swapTitle(k, "race so far", "bars")}<span class="legend">${behind == null ? "" : `${behind} `}behind the leader</span></div>
+      <div class="card-head">${swapTitle(k, "race so far", "bars")}<span class="legend">${behind == null ? "" : `${behind} `}behind${k === "knap" ? "" : " the leader"}</span></div>
       ${journey(d, p, k, w)}
     </div>`;
 }
@@ -360,7 +361,7 @@ function raceCard(d, p, w, k) {
  * request), with a dot on the opened player's line there.
  */
 function journey(d, p, side, w) {
-  const k = side === "show" ? "show" : "league", upTo = Math.min(w, d.weeksScored), end = upTo, last = d.episodes.length; // the lines end at the week on show
+  const k = side, upTo = Math.min(w, d.weeksScored), end = upTo, last = d.episodes.length; // the lines end at the week on show (k: show, league or knap)
   const eps = Array.from({ length: end }, (_, i) => i + 1);
   const total = (q, e) => q.history[e - 1][k];
   const best = (e) => Math.max(...d.players.map((q) => total(q, e)));
@@ -378,8 +379,8 @@ function journey(d, p, side, w) {
     : end ? others.map((q) => `<i class="jr-dot" style="--x:0%;--y:${f(y(gap(q, 1)))}%"></i>`).join("") + `<i class="jr-dot me" style="--x:0%;--y:${f(y(gap(p, 1)))}%"></i>` : "";
   const g = upTo ? gap(p, upTo) : 0;
   const axis = d.episodes.map(({ ep }) => `<span class="${ep === upTo ? "now" : ep > end ? "later" : ""}" style="--x:${f(x(ep))}%">${ep}</span>`).join("");
-  const board = k === "show" ? "Show" : "League";
-  const say = upTo ? `${p.name}: ${g ? `${-g} ${board} points behind the leader` : `leads the ${board} on ${total(p, upTo)}`} after episode ${upTo}, ${ord(p.history[upTo - 1][`${k}Rank`])}` : `${p.name}: no episodes scored yet`;
+  const board = BOARD[k], rank = upTo && 1 + d.players.filter((q) => total(q, upTo) > total(p, upTo)).length;
+  const say = upTo ? `${p.name}: ${g ? `${-g} ${board} points behind the leader` : `leads the ${board} on ${total(p, upTo)}`} after episode ${upTo}, ${ord(rank)}` : `${p.name}: no episodes scored yet`;
   return `<div class="jr ${k}" role="img" aria-label="${esc(say)}">
     <div class="jr-plot">${grid}${lines}<div class="jr-ax" aria-hidden="true">${axis}</div></div>
   </div>`;
@@ -436,7 +437,7 @@ export function knapTable(d, w = stWeek(d), open = null, how = false) {
   const body = rows.map((r, i) => `
       <div class="kt-item${r.name === open ? " open" : ""}">
         <button type="button" class="kt-row" data-kp="${esc(r.name)}" aria-expanded="${r.name === open}" style="--m:${(r.knap / top).toFixed(3)}"><b class="kt-rk${tier(i + 1)}">${i + 1}</b><span class="kt-name"><span>${esc(r.name)}</span><svg class="kt-chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1.25 1.25 5 4.75l3.75-3.5"/></svg></span><span class="kt-wk">+${r.week}</span><span class="kt-pts${i === 0 && kn.length ? " lead" : ""}">${r.knap}</span></button>
-        <div class="kt-more"><div>${knapMore(d, r.p, wk)}</div></div>
+        <div class="kt-more"><div>${r.name === open ? knapMore(d, r.p, wk) : ""}</div></div>
       </div>`).join("");
   return `${hero(lead)}
     <div class="card kt-board" style="--n:${rows.length}">
@@ -445,23 +446,27 @@ export function knapTable(d, w = stWeek(d), open = null, how = false) {
     </div>${back}`;
 }
 
-/** A bonus's words, and its plural. */
-const KN_WORDS = { dq: ["DQ", "DQs"], neg: ["minus", "minuses"] };
 /**
- * An opened Knappett row: every scored week up to the one on show, newest
- * first. Each week reads its pick (three letters in the contestant's
- * colour), how far it finished behind the episode's winner, its bonus
- * points ("DQ +3", "minus +3"), and that week's Knappett points (olive when
- * a bonus added to them).
+ * An opened Knappett row (on request: "the same as the Show and League"):
+ * the opened halves' cards, for the Knappett. Points per episode (each bar
+ * that week's Knappett points, in the pick's colour, with the pick's letters
+ * and the median of everyone's weeks) or, through the title's switch, the
+ * race so far (each player's gap to the Knappett's leader). The switch is
+ * the Standings' own (state.xpView).
  */
-function knapMore(d, p, wk) {
-  const lines = p.weeks.slice(0, wk).reverse().map((x) => {
-    const k = x.knap, bad = Object.keys(KN_WORDS).filter((t) => k[t]).map((t) => {
-      const n = k[t] / KNAP[t];
-      return `<span>${n > 1 ? `${n} ${KN_WORDS[t][1]}` : KN_WORDS[t][0]} <b>+${k[t]}</b></span>`;
-    });
-    const pick = x.pick ? `<span class="kt-pick" style="color:${d.cast[x.pick].color}">${esc(x.pick.slice(0, 3))}</span>` : `<span class="kt-pick none">none</span>`;
-    return `<div class="kt-ep${x.ep === wk ? " now" : ""}"><span class="kt-epn">${x.ep}</span>${pick}<span class="kt-gap">${k.gap}</span><span class="kt-bad">${bad.join("")}</span><b class="kt-tot${bad.length ? " bad" : ""}">${k.total}</b></div>`;
-  }).join("");
-  return `<div class="kt-eps"><div class="kt-ep kt-ep-head"><span>Ep</span><span>Pick</span><span>Behind</span><span>Bonus</span><span>Pts</span></div>${lines}</div>`;
+export function knapMore(d, p, w = stWeek(d)) {
+  const wk = Math.min(w, d.weeksScored);
+  if (!wk) return "";
+  return `<div class="xp">${state.xpView === "race" ? raceCard(d, p, wk, "knap") : knapBars(d, p, wk)}</div>`;
+}
+function knapBars(d, p, w) {
+  const all = d.players.flatMap((q) => q.weeks.filter((x) => x.scored).map((x) => x.knap.total));
+  const at = (ep) => {
+    const x = p.weeks[ep - 1];
+    if (!x) return null;
+    const dim = ep !== w, color = x.pick ? d.cast[x.pick].color : "var(--t4)", tag = x.pick ? x.pick.slice(0, 3) : null;
+    if (!x.scored) return { tbd: true, dim, color: x.pick && color, tag };
+    return { v: x.knap.total, dim, color, tag: tag || "–" };
+  };
+  return barsCard(d, at, Math.max(1, ...all), median(all), "var(--t3)", swapTitle("knap", "points per episode", "race"));
 }

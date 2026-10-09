@@ -23,7 +23,7 @@
 // a later visit asks again on its first tap, which Safari answers by itself
 // if it remembers.
 import { $, state } from "./ui.js";
-import { knapTable } from "./views/table.js";
+import { knapTable, knapMore } from "./views/table.js";
 
 const ASK = typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function";
 const KEY = "fm-tilt";
@@ -43,14 +43,14 @@ function set(show, rot = 0) {
   const was = on;
   on = show; if (show) turn = rot;
   const el = $("#kflip");
-  if (show && !was) { open = null; how = false; el.firstElementChild.innerHTML = knapTable(state.d); }
+  if (show && !was) { open = null; how = false; $(".kflip-in").innerHTML = knapTable(state.d); }
   el.style.setProperty("--rot", `${turn}deg`);
   el.classList.toggle("turn", turn === 180);
   el.classList.toggle("side", Math.abs(turn) === 90);
   el.classList.toggle("on", show);
   el.setAttribute("aria-hidden", !show);
   document.body.classList.toggle("kflipped", show);
-  if (show && !was) el.scrollTop = 0;
+  if (show && !was) $(".kflip-scroll").scrollTop = 0;
 }
 
 /** After the pose has held for a moment. */
@@ -146,12 +146,23 @@ export function initFlip() {
       hw.closest(".kt-hero").classList.toggle("explain", how);
       return;
     }
-    if (e.target.closest(".kt-explain, #kt-explain")) return; // reading the card
+    if (e.target.closest("#kt-explain")) return; // reading the card
+    // An opened row's card title switches it between points and the race, as on the Standings.
+    const swap = e.target.closest(".xp-swap");
+    if (swap) {
+      state.xpView = swap.dataset.xp;
+      const item = swap.closest(".kt-item");
+      item.querySelector(".kt-more > div").innerHTML = knapMore(state.d, state.d.byName[open]);
+      return;
+    }
+    if (e.target.closest(".kt-more")) return; // reading a card
     const row = e.target.closest(".kt-row");
     if (!row) { held = true; settle(); set(false); return; }
     open = open === row.dataset.kp ? null : row.dataset.kp;
     for (const r of $("#kflip").querySelectorAll(".kt-row")) {
       const me = r.dataset.kp === open;
+      // The opened row's card is drawn as it opens; a closing one keeps its card until it has folded away.
+      if (me) r.nextElementSibling.firstElementChild.innerHTML = knapMore(state.d, state.d.byName[open]);
       r.parentElement.classList.toggle("open", me);
       r.setAttribute("aria-expanded", me);
     }
@@ -162,5 +173,5 @@ export function initFlip() {
 export function flipSync() {
   if (!on) return;
   if (state.page !== "standings") set(false);
-  else $("#kflip").firstElementChild.innerHTML = knapTable(state.d, undefined, open, how);
+  else $(".kflip-in").innerHTML = knapTable(state.d, undefined, open, how);
 }

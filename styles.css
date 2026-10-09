@@ -12,7 +12,6 @@
      scoring cards, the table's column heads and its theme, the leaders line) */
   --show: #e5484d; --show-hi: #ff8f86; --show-glow: rgba(229, 72, 77, .30); --show-edge: rgba(229, 72, 77, .38);
   --league: #3e7bfa; --league-hi: #93b8ff; --league-glow: rgba(62, 123, 250, .30); --league-edge: rgba(90, 140, 250, .38);
-  --knap: #a3a86e; --knap-hi: #cdd296; --knap-glow: rgba(163, 168, 110, .26); --knap-edge: rgba(163, 168, 110, .4); /* the stink fog's muted olive: the Knappett's table (an Easter egg, flip.js) */
   /* A fine film grain (SVG noise), for textured surfaces */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
@@ -279,74 +278,82 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    portrait, a quarter turn (.side, --rot ±90deg, the layer as tall as the
    screen is wide) when the page turned to landscape on the way over, as on
    Android phones. --kh is its height, for fitting the rows. A fade in and
-   out; none under reduced motion. */
+   out; none under reduced motion. The content scrolls in .kflip-scroll, over
+   the falling background (.kf-fall), which stays put. */
 .kflip {
   --kh: 100dvh;
-  position: fixed; inset: 0; z-index: 60; overflow-y: auto; overscroll-behavior: contain;
-  padding: env(safe-area-inset-top) 0 max(16px, env(safe-area-inset-bottom));
-  background: var(--grain), radial-gradient(90% 40% at 50% 0%, var(--knap-glow), transparent 80%), var(--bg);
+  position: fixed; inset: 0; z-index: 60; overflow: hidden; background: var(--bg);
   opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s var(--ease), visibility 0s .25s;
 }
 .kflip.on { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .25s var(--ease); }
-.kflip.turn { transform: rotate(180deg); padding-top: env(safe-area-inset-bottom); padding-bottom: max(16px, env(safe-area-inset-top)); }
-.kflip.side { --kh: 100vw; inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; padding: 0 0 16px; transform: translate(-50%, -50%) rotate(var(--rot)); }
+.kflip.turn { transform: rotate(180deg); }
+.kflip.side { --kh: 100vw; inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; transform: translate(-50%, -50%) rotate(var(--rot)); }
+.kflip-scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: env(safe-area-inset-top) 0 max(16px, env(safe-area-inset-bottom)); }
+.kflip.turn .kflip-scroll { padding: env(safe-area-inset-bottom) 0 max(16px, env(safe-area-inset-top)); }
+.kflip.side .kflip-scroll { padding: 0 0 16px; }
 body.kflipped { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .kflip, .kflip.on { transition: none; } }
-.kflip-in { max-width: 34rem; margin: 0 auto; }
-.kt-hero { text-align: center; padding-block: 18px 16px; background: var(--grain), radial-gradient(90% 100% at 50% 0%, var(--knap-glow), transparent 80%); }
-.kt-hero .ep-title { margin-bottom: 0; color: var(--t1); text-shadow: 0 0 18px color-mix(in srgb, var(--knap) 45%, transparent); }
+/* Falling (on request: "a background animation that makes the foreground
+   content look like it's continuously falling", in place of the olive):
+   three layers of faint streaks and motes rush upwards past the table,
+   near ones faster, longer and fainter, like motion blur; each loops by
+   moving exactly one tile of its pattern, so it never jumps. Transforms only;
+   the edges fade into the dark. Still under reduced motion. */
+.kf-fall { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.kf-fall i { position: absolute; left: 0; right: 0; top: 0; height: calc(100% + var(--t)); background-size: var(--w) var(--t); animation: kf-rise var(--s) linear infinite; will-change: transform; }
+.kf-fall i:nth-child(1) { --w: 110px; --t: 170px; --s: 3.4s;
+  background-image: radial-gradient(1.2px 5px at 20% 15%, rgba(240, 232, 220, .5), transparent), radial-gradient(1px 4px at 70% 55%, rgba(240, 232, 220, .4), transparent), radial-gradient(1.4px 6px at 45% 85%, rgba(232, 176, 64, .45), transparent), radial-gradient(1px 4px at 88% 30%, rgba(240, 232, 220, .35), transparent); }
+.kf-fall i:nth-child(2) { --w: 150px; --t: 260px; --s: 1.6s;
+  background-image: radial-gradient(1.4px 18px at 30% 25%, rgba(240, 232, 220, .32), transparent), radial-gradient(1.2px 14px at 80% 70%, rgba(240, 232, 220, .26), transparent), radial-gradient(1.2px 12px at 55% 95%, rgba(232, 176, 64, .24), transparent); }
+.kf-fall i:nth-child(3) { --w: 210px; --t: 420px; --s: .8s;
+  background-image: radial-gradient(1.8px 60px at 15% 40%, rgba(240, 232, 220, .16), transparent), radial-gradient(1.6px 48px at 65% 80%, rgba(240, 232, 220, .13), transparent), radial-gradient(1.4px 40px at 90% 10%, rgba(240, 232, 220, .1), transparent); }
+@keyframes kf-rise { to { transform: translateY(calc(-1 * var(--t))); } }
+.kf-fall::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, var(--bg), transparent 18%, transparent 78%, var(--bg)), var(--grain); }
+@media (prefers-reduced-motion: reduce) { .kf-fall i { animation: none; } }
+.kflip-in { position: relative; max-width: 34rem; margin: 0 auto; }
+.kt-hero { text-align: center; padding-block: 18px 16px; background: none; }
+.kt-hero .ep-title { margin-bottom: 0; color: var(--t1); }
 /* The rows fit the screen where they can (15 players on an iPhone), 44px at most */
-.card.kt-board { --row: clamp(34px, calc((var(--kh) - 236px) / var(--n)), 44px); margin: 12px var(--px) 0; padding: 0; overflow: hidden; border-color: var(--knap-edge); }
+.card.kt-board { --row: clamp(34px, calc((var(--kh) - 236px) / var(--n)), 44px); --rk: 36px; margin: 12px var(--px) 0; padding: 0; overflow: hidden; background: rgba(16, 13, 16, .7); } /* see-through, so the fall shows behind the rows */
 .kt-head, .kt-row { display: grid; grid-template-columns: var(--rk) minmax(0, 1fr) 60px 60px; align-items: center; }
 .kt-row { width: 100%; text-align: left; -webkit-tap-highlight-color: transparent; }
-.card.kt-board { --rk: 36px; }
-.kt-head { height: 34px; white-space: nowrap; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--knap-hi); border-bottom: 2px solid var(--knap); background: linear-gradient(180deg, color-mix(in srgb, var(--knap) 16%, transparent), transparent); }
+.kt-head { height: 34px; white-space: nowrap; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--t2); border-bottom: 2px solid rgba(240, 232, 220, .22); background: linear-gradient(180deg, rgba(240, 232, 220, .06), transparent); }
 .kt-head span:first-child { align-self: stretch; background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold); }
 .kt-head span:nth-child(2) { display: flex; align-items: center; gap: 7px; padding-left: 12px; }
 .kt-head svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .kt-head span:nth-child(n+3) { text-align: right; padding-right: 14px; }
 .kt-row {
   position: relative; height: var(--row); border-top: 1px solid var(--b-dim);
-  background: linear-gradient(90deg, transparent var(--rk), color-mix(in srgb, var(--knap) 9%, transparent) var(--rk), color-mix(in srgb, var(--knap) 19%, transparent) calc(var(--rk) + (100% - var(--rk)) * var(--m)), transparent calc(var(--rk) + (100% - var(--rk)) * var(--m)));
+  background: linear-gradient(90deg, transparent var(--rk), rgba(240, 232, 220, .04) var(--rk), rgba(240, 232, 220, .1) calc(var(--rk) + (100% - var(--rk)) * var(--m)), transparent calc(var(--rk) + (100% - var(--rk)) * var(--m)));
 }
 .kt-head + .kt-item > .kt-row { border-top: 0; }
 .kt-rk { align-self: stretch; display: grid; place-items: center; font-size: 15px; font-weight: 700; color: var(--t3); background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold); }
 .kt-name { display: flex; align-items: center; min-width: 0; padding-left: 12px; font: 800 clamp(16px, 4.4vw, 18px) var(--ff-name); color: var(--t1); }
 .kt-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Each row opens (on request) to the player's weeks: a chevron like the boards', turning over when open */
+/* Each row opens (on request) to the player's Knappett cards, the same as an opened Standings row's; a chevron like the boards', turning over when open */
 .kt-chev { flex: none; width: 9px; height: 5.5px; margin: 1px 0 0 6px; overflow: visible; fill: none; stroke: var(--t4); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s var(--ease); }
-.kt-item.open .kt-chev { transform: rotate(180deg); stroke: var(--knap-hi); }
-.kt-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s var(--ease); }
+.kt-item.open .kt-chev { transform: rotate(180deg); stroke: var(--gold2); }
+.kt-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease); }
 .kt-item.open .kt-more { grid-template-rows: 1fr; }
 .kt-more > div { min-height: 0; overflow: hidden; }
-.kt-item.open .kt-row { background-color: color-mix(in srgb, var(--knap) 8%, transparent); }
-.kt-eps { padding: 4px 12px 10px calc(var(--rk) + 12px); border-top: 1px solid var(--knap-edge); background: rgba(10, 8, 10, .35); }
-.kt-ep { display: grid; grid-template-columns: 22px 38px 50px minmax(0, 1fr) 30px; align-items: baseline; gap: 10px; padding: 5px 0; font-size: 13px; color: var(--t2); font-variant-numeric: tabular-nums; }
-.kt-ep + .kt-ep { border-top: 1px solid var(--b-dim); }
-.kt-ep-head { padding: 6px 0 4px; font: 500 11px var(--fm); letter-spacing: .08em; text-transform: uppercase; color: var(--t4); }
-.kt-ep-head span:nth-child(3), .kt-ep-head span:nth-child(5) { text-align: right; }
-.kt-ep.now { color: var(--t1); }
-.kt-epn { font: 500 12px var(--fm); color: var(--t3); }
-.kt-ep.now .kt-epn { color: var(--gold2); }
-.kt-pick { font: 500 12px var(--fm); letter-spacing: .04em; text-transform: uppercase; }
-.kt-pick.none { color: var(--t4); text-transform: none; }
-.kt-gap { text-align: right; }
-.kt-bad { display: flex; flex-wrap: wrap; gap: 0 10px; font-size: 12px; color: var(--t3); }
-.kt-bad b { font-weight: 700; color: var(--knap-hi); }
-.kt-tot { text-align: right; font-size: 14px; font-weight: 800; color: var(--t1); }
-.kt-tot.bad { color: var(--knap-hi); }
-@media (prefers-reduced-motion: reduce) { .kt-more, .kt-chev { transition: none; } }
+.kt-item.open .kt-row { background-color: rgba(240, 232, 220, .05); }
+.kt-more .xp { --head: 52px; border-top: 1px solid var(--b-gold); }
+.xp-swap b.knap { color: var(--t1); }
+.jr.knap { --c: var(--gold2); }
+.kt-item.open .jr-me { animation: jr-draw .8s var(--ease) both; }
+.kt-item.open .jr-others, .kt-item.open .jr-dot { animation: jr-fade .6s var(--ease) both; }
+@media (prefers-reduced-motion: reduce) { .kt-more, .kt-chev { transition: none; } .kt-item.open .jr-me, .kt-item.open .jr-others, .kt-item.open .jr-dot { animation: none; } }
 .kt-wk { text-align: right; padding-right: 14px; font: 500 12px var(--fm); color: var(--t3); font-variant-numeric: tabular-nums; }
 .kt-pts { text-align: right; padding-right: 14px; font-size: clamp(17px, 4.6vw, 20px); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.kt-pts.lead { color: var(--knap-hi); text-shadow: 0 0 10px color-mix(in srgb, var(--knap) 50%, transparent); }
+.kt-pts.lead { color: var(--gold2); text-shadow: 0 0 10px var(--gold-glow); }
 .kt-name > span, .kt-pts, .kt-rk { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 .kt-back { margin-top: 14px; text-align: center; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--t4); }
-.kt-hero .st-knap { color: var(--knap); white-space: nowrap; }
-/* How scoring works in the table's hero (on request): the Show and League cards' pattern, olive, its points in the footer */
+.kt-hero .st-knap { color: var(--t1); white-space: nowrap; }
+/* How scoring works in the table's hero (on request): the Show and League cards' pattern, in the app's warm white, its points in the footer */
 .kt-hero.explain .st-explain { grid-template-rows: 1fr; }
 .kt-hero .how-card { max-width: 30rem; margin: 14px auto 4px; text-align: left; }
 .kt-hero:not(.explain) .how-card, .kt-hero:not(.explain) .how-glint { animation-play-state: paused; }
-.card.how-card.knappett { --hc: var(--knap); --hc-hi: var(--knap-hi); --hc-glow: var(--knap-glow); --hc-deep: #1a1b0e; --hc-edge: var(--knap-edge); animation-duration: 19s; animation-delay: -11s; }
+.card.how-card.knappett { --hc: #a89f92; --hc-hi: var(--t1); --hc-glow: rgba(240, 232, 220, .12); --hc-deep: var(--s2); --hc-edge: rgba(240, 232, 220, .16); animation-duration: 19s; animation-delay: -11s; }
 .how-range.how-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; }
 .how-range.how-tiers p { display: flex; flex-direction: column; min-width: 0; }
 .how-range.how-tiers b { font-size: 20px; }
