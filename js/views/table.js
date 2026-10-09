@@ -406,8 +406,8 @@ const FALL = "M2 3.5 6.5 8l3-3 4.5 4.5 M10.5 9.5H14V6 M2.5 13.5h11";
  */
 const KNAP_TERM = {
   path: FALL, name: "Knappett",
-  rule: ["The player whose picks finish ", "furthest behind each episode's winner", " wins, with extra points for every disaster. Skipping a poll counts as the winner's whole score behind. Named for Jessica Knappett's fall in Series 7."],
-  tiers: [["1", "per pt behind"], ["3", "per DQ"], ["3", "minus score"], ["2", "per zero"], ["2", "last place"], ["+3", "last by 5+"]],
+  rule: ["The player whose picks finish ", "furthest behind each episode's winner", " wins, with extra points for disqualifications and minus scores. Skipping a poll counts as the winner's whole score behind. Named for Jessica Knappett's fall in Series 7."],
+  tiers: [["1", "per pt behind"], ["3", "per DQ"], ["3", "per minus score"]],
 };
 
 /**
@@ -445,14 +445,14 @@ export function knapTable(d, w = stWeek(d), open = null, how = false) {
     </div>${back}`;
 }
 
-/** A disaster's words, and its plural. */
-const KN_WORDS = { dq: ["DQ", "DQs"], neg: ["minus", "minuses"], zero: ["zero", "zeros"], last: ["last", "last"], stinker: ["stinker", "stinker"] };
+/** A bonus's words, and its plural. */
+const KN_WORDS = { dq: ["DQ", "DQs"], neg: ["minus", "minuses"] };
 /**
  * An opened Knappett row: every scored week up to the one on show, newest
  * first. Each week reads its pick (three letters in the contestant's
- * colour), how far it finished behind the episode's winner, its disasters
- * ("DQ +3 · last +2"), and that week's Knappett points (olive when a
- * disaster added to them).
+ * colour), how far it finished behind the episode's winner, its bonus
+ * points ("DQ +3", "minus +3"), and that week's Knappett points (olive when
+ * a bonus added to them).
  */
 function knapMore(d, p, wk) {
   const lines = p.weeks.slice(0, wk).reverse().map((x) => {
@@ -463,5 +463,5 @@ function knapMore(d, p, wk) {
     const pick = x.pick ? `<span class="kt-pick" style="color:${d.cast[x.pick].color}">${esc(x.pick.slice(0, 3))}</span>` : `<span class="kt-pick none">none</span>`;
     return `<div class="kt-ep${x.ep === wk ? " now" : ""}"><span class="kt-epn">${x.ep}</span>${pick}<span class="kt-gap">${k.gap}</span><span class="kt-bad">${bad.join("")}</span><b class="kt-tot${bad.length ? " bad" : ""}">${k.total}</b></div>`;
   }).join("");
-  return `<div class="kt-eps"><div class="kt-ep kt-ep-head"><span>Ep</span><span>Pick</span><span>Behind</span><span>Disasters</span><span>Pts</span></div>${lines}</div>`;
+  return `<div class="kt-eps"><div class="kt-ep kt-ep-head"><span>Ep</span><span>Pick</span><span>Behind</span><span>Bonus</span><span>Pts</span></div>${lines}</div>`;
 }
