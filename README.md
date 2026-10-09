@@ -111,6 +111,7 @@ The site has three tabs: **Standings**, **Episodes** and **Cast**.
 - Both boards side by side: **Show** on the left, **League** on the right, each from first place down.
 - **How scoring works** explains the Show, the League and the Knappett. Under it, **Read the welcome** brings back the welcome message the site opens with.
 - Whoever has the most Knappett points **leads The Knappett**, named alongside the leaders. **How scoring works** explains all three tables.
+- **Turn your phone upside down** to see the Knappett's own table, the right way up in your hand. Turn it back over for the standings. On an iPhone or iPad, first open **How scoring works** and tap **Tap to allow motion** under the Knappett.
 - Tap **Ep 1**, **Ep 2**… or swipe sideways to see the standings after any episode.
 - **Tap the Show or League heading** to open that board's race: every player's gap to the leader, week by week. Tap a line to follow one player.
 - **Tap any name** to see their points and pick for every episode. Tap the card's title to switch to their race, then to their Knappett points (the olive part of each bar is from disasters).

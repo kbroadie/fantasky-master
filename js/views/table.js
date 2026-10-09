@@ -68,14 +68,21 @@ const TERMS = [
  * under the pair, its tiers in the footer. Not the league's words: written
  * for the app, in the same pattern.
  */
-const KNAP_TERM = { icon: "fall", name: "Knappett", rule: ["The player whose picks finish ", "furthest behind each episode's winner", " wins, with extra points for every disaster. Named for Jessica Knappett's fall in Series 7."] };
+const KNAP_TERM = { flip: true, icon: "fall", name: "Knappett", rule: ["The player whose picks finish ", "furthest behind each episode's winner", " wins, with extra points for every disaster. Named for Jessica Knappett's fall in Series 7."] };
+/**
+ * Under the Knappett's rule, on phones and tablets: how to see its table
+ * (flip.js). On an iPhone or iPad, Safari only gives the page the tilt once
+ * a tap has allowed it, so until then this is the button that asks
+ * (state.tilt "ask").
+ */
+export const flipHint = () => `<button type="button" class="kn-flip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6.5A5 5 0 0 1 12.2 4M13 9.5A5 5 0 0 1 3.8 12 M12.5 1.5v3h-3 M3.5 14.5v-3h3"/></svg><span>Turn your phone upside down for its table${state.tilt === "ask" ? ". <u>Tap to allow motion</u>" : ""}</span></button>`;
 const KNAP_TIERS = [["1", "per pt behind"], ["3", "per DQ"], ["3", "minus score"], ["2", "per zero"], ["2", "last place"], ["+3", "last by 5+"]];
 const howCard = (t) => `<div class="card how-card ${t.name.toLowerCase()}">
     <div class="how-head">
       <span class="how-icon" aria-hidden="true"><svg class="how-ico" viewBox="0 0 16 16"><path d="${HOW_ICONS[t.icon]}"/></svg><i class="how-glint"></i></span>
       <h3 class="how-title"><span class="how-the">The</span><span class="how-name">${esc(t.name)}</span></h3>
     </div>
-    <p class="how-rule">${esc(t.rule[0])}<strong>${esc(t.rule[1])}</strong>${esc(t.rule[2])}</p>
+    <p class="how-rule">${esc(t.rule[0])}<strong>${esc(t.rule[1])}</strong>${esc(t.rule[2])}${t.flip ? flipHint() : ""}</p>
     ${t.range ? `<p class="how-range"><b>${esc(t.range)}</b><span>${esc(t.unit)}</span></p>`
       : `<div class="how-range how-tiers">${KNAP_TIERS.map(([v, u]) => `<p><b>${v}</b><span>${u}</span></p>`).join("")}</div>`}
   </div>`;
@@ -434,3 +441,28 @@ function journey(d, p, side, w) {
   </div>`;
 }
 
+/**
+ * The Knappett's own table (on request), shown when a phone or tablet is held
+ * upside down on the Standings (flip.js), in place of the boards: everyone's
+ * Knappett points after the week on show (or the latest scored week), most
+ * first, with that week's points beside them. Set like the Standings: the
+ * hero's kicker and title, then one card of rows, a place column at the left
+ * and an olive gap meter behind each row.
+ */
+export function knapTable(d, w = stWeek(d)) {
+  const wk = Math.min(w, d.weeksScored), final = d.complete && wk === d.episodes.length;
+  const kicker = `<div class="kicker">Series ${esc(state.key)} · ${wk ? `After episode ${wk}` : "No episodes scored yet"}</div>`;
+  const back = `<p class="kt-back">Turn it back over for the standings</p>`;
+  if (!wk) return `<div class="hero kt-hero">${kicker}<h2 class="ep-title">The Knappett</h2></div>${back}`;
+  const rows = d.players.map((p) => ({ name: p.name, knap: p.history[wk - 1].knap, week: p.weeks[wk - 1].knap.total }))
+    .sort((a, b) => b.knap - a.knap || a.name.localeCompare(b.name));
+  const kn = knappetts(rows), top = Math.max(1, rows[0].knap);
+  const lead = kn.length ? `<p class="st-leaders"><span><b>${esc(listing(kn))}</b> ${final ? (kn.length > 1 ? "win" : "wins") : (kn.length > 1 ? "lead" : "leads")} <span class="st-knap">The Knappett</span></span></p>` : "";
+  const body = rows.map((r, i) => `
+      <div class="kt-row" style="--m:${(r.knap / top).toFixed(3)}"><b class="kt-rk${tier(i + 1)}">${i + 1}</b><span class="kt-name">${esc(r.name)}</span><span class="kt-wk">+${r.week}</span><span class="kt-pts${i === 0 && kn.length ? " lead" : ""}">${r.knap}</span></div>`).join("");
+  return `<div class="hero kt-hero">${kicker}<h2 class="ep-title">The Knappett</h2>${lead}</div>
+    <div class="card kt-board" style="--n:${rows.length}">
+      <div class="kt-head"><span></span><span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${HOW_ICONS.fall}"/></svg>Player</span><span>Ep ${wk}</span><span>Total</span></div>
+      ${body}
+    </div>${back}`;
+}

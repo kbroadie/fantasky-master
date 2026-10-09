@@ -10,6 +10,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
+import { initFlip, flipSync } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -48,6 +49,7 @@ function loadSeries(key) {
   renderSlides(d);
   if (!$("#foot").children.length) $("#foot").innerHTML = footer();
   countdown();
+  flipSync();
 }
 
 /** Standings: the week strip and one slide per week; an opened player stays opened. */
@@ -84,6 +86,7 @@ function refresh(text) {
   for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get());
   else mark(sw, sw.get(), false);
   if (fk) $(`[data-fk="${CSS.escape(fk)}"]`)?.focus({ preventScroll: true });
+  flipSync();
 }
 
 function show(page) {
@@ -97,6 +100,7 @@ function show(page) {
   if (page === "episodes") jump(EP, state.ep - 1);
   if (page === "cast") jump(CAST, state.cast);
   writeHash();
+  flipSync();
 }
 
 // ── Swipers: a tab strip over a row of scroll-snapped slides ─────────────────
@@ -579,6 +583,7 @@ try {
   try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
   $("#welcome").innerHTML = welcomeCard();
   $("#welcome").hidden = !welcome;
+  initFlip(); // before the first render: How scoring works says whether to tap to allow the tilt
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);

@@ -280,6 +280,54 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   .how-glint { display: none; }
 }
 
+/* The line under the Knappett's rule: turn the phone over for its table
+   (flip.js); on iPhone and iPad the tap that allows the tilt. Phones and
+   tablets only. */
+.kn-flip { display: flex; align-items: flex-start; gap: 7px; margin-top: 10px; text-align: left; font: 500 12px/1.45 var(--ff); color: var(--hc-hi); -webkit-tap-highlight-color: transparent; }
+.kn-flip svg { flex: none; width: 15px; height: 15px; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.kn-flip u { text-decoration-thickness: 1px; text-underline-offset: 2px; }
+@media (pointer: fine) { .kn-flip { display: none; } }
+
+/* The Knappett's table, over the Standings while the device is upside down
+   (flip.js): a layer over everything, turned round (.turn) when the browser
+   hasn't turned the page itself, so it reads the right way up in the hand.
+   Its safe areas swap with it. A fade in and out; none under reduced
+   motion. */
+.kflip {
+  position: fixed; inset: 0; z-index: 60; overflow-y: auto; overscroll-behavior: contain;
+  padding: env(safe-area-inset-top) 0 max(16px, env(safe-area-inset-bottom));
+  background: var(--grain), radial-gradient(90% 40% at 50% 0%, var(--knap-glow), transparent 80%), var(--bg);
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s var(--ease), visibility 0s .25s;
+}
+.kflip.on { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .25s var(--ease); }
+.kflip.turn { transform: rotate(180deg); padding-top: env(safe-area-inset-bottom); padding-bottom: max(16px, env(safe-area-inset-top)); }
+body.kflipped { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .kflip, .kflip.on { transition: none; } }
+.kflip-in { max-width: 34rem; margin: 0 auto; }
+.kt-hero { text-align: center; padding-block: 18px 16px; background: var(--grain), radial-gradient(90% 100% at 50% 0%, var(--knap-glow), transparent 80%); }
+.kt-hero .ep-title { margin-bottom: 0; color: var(--t1); text-shadow: 0 0 18px color-mix(in srgb, var(--knap) 45%, transparent); }
+/* The rows fit the screen where they can (15 players on an iPhone), 44px at most */
+.card.kt-board { --row: clamp(34px, calc((100dvh - 236px) / var(--n)), 44px); margin: 12px var(--px) 0; padding: 0; overflow: hidden; border-color: var(--knap-edge); }
+.kt-head, .kt-row { display: grid; grid-template-columns: var(--rk) minmax(0, 1fr) 60px 60px; align-items: center; }
+.card.kt-board { --rk: 36px; }
+.kt-head { height: 34px; white-space: nowrap; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--knap-hi); border-bottom: 2px solid var(--knap); background: linear-gradient(180deg, color-mix(in srgb, var(--knap) 16%, transparent), transparent); }
+.kt-head span:first-child { align-self: stretch; background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold); }
+.kt-head span:nth-child(2) { display: flex; align-items: center; gap: 7px; padding-left: 12px; }
+.kt-head svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.kt-head span:nth-child(n+3) { text-align: right; padding-right: 14px; }
+.kt-row {
+  position: relative; height: var(--row); border-top: 1px solid var(--b-dim);
+  background: linear-gradient(90deg, transparent var(--rk), color-mix(in srgb, var(--knap) 9%, transparent) var(--rk), color-mix(in srgb, var(--knap) 19%, transparent) calc(var(--rk) + (100% - var(--rk)) * var(--m)), transparent calc(var(--rk) + (100% - var(--rk)) * var(--m)));
+}
+.kt-head + .kt-row { border-top: 0; }
+.kt-rk { align-self: stretch; display: grid; place-items: center; font-size: 15px; font-weight: 700; color: var(--t3); background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold); }
+.kt-name { padding-left: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 clamp(16px, 4.4vw, 18px) var(--ff-name); color: var(--t1); }
+.kt-wk { text-align: right; padding-right: 14px; font: 500 12px var(--fm); color: var(--t3); font-variant-numeric: tabular-nums; }
+.kt-pts { text-align: right; padding-right: 14px; font-size: clamp(17px, 4.6vw, 20px); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.kt-pts.lead { color: var(--knap-hi); text-shadow: 0 0 10px color-mix(in srgb, var(--knap) 50%, transparent); }
+.kt-name, .kt-pts, .kt-rk { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
+.kt-back { margin-top: 14px; text-align: center; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--t4); }
+
 /* ── Standings ─────────────────────────────────────────────────────── */
 /* Both boards side by side, in a rounded card like the cards on the other
    tabs. Each row is a place: its number in a fixed column at the left (1, 2,
