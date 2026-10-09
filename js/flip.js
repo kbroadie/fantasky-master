@@ -23,7 +23,7 @@
 // a later visit asks again on its first tap, which Safari answers by itself
 // if it remembers.
 import { $, state, reducedMotion } from "./ui.js";
-import { knapTable, knapMore } from "./views/table.js";
+import { knapTable, knapMore, stWeek } from "./views/table.js";
 
 const ASK = typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function";
 const KEY = "fm-tilt";
@@ -34,7 +34,8 @@ let on = false, turn = 0, held = false, pending = null, timer = 0, listening = f
 let up = null; // the way up, in the device's own frame: [x to its right edge, y to its top], from the sensor
 let oriented = false; // the orientation sensor works (else the accelerometer stands in)
 const sideways = {}; // per landscape screen angle, which of the device's edges is up when it's read that way: +1 its right, −1 its left
-let open = null; // the player whose row is open
+let open = null; // the player whose row is open (in the week on show)
+let wk = 1; // the week on show in the table (its own, like the Standings' strip and swiper)
 let how = false; // How scoring works, open
 
 const angle = () => screen.orientation?.angle ?? (typeof window.orientation === "number" ? (window.orientation + 360) % 360 : 0);
@@ -46,20 +47,22 @@ function set(show, rot = 0) {
   const was = on;
   on = show; if (show) turn = rot;
   const el = $("#kflip");
-  if (show && !was) {
-    // How scoring works starts open the first time a device sees the table (on request), closed after.
-    let seen = false;
-    try { seen = localStorage.getItem(HOW_KEY) === "1"; localStorage.setItem(HOW_KEY, "1"); } catch {}
-    open = null; how = !seen;
-    $(".kflip-in").innerHTML = knapTable(state.d, undefined, null, how);
-  }
   el.style.setProperty("--rot", `${turn}deg`);
   el.classList.toggle("turn", turn === 180);
   el.classList.toggle("side", Math.abs(turn) === 90);
   el.classList.toggle("on", show);
   el.setAttribute("aria-hidden", !show);
   document.body.classList.toggle("kflipped", show);
-  if (show && !was) $(".kflip-scroll").scrollTop = 0;
+  if (show && !was) {
+    // How scoring works starts open the first time a device sees the table (on request), closed after.
+    let seen = false;
+    try { seen = localStorage.getItem(HOW_KEY) === "1"; localStorage.setItem(HOW_KEY, "1"); } catch {}
+    open = null; how = !seen;
+    // It opens on the Standings' week, or the latest scored one before it.
+    wk = Math.min(stWeek(state.d), Math.max(1, state.d.weeksScored));
+    render();
+    $(".kflip-scroll").scrollTop = 0;
+  } else if (show) toWeek(wk, false); // turned another way: the swiper is a new width
   if (show) fall(); else stopFall();
 }
 
@@ -72,8 +75,46 @@ function want(show, rot) {
 }
 function settle() { clearTimeout(timer); pending = null; }
 
+// ── Weeks ───────────────────────────────────────────────────────────────────
+// Like the Standings (on request): the episode strip over a swiper of weeks.
+// A tap on the strip scrolls to that week; a swipe shows the neighbouring
+// week alongside as it moves, and where it settles is the week on show. An
+// opened row closes when the week changes.
+
+/** Draw the table (all its weeks) and show the week on show. */
+function render() {
+  $(".kflip-in").innerHTML = knapTable(state.d, how);
+  open = null;
+  toWeek(wk, false);
+}
+/** Scroll the swiper to week w (smoothly, unless just drawn), and mark its tab. */
+function toWeek(w, smooth = true) {
+  const sw = $(".kt-swiper");
+  if (!sw) return;
+  sw.scrollTo({ left: (w - 1) * sw.clientWidth, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
+  mark(w);
+}
+function mark(w) {
+  const strip = $(".kt-strip"), t = strip?.children[w - 1];
+  if (!t) return;
+  for (const b of strip.children) b.classList.toggle("on", b === t);
+  strip.scrollTo({ left: t.offsetLeft - (strip.clientWidth - t.offsetWidth) / 2, behavior: "auto" });
+}
+/** The swiper settled on a week: it's the week on show; any opened row closes. */
+function onSwipe() {
+  const sw = $(".kt-swiper"), w = Math.round(sw.scrollLeft / Math.max(1, sw.clientWidth)) + 1;
+  if (w === wk) return;
+  wk = w;
+  mark(w);
+  if (open) {
+    open = null;
+    for (const r of $("#kflip").querySelectorAll(".kt-item.open")) { r.classList.remove("open"); r.firstElementChild.setAttribute("aria-expanded", "false"); }
+  }
+}
+
 function onTilt(e) {
   const { beta, gamma } = e;
+  probe.o++; probe.beta = beta; probe.gamma = gamma; probe.show();
   if (beta == null || gamma == null) return;
   oriented = true;
   const b = beta * Math.PI / 180, g = gamma * Math.PI / 180;
@@ -89,8 +130,9 @@ function onTilt(e) {
  * gives the orientation once allowed).
  */
 function onMotion(e) {
-  if (oriented) return;
   const a = e.accelerationIncludingGravity;
+  probe.m++; probe.acc = a; probe.show();
+  if (oriented) return;
   if (!a || a.x == null || a.y == null) return;
   const n = Math.hypot(a.x, a.y, a.z || 0);
   if (n < 6 || n > 14) return; // being shaken, not held
@@ -112,6 +154,7 @@ function judge() {
   if ((a === 90 || a === 270) && Math.abs(ux) > 0.8) sideways[a] = Math.sign(ux);
   const down = uy < -0.57 && -uy > Math.abs(ux) * 1.4;
   const back = uy > -0.26 || Math.abs(ux) > -uy;
+  probe.pose = down ? "upside down" : back ? "upright" : "in between";
   if (held && back) held = false; // a tap closed it: open again only after it's been turned back
   if (down && !held) { const rot = turnFor(ux, uy); if (!on || rot !== turn) want(true, rot); else settle(); }
   else if (back) { if (on) want(false, turn); else settle(); }
@@ -285,7 +328,37 @@ export async function askTilt() {
   asking = false;
 }
 
+/**
+ * A diagnostic, only with ?tilt in the address (on request, to find why a
+ * phone didn't show the table): a small box of what the page is getting from
+ * the sensors and what it makes of it. Nothing otherwise.
+ */
+const probe = { o: 0, m: 0, pose: "–", el: null, at: 0,
+  show() {
+    if (!this.el) return;
+    const now = performance.now();
+    if (now - this.at < 100) return;
+    this.at = now;
+    const f = (v) => (v == null ? "null" : (+v).toFixed(1));
+    const a = this.acc;
+    this.el.textContent = [
+      `orientation events: ${this.o}  β ${f(this.beta)}  γ ${f(this.gamma)}`,
+      `motion events: ${this.m}  ${a ? `x ${f(a.x)}  y ${f(a.y)}  z ${f(a.z)}` : ""}`,
+      `screen angle: ${angle()}  ${screen.orientation?.type || ""}  page: ${state.page}`,
+      `way up: ${up ? up.map((v) => v.toFixed(2)).join(", ") : "–"}  (${oriented ? "orientation" : "motion"})`,
+      `pose: ${this.pose}  table: ${on ? `on, turned ${turn}°` : "off"}${held ? " (tapped shut)" : ""}`,
+      `secure: ${isSecureContext}  permission API: ${ASK}  allowed: ${allowed}`,
+    ].join("\n");
+  },
+};
+
 export function initFlip() {
+  if (new URLSearchParams(location.search).has("tilt")) {
+    probe.el = Object.assign(document.createElement("pre"), { className: "tilt-probe" });
+    document.body.append(probe.el);
+    probe.show();
+    setInterval(() => { probe.at = 0; probe.show(); }, 500);
+  }
   let before = false;
   try { before = localStorage.getItem(KEY) === "1"; } catch {}
   if (!ASK) listen();
@@ -296,32 +369,39 @@ export function initFlip() {
   // A tap on a row opens that player's weeks (one at a time); a tap anywhere
   // else closes the table until the device is turned back (in case the
   // sensor misjudges how it's held).
+  $("#kflip").addEventListener("scroll", (e) => { if (e.target.classList?.contains("kt-swiper")) onSwipe(); }, true);
   $("#kflip").addEventListener("click", (e) => {
-    // How scoring works opens and closes the Knappett's card.
+    // The strip: that week.
+    const tab = e.target.closest(".kt-strip .strip-tab");
+    if (tab) { wk = +tab.dataset.slide + 1; toWeek(wk); return; }
+    // How scoring works opens and closes the Knappett's card, on every week.
     const hw = e.target.closest(".kt-how");
     if (hw) {
       how = !how;
-      hw.setAttribute("aria-expanded", how);
-      hw.closest(".kt-hero").classList.toggle("explain", how);
+      for (const b of $("#kflip").querySelectorAll(".kt-how")) {
+        b.setAttribute("aria-expanded", how);
+        b.closest(".kt-hero").classList.toggle("explain", how);
+      }
       return;
     }
-    if (e.target.closest("#kt-explain")) return; // reading the card
+    if (e.target.closest(".kt-hero .st-explain")) return; // reading the card
     // An opened row's card title switches it between points and the race, as on the Standings.
     const swap = e.target.closest(".xp-swap");
     if (swap) {
       state.xpView = swap.dataset.xp;
       const item = swap.closest(".kt-item");
-      item.querySelector(".kt-more > div").innerHTML = knapMore(state.d, state.d.byName[open]);
+      item.querySelector(".kt-more > div").innerHTML = knapMore(state.d, state.d.byName[open], +item.closest(".kt-slide").dataset.week);
       return;
     }
     if (e.target.closest(".kt-more")) return; // reading a card
     const row = e.target.closest(".kt-row");
     if (!row) { held = true; settle(); set(false); return; }
+    const slide = row.closest(".kt-slide");
     open = open === row.dataset.kp ? null : row.dataset.kp;
-    for (const r of $("#kflip").querySelectorAll(".kt-row")) {
+    for (const r of slide.querySelectorAll(".kt-row")) {
       const me = r.dataset.kp === open;
       // The opened row's card is drawn as it opens; a closing one keeps its card until it has folded away.
-      if (me) r.nextElementSibling.firstElementChild.innerHTML = knapMore(state.d, state.d.byName[open]);
+      if (me) r.nextElementSibling.firstElementChild.innerHTML = knapMore(state.d, state.d.byName[open], +slide.dataset.week);
       r.parentElement.classList.toggle("open", me);
       r.setAttribute("aria-expanded", me);
     }
@@ -332,5 +412,5 @@ export function initFlip() {
 export function flipSync() {
   if (!on) return;
   if (state.page !== "standings") set(false);
-  else $(".kflip-in").innerHTML = knapTable(state.d, undefined, open, how);
+  else { wk = Math.min(wk, state.d.episodes.length); render(); }
 }

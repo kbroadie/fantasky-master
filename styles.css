@@ -269,6 +269,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   .how-glint { display: none; }
 }
 
+/* The tilt diagnostic, only with ?tilt in the address (flip.js) */
+.tilt-probe { position: fixed; left: 8px; bottom: 8px; z-index: 100; margin: 0; padding: 8px 10px; max-width: calc(100vw - 16px); white-space: pre-wrap; font: 400 11px/1.45 var(--fm); color: #9f9; background: rgba(0, 0, 0, .82); border-radius: 8px; pointer-events: none; }
 /* The Knappett's fall in a tapped last-place cell, for a moment (fallIn in flip.js) */
 .cell-fall { position: absolute; z-index: 30; pointer-events: none; }
 
@@ -304,6 +306,10 @@ body.kflipped { overflow: hidden; }
 .kf-fall canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .kf-fall::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, var(--bg), transparent 18%, transparent 78%, var(--bg)), var(--grain); }
 .kflip-in { position: relative; max-width: 34rem; margin: 0 auto; }
+/* Its episode strip and weeks, like the Standings' (on request): the strip sticks to the top as the table scrolls */
+.kt-strip { position: sticky; top: 0; z-index: 3; }
+.kt-swiper { align-items: flex-start; }
+.kt-slide { content-visibility: visible; }
 .kt-hero { text-align: center; padding-block: 18px 16px; background: none; }
 .kt-hero .ep-title { margin-bottom: 0; color: var(--t1); }
 /* The rows fit the screen where they can (15 players on an iPhone), 44px at most */
