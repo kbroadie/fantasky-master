@@ -292,6 +292,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   cursor: default; -webkit-tap-highlight-color: transparent;
 }
 .st-quote cite { font-style: normal; white-space: nowrap; }
+/* Underlined while the tilt still needs allowing (Safari), so it reads as a tap (askHint in flip.js) */
+.tilt-ask .st-quote q { text-decoration: underline 1px; text-underline-offset: 3px; }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 /* The head lines up with the rows: the place column's strip, then the Show's
    half over the left half and the League's over the right. */

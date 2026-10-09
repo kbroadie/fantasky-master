@@ -89,7 +89,7 @@ function onTilt(e) {
   const { beta, gamma } = e;
   probe.o++; probe.beta = beta; probe.gamma = gamma; probe.show();
   if (beta == null || gamma == null) return;
-  oriented = true;
+  if (!oriented) { oriented = true; askHint(); }
   const b = beta * Math.PI / 180, g = gamma * Math.PI / 180;
   up = [-Math.cos(b) * Math.sin(g), Math.sin(b)];
   judge();
@@ -295,12 +295,19 @@ function stopFall() { cancelAnimationFrame(fallRaf); fallRaf = 0; }
  * only then). Nothing once readings come, or elsewhere.
  */
 let asking = false;
+/**
+ * While the tilt still needs allowing (Safari, before a tap allows it and
+ * before any reading), the quote under the boards is underlined (on
+ * request), so it looks like something to tap: html.tilt-ask.
+ */
+function askHint() { document.documentElement.classList.toggle("tilt-ask", ASK && !allowed && !oriented); }
 export async function askTilt() {
   if (allowed || asking || oriented || probe.m) return;
   asking = true;
   try {
     if (await DeviceOrientationEvent.requestPermission() === "granted") {
       allowed = true;
+      askHint();
       try { localStorage.setItem(KEY, "1"); } catch {}
       listen();
     }
@@ -343,6 +350,7 @@ export function initFlip(h) {
   let before = false;
   try { before = localStorage.getItem(KEY) === "1"; } catch {}
   listen();
+  askHint();
   // Allowed on an earlier visit: ask again on the first tap if nothing has come (Safari answers by itself if it remembers).
   if (ASK && before) addEventListener("click", askTilt, { once: true, capture: true });
   screen.orientation?.addEventListener("change", onTurn);
