@@ -1,6 +1,9 @@
 // Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js): toggles and sliders, a card per
 // effect, per device in localStorage. Defaults are the site as designed; everything applies live (fm-switch events)
 export const CARDS = [
+  // How the view changes to and from Fantasy Land (flip.js)
+  { title: "Transition",
+    items: [{ key: "fzMove", type: "choice", def: "ripple", options: [["off", "Off"], ["ripple", "Ripple"], ["dream", "Dream"], ["turn", "Turn"]] }] },
   { title: "Frame rate",
     items: [{ key: "fps", type: "toggle", def: false, main: true }] },
   { title: "Background effects", view: "fz",
@@ -38,7 +41,7 @@ try { for (const k of Object.keys(localStorage)) if (k.startsWith("fm-sw-") && !
 for (const [k, it] of Object.entries(ITEMS)) {
   let v = null;
   try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
-  values[k] = v == null ? it.def : it.type === "toggle" ? v === "1" : +v;
+  values[k] = v == null ? it.def : it.type === "toggle" ? v === "1" : it.type === "choice" ? (it.options.some(([o]) => o === v) ? v : it.def) : +v;
 }
 export const get = (k) => values[k];
 export function set(k, v) {

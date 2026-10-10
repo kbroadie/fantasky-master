@@ -15,13 +15,47 @@ function set(show, anchor) {
   if (show === on) return;
   on = show;
   if (show) warm();
-  const y0 = $(anchor)?.getBoundingClientRect().top;
-  document.documentElement.classList.toggle("fz", show);
-  state.fantasy = show;
-  hooks.redraw();
-  const y1 = $(anchor)?.getBoundingClientRect().top;
-  if (y0 != null && y1 != null) scrollBy(0, y1 - y0);
-  if (show) { fall(); glints(); } else { stopFall(); clearInterval(glinter); }
+  const html = document.documentElement, at = $(anchor)?.getBoundingClientRect();
+  const swap = () => {
+    html.classList.toggle("fz", show);
+    state.fantasy = show;
+    hooks.redraw();
+    const y1 = $(anchor)?.getBoundingClientRect().top;
+    if (at && y1 != null) scrollBy(0, y1 - at.top);
+    if (show) { fall(); glints(); } else { stopFall(); clearInterval(glinter); }
+  };
+  const how = get("fzMove");
+  if (how === "off" || reducedMotion || !document.startViewTransition) return swap();
+  // The browser pictures the page before and after and animates between the two (styles.css, html[data-vt])
+  html.dataset.vt = how;
+  html.classList.toggle("vt-in", show);
+  if (how === "ripple") ripple(at, show);
+  if (how === "turn") nameMovers();
+  const vt = document.startViewTransition(() => { swap(); if (how === "turn") nameMovers(); });
+  vt.finished.finally(() => { delete html.dataset.vt; html.classList.remove("vt-in"); if (how === "turn") nameMovers(true); });
+}
+
+// Ripple: Fantasy Land grows from what was tapped in a circle, and shrinks back into it. Its keyframes are written
+// here, as a custom property on the root would restyle every duck and dolphin
+let rippleCss = null;
+function ripple(r, show) {
+  const x = r ? r.left + r.width / 2 : innerWidth / 2, y = r ? r.top + r.height / 2 : innerHeight / 2;
+  const R = Math.ceil(Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)));
+  rippleCss ??= document.head.appendChild(document.createElement("style"));
+  const small = `circle(0 at ${x}px ${y}px)`, big = `circle(${R}px at ${x}px ${y}px)`;
+  rippleCss.textContent = `@keyframes vt-ripple { from { clip-path: ${show ? small : big}; } to { clip-path: ${show ? big : small}; } }`;
+}
+// Turn: each player's half on the week on show, and each Cast tab, glides from its old place to its new one
+// (the order inverts). Only what's on screen under the bar and strip: a moving picture is drawn over everything, the bar
+// too. Named only for the transition: names must be unique, and a named element is a stacking context
+function nameMovers(clear = false) {
+  const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const top = Math.max(0, ...[...document.querySelectorAll(".topbar, .strip")].map((e) => e.getBoundingClientRect())
+    .filter((r) => r.height && r.bottom < innerHeight / 2).map((r) => r.bottom));
+  for (const el of document.querySelectorAll("#st-body .slide.here .sd, #cast-tabs .strip-tab")) {
+    const r = el.getBoundingClientRect(), seen = el.dataset.p ? r.top >= top && r.bottom <= innerHeight : r.height > 0;
+    el.style.viewTransitionName = clear || !seen ? "" : el.dataset.p ? `vt-${el.dataset.side}-${slug(el.dataset.p)}` : `vt-cast-${slug(el.textContent)}`;
+  }
 }
 
 // Pacifico ("Fantasy") is fetched once a finger is on the quote, before the tap lands

@@ -34,6 +34,13 @@ const control = (it) => (it.type === "toggle"
 // the Fantasy Land tile switches it, so the page previews them live
 const switchCard = (c) => {
   const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
+  if (rest[0]?.type === "choice") { // a choice: its options in a row across the card
+    const it = rest[0];
+    return `
+    <div class="card sw-card wide"><div class="card-head"><span>${esc(c.title)}</span></div>
+      <div class="sw-seg" role="radiogroup" aria-label="${esc(c.title)}">${it.options.map(([v, name]) =>
+        `<button type="button" role="radio" aria-checked="${get(it.key) === v}" data-sw="${it.key}" data-v="${v}">${esc(name)}</button>`).join("")}</div></div>`;
+  }
   if (!main && rest.length === 1) { // a lone slider: its value in the head
     const it = rest[0];
     return `
@@ -49,7 +56,7 @@ const switchCard = (c) => {
 const tile = (title, end, wide = false) => `<div class="card sw-card${wide ? " wide" : ""}"><div class="card-head"><span>${title}</span>${end}</div></div>`;
 const switchCards = () => {
   // Defaults spans the row when it would be left alone in one
-  const cards = cardsShown(!!state.fantasy), tiles = 1 + cards.filter((c) => c.items.length === 1).length;
+  const cards = cardsShown(!!state.fantasy), tiles = 1 + cards.filter((c) => c.items.length === 1 && c.items[0].type !== "choice").length;
   return `
     <div class="sw-grid">
       ${tile("Fantasy Land", `<button type="button" class="sw-toggle" role="switch" aria-checked="${!!state.fantasy}" aria-label="Fantasy Land" data-fz></button>`)}
