@@ -673,7 +673,15 @@ function barTo(compact) {
     const a = first[i], b = el.getBoundingClientRect();
     const dy = top(a) - top(b), sy = tall(a) / tall(b);
     if (!b.height || (Math.abs(dy) < .5 && Math.abs(sy - 1) < .01)) return;
-    el.animate([{ translate: `0 ${dy}px`, scale: `1 ${sy}` }, { translate: "0 0", scale: "1 1" }], { id: "bar", duration: 300, easing: "cubic-bezier(.22, 1, .36, 1)" });
+    // A stretched box keeps its round corners (on request): as it's scaled by
+    // k, its corners' vertical radius is r / k, so they're r on the screen.
+    const r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+    const frame = (p) => {
+      const k = sy + (1 - sy) * p, f = { offset: p, translate: `0 ${dy * (1 - p)}px`, scale: `1 ${k}` };
+      if (r && Math.abs(sy - 1) >= .01) f.borderRadius = `${r}px / ${r / k}px`;
+      return f;
+    };
+    el.animate([0, .25, .5, .75, 1].map(frame), { id: "bar", duration: 300, easing: "cubic-bezier(.22, 1, .36, 1)" });
   });
   moving();
 }
