@@ -1,5 +1,5 @@
 // Diagnostics, switched on Moss's cards (switches.js): the frame rate graphs, in the site's own
-// colours (read from its tokens, so the rainbow view's too). The graphs' loop keeps the main thread drawing every
+// colours (read from its tokens, so Fantasy Land's too). The graphs' loop keeps the main thread drawing every
 // frame, so it costs a little itself; they redraw 4 times a second
 import { get, onSwitch } from "./switches.js";
 

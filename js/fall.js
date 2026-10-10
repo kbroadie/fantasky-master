@@ -79,14 +79,14 @@ export function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44
   };
 }
 
-// start() at o.fps, 30 by default (one still frame if reduced), stop(). Each frame is a full-screen texture the GPU
+// start() at o.fps, 60 by default (one still frame if reduced), stop(). Each frame is a full-screen texture the GPU
 // uploads and blends everything over, so fewer frames are what count
 // o: the Moss cards' settings (fps, density, figures, bright, speed), the designed look by default
 export function runner(canvas, w, h, reduced, o = {}) {
   canvas.width = w; canvas.height = h;
   const figs = o.figures ?? 7, area = (w * h) / (390 * 844);
   const draw = streaks(canvas.getContext("2d"), w, h, o.density ?? 1, 1.3 * (o.bright ?? 1), figs ? Math.max(1, Math.round(figs * area)) : 0, [26, 44], true, o.speed ?? 1);
-  const gap = 1000 / (o.fps ?? 30) - 3; // at any refresh rate
+  const gap = 1000 / (o.fps ?? 60) - 3; // at any refresh rate
   const raf = globalThis.requestAnimationFrame ? (f) => requestAnimationFrame(f) : (f) => setTimeout(() => f(performance.now()), 16);
   const unraf = globalThis.cancelAnimationFrame ? (id) => cancelAnimationFrame(id) : (id) => clearTimeout(id);
   let id = 0, last = 0;

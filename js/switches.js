@@ -3,15 +3,17 @@
 export const CARDS = [
   { title: "Frame rate",
     items: [{ key: "fps", type: "toggle", def: false, main: true }] },
-  { title: "Falling background",
+  { title: "Background effects", view: "fz",
     items: [
       { key: "fall", type: "toggle", def: true, main: true, cls: "no-fall" },
-      { key: "fallFps", type: "range", label: "Frame rate", def: 30, min: 10, max: 60, step: 5, unit: " fps" },
+      { key: "fallFps", type: "range", label: "Frame rate", def: 60, min: 10, max: 60, step: 5, unit: " fps" },
       { key: "fallDensity", type: "range", label: "Streaks", def: 1, min: 0, max: 3, step: 0.25, unit: "×" },
-      { key: "fallFigures", type: "range", label: "Figures and emoji", def: 7, min: 0, max: 20, step: 1, unit: "" },
+      { key: "fallFigures", type: "range", label: "Figures", def: 7, min: 0, max: 20, step: 1, unit: "" },
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
       { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
     ] },
+  { title: "Card opacity", view: "fz",
+    items: [{ key: "fzAlpha", type: "range", def: 0.84, min: 0.5, max: 1, step: 0.02, pct: true, css: "--fz-a" }] },
   { title: "Podium effects",
     items: [
       { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
@@ -19,26 +21,19 @@ export const CARDS = [
       { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
       { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
     ] },
-  { title: "Rainbow decorations",
-    items: [
-      { key: "sparkles", type: "toggle", label: "Title sparkles", def: true, cls: "no-sparkles" },
-      { key: "glint", type: "toggle", label: "Glint on Fantasy", def: true, cls: "no-glint" },
-      { key: "tabBow", type: "toggle", label: "Sliding tab rainbow", def: true, cls: "no-tabbow" },
-      { key: "dolphins", type: "toggle", label: "Leaping dolphins", def: true, cls: "no-dolphins" },
-      { key: "stillScroll", type: "toggle", label: "Hold still while scrolling", def: true },
-    ] },
-  { title: "Rainbow cards",
-    items: [{ key: "fzAlpha", type: "range", label: "Opacity", def: 0.84, min: 0.5, max: 1, step: 0.02, pct: true, css: "--fz-a" }] },
   { title: "Scoring cards",
     items: [{ key: "howLight", type: "toggle", def: true, main: true, cls: "no-howlight" }] },
 ];
+// A card for one view only (view: "fz", Fantasy Land) shows only there
+export const cardsShown = (fantasy) => CARDS.filter((c) => !c.view || (c.view === "fz") === fantasy);
 const ITEMS = Object.fromEntries(CARDS.flatMap((c) => c.items.map((it) => [it.key, it])));
 const id = (k) => `fm-sw-${k}`;
 export const item = (k) => ITEMS[k];
 export const shown = (it, v) => (it.pct ? `${Math.round(v * 100)}%` : `${+v.toFixed(2)}${it.unit}`);
 
-// Read once: get() runs on every scroll (still() in main.js)
+// Read once; settings that no longer exist are forgotten
 const values = {};
+try { for (const k of Object.keys(localStorage)) if (k.startsWith("fm-sw-") && !ITEMS[k.slice(6)]) localStorage.removeItem(k); } catch { /* private mode */ }
 for (const [k, it] of Object.entries(ITEMS)) {
   let v = null;
   try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
