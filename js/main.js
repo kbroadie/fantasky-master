@@ -202,7 +202,7 @@ function dragEnd(e) {
     last = now;
     const before = get();
     put(before + speed * dt);
-    speed *= 0.975 ** (dt / 16);
+    speed *= 0.998 ** dt; // iOS's own deceleration
     coastV = speed;
     if (Math.abs(speed) > 0.02 && get() !== before) coast = requestAnimationFrame(frame);
     else coast = 0;
@@ -637,7 +637,15 @@ function edges() {
     s.classList.toggle("more-r", s.scrollLeft + s.clientWidth < s.scrollWidth - 2);
   }
 }
-document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("strip")) edges(); }, { capture: true, passive: true });
+document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("strip")) edges(); still(); }, { capture: true, passive: true });
+// Fantasy: the decorative animations hold still while anything scrolls, so the scroll has the frames
+let stillT = 0;
+function still() {
+  if (!state.fantasy) return;
+  if (!stillT) document.documentElement.classList.add("scrolling");
+  clearTimeout(stillT);
+  stillT = setTimeout(() => { stillT = 0; document.documentElement.classList.remove("scrolling"); }, 200);
+}
 
 let lraf = 0;
 function cardLight() {

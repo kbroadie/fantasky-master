@@ -79,14 +79,11 @@ export function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44
   };
 }
 
-// start() at 30 fps (one still frame if reduced), stop(). Half resolution, scaled up by CSS: each frame is a
-// full-screen texture the GPU uploads and blends everything over, so fewer and smaller frames are what count
+// start() at 30 fps (one still frame if reduced), stop(). Each frame is a full-screen texture the GPU
+// uploads and blends everything over, so fewer frames are what count
 export function runner(canvas, w, h, reduced) {
-  canvas.width = Math.round(w / 2); canvas.height = Math.round(h / 2);
-  const g = canvas.getContext("2d");
-  g.scale(canvas.width / w, canvas.height / h);
-  g.imageSmoothingQuality = "high"; // the emoji sprites shrink a long way; low quality left them blocky
-  const draw = streaks(g, w, h, 1, 1.3, Math.max(4, Math.round(7 * (w * h) / (390 * 844))), [26, 44], true);
+  canvas.width = w; canvas.height = h;
+  const draw = streaks(canvas.getContext("2d"), w, h, 1, 1.3, Math.max(4, Math.round(7 * (w * h) / (390 * 844))), [26, 44], true);
   const raf = globalThis.requestAnimationFrame ? (f) => requestAnimationFrame(f) : (f) => setTimeout(() => f(performance.now()), 16);
   const unraf = globalThis.cancelAnimationFrame ? (id) => cancelAnimationFrame(id) : (id) => clearTimeout(id);
   let id = 0, last = 0;
