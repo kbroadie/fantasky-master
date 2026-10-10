@@ -3,7 +3,6 @@ import { $, esc, framed, icon, TASK_NAME, state } from "./ui.js";
 import { parseRows, toCSV, parseCSV } from "./csv.js";
 import { checkData } from "./checks.js";
 import { apply } from "./ops.js";
-import { SWITCHES, isOn, setSwitch } from "./switches.js";
 
 const REPO = "kbroadie/fantasky-master", BRANCH = "main", PATH = "data/fantasky_master_data.csv";
 const FILE_API = `https://api.github.com/repos/${REPO}/contents/${PATH}`;
@@ -124,7 +123,6 @@ function keyDialog() {
           <p class="ed-msg" id="ed-key-msg"></p>
           <div class="ed-actions">
             <button type="button" class="ed-btn" data-ed="forget">Forget key</button>
-            <button type="button" class="ed-btn" data-ed="switches">Switches</button>
             <span></span>
             <button type="button" class="ed-btn" value="cancel" data-ed="cancel">Cancel</button>
             <button type="submit" class="ed-btn gold" data-ed="use">Start editing</button>
@@ -136,7 +134,6 @@ function keyDialog() {
       const b = e.target.closest("[data-ed]");
       if (!b) return;
       if (b.dataset.ed === "cancel") return dlg.close();
-      if (b.dataset.ed === "switches") { dlg.close(); return switches(); }
       if (b.dataset.ed === "forget") { store.set(""); memKey = ""; $("#ed-key-in").value = ""; $("#ed-key-msg").textContent = "Key forgotten on this device."; b.hidden = true; return; }
       if (b.dataset.ed === "use") {
         e.preventDefault();
@@ -161,28 +158,6 @@ function keyDialog() {
   dlg.showModal();
 }
 
-// Hidden switches for this device (switches.js); no key needed
-function switches() {
-  let dlg = $("#ed-sw");
-  if (!dlg) {
-    document.body.insertAdjacentHTML("beforeend", `
-      <dialog id="ed-sw" class="ed-dialog">
-        <form method="dialog">
-          <h2>Switches</h2>
-          <p>Hidden settings, on this device only.</p>
-          <div class="ed-sws">${SWITCHES.map((s) => `
-            <label class="ed-sw"><input type="checkbox" data-sw="${s.key}"><span><b>${esc(s.name)}</b><small>${esc(s.note)}</small></span></label>`).join("")}
-          </div>
-          <div class="ed-actions"><span></span><button class="ed-btn gold" value="done">Done</button></div>
-        </form>
-      </dialog>`);
-    dlg = $("#ed-sw");
-    dlg.addEventListener("change", (e) => { const k = e.target.dataset.sw; if (k) setSwitch(k, e.target.checked); });
-  }
-  for (const box of dlg.querySelectorAll("[data-sw]")) box.checked = isOn(box.dataset.sw);
-  dlg.showModal();
-}
-
 function start() {
   if (state.edit) return;
   state.edit = true;
@@ -192,7 +167,7 @@ function start() {
       <div class="ed-bar" id="ed-bar" role="region" aria-label="Edit mode">
         <span class="ed-status" id="ed-status" aria-live="polite"></span>
         <button type="button" class="ed-btn" data-ed="key">Key</button>
-        <button type="button" class="ed-btn" data-ed="switches">Switches</button>
+
         <button type="button" class="ed-btn gold" data-ed="save">Save</button>
         <button type="button" class="ed-btn" data-ed="done">Done</button>
       </div>`);
@@ -200,7 +175,6 @@ function start() {
       const b = e.target.closest("[data-ed]")?.dataset.ed;
       if (b === "save") save();
       if (b === "key") keyDialog();
-      if (b === "switches") switches();
       if (b === "done") stop();
     });
   }

@@ -19,7 +19,7 @@ js/league.js                    pure scoring engine (derive): must match the sys
 js/csv.js, js/checks.js, js/ops.js  CSV parsing and round-trip, the data rules, edits as row ops
 js/alltime.js, js/heroes.js     all-time stats (radar, badges, facts); profile photo crops
 js/edit.js, js/wiki.js          edit mode; Taskmaster Wiki reader
-js/switches.js                  hidden per-device switches (the duck menu's Switches), and the frame rate graphs
+js/switches.js                  hidden per-device switches (Maurice Moss's cards), and the frame rate graphs
 js/bench.js                     the benchmark (the graphs' button): scripted interactions at three speeds, loaded only when run
 js/podium-fx.js                 podium effects (gold light, stink gas): one half-res canvas between portraits and text
 js/flip.js, js/fall.js, js/fall-worker.js   the Easter egg (below): switching it, and its falling background
@@ -80,6 +80,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
   - **The race so far** shows each contestant's gap to the leader, ending at the episode on show; tap a line to follow it.
   - An unscored episode is just its head.
 - **Cast:**
+  - **Maurice Moss, an Easter egg** (`cast.js`, `state.moss`): tapping Richard Ayoade's portrait (Series 22) renames him Maurice Moss and swaps his cards for the hidden switches, a card each with a toggle and what it does (`SWITCHES` in `switches.js`, `fm-sw-*` in localStorage, per device; add any new switch there); tap again to go back. Nothing on the site mentions it. One switch so far: **Frame rate**, live corner graphs of the main thread's frames a second (last 10s) and frame time (last 160 frames), redrawn 4 times a second (its own loop costs a little), with a Benchmark button (`bench.js`, loaded only when run): scrolling, swipes, rows, race charts, How scoring works and tabs at slow, medium and fast, then a results table to copy. Its scrolling is scripted, so it measures what scrolling costs to draw, not the phone's own scrolling.
   - Per contestant: a header (portrait; first place gets the gold light), All-time records badges (top 3, finished series only), Points per episode bars with the median line, the Every task heat strip (DQ crosses, n/a dashes), a Performance radar (z-scores vs all 110 contestants, −3σ centre to +3σ edge), and a Profile (bio and facts over their face, never performance).
 - **Swipers:**
   - Swiping past an end goes to the neighbouring tab (`edgeNav`).
@@ -89,7 +90,6 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
   - Picks and scores are entered on the page. Episodes are edited in place, with a "Get scores from the wiki" button.
   - Every change is an op, replayed onto a fresh copy from GitHub on Save. It must pass `checkData` first.
   - The commissioner's fine-grained token stays only in that browser's localStorage (`fm-gh-key`), never in the site.
-  - **Switches** (in the bar and in the key dialog, so no key is needed): per-device toggles from `switches.js` (`fm-sw-*` in localStorage). Add any new switch there. One so far: **Frame rate**, live corner graphs of the main thread's frames a second (last 10s) and frame time (last 160 frames), redrawn 4 times a second (its own loop costs a little), with a Benchmark button (`bench.js`, loaded only when run): scrolling, swipes, rows, race charts, How scoring works and tabs at slow, medium and fast, then a results table to copy. Its scrolling is scripted, so it measures what scrolling costs to draw, not the phone's own scrolling.
 - **Wiki sync** (`.github/workflows/wiki-sync.yml`, `tools/sync-wiki.mjs`):
   - Runs Thursday nights and hourly through Friday.
   - Fills in the next episode's scores once the wiki's table is complete, and titles that are placeholders or differ. It never touches scored episodes and never touches picks.

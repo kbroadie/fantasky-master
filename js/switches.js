@@ -1,6 +1,6 @@
-// Hidden switches, toggled in the duck menu (Switches): per device, in localStorage
+// Hidden switches, toggled on Maurice Moss's cards (the Cast tab's Easter egg, cast.js): per device, in localStorage
 export const SWITCHES = [
-  { key: "fps", name: "Frame rate", note: "Live graphs of frames a second and frame time, with a benchmark. They time the main thread; scrolling the phone does itself can stay smooth when they dip." },
+  { key: "fps", name: "Frame rate", note: "Live graphs in the corner: frames a second over the last 10 seconds, and how long each frame took. Under them, a Benchmark button runs every interaction at three speeds and gives a table of results to copy." },
 ];
 const id = (k) => `fm-sw-${k}`;
 export function isOn(k) {
