@@ -1139,5 +1139,8 @@ html.fz #foot.run .dk { animation: fz-bob 5s infinite; }
 @keyframes vt-tilt-in { 0%, 50% { transform: translateY(100%); } 100% { transform: none; } }
 @keyframes vt-vertigo-out { 55% { opacity: 1; } 100% { opacity: 0; transform: scale(1.7); filter: blur(3px); } }
 @keyframes vt-vertigo-in { 0%, 40% { opacity: 0; transform: scale(.6); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+/* Slam's rows flip over as its shockwave reaches them (the rest of Slam is written by flip.js, from where things are) */
+@keyframes vt-flip-out { to { transform: perspective(600px) rotateX(90deg); } }
+@keyframes vt-flip-in { from { transform: perspective(600px) rotateX(-90deg); } }
 @keyframes vt-dream-out { to { opacity: 0; filter: blur(14px) hue-rotate(160deg) saturate(1.8); transform: scale(1.06); } }
 @keyframes vt-dream-in { from { opacity: 0; filter: blur(14px) hue-rotate(-160deg) saturate(1.8); transform: scale(.96); } }
