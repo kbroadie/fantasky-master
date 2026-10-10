@@ -1099,7 +1099,12 @@ html.fz .ep-title .ep-t {
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
   filter: drop-shadow(0 1px 0 rgba(42, 8, 69, .9)) drop-shadow(0 0 6px rgba(255, 90, 210, .3));
 }
-html.fz .ep-title::before, html.fz .ep-title::after { content: "✨"; display: inline-block; margin: 0 .3em; font-size: .62em; vertical-align: .25em; }
+/* The sparkles flank the whole title, centred on it, and each line of the
+   words is centred on its own: inline, one led the first line and one ended
+   the last, so a title on two lines sat off centre (on request) */
+html.fz .ep-title { display: flex; align-items: center; justify-content: center; }
+html.fz .ep-title .ep-w { min-width: 0; } /* a block round the words, which stay inline, so each line gets its own rainbow */
+html.fz .ep-title::before, html.fz .ep-title::after { content: "✨"; flex: none; margin: 0 .3em; font-size: .62em; }
 html.fz .ep-title::after { animation-delay: -1.1s; }
 html.fz .st-how { color: var(--gold2); text-shadow: 0 0 8px rgba(255, 225, 77, .3); }
 /* The Profile in the dream (on request: "should fit the vibe"): the photo
