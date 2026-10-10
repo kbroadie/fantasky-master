@@ -237,6 +237,10 @@ document.addEventListener("touchcancel", dragEnd, { passive: true });
 /** Every page drawn again (fantasy mode on or off), on the same week, episode and contestant. */
 function redraw() {
   const key = $("#cast-tabs .on")?.textContent;
+  // The dolphins' footer appears or goes: look again whether it's on screen
+  const foot = $(".fz-foot");
+  footSeen.unobserve(foot);
+  footSeen.observe(foot);
   renderStandings(state.d);
   renderSlides(state.d);
   const i = castOrder(state.d).findIndex((c) => c.key === key);
@@ -704,7 +708,10 @@ $("main").addEventListener("scroll", barScroll, { passive: true });
 bar.addEventListener("focusin", () => setHidden(false)); // never hide what the keyboard is on
 // The dolphins' footer (fantasy mode) animates only while it's on screen:
 // its leaps cost even off screen.
-new IntersectionObserver(([e]) => e.target.classList.toggle("run", e.isIntersecting)).observe($(".fz-foot"));
+// The latest entry decides: changes can come batched, and the first is the oldest
+// (reading it left the dolphins frozen mid-leap, on request).
+const footSeen = new IntersectionObserver((es) => { const e = es.at(-1); e.target.classList.toggle("run", e.isIntersecting); });
+footSeen.observe($(".fz-foot"));
 /** The page was put back at the top (turned over or back): the bar open and shown. */
 function barAtTop() { lastY = 0; down = up = 0; bar.classList.remove("compact"); setHidden(false); }
 
