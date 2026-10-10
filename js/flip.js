@@ -1,6 +1,7 @@
 // Fantasy Fantasky Master: an Easter egg, never mentioned on the site. Upside down, the app turns to read right in the hand (fz-turn 180°, fz-side ±90° when the page went landscape, none if the browser turned it) and goes into fantasy mode (low scores win). Turned, body is a fixed rotated box and main scrolls. Listens from load; iOS needs a tap to allow the tilt (the quote under the boards).
 import { $, state, reducedMotion } from "./ui.js";
 import { runner } from "./fall.js";
+import { isOn } from "./switches.js";
 
 const ASK = typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function";
 // iOS motion signs run the other way (iPadOS reports as Mac + touch)
@@ -18,6 +19,8 @@ export const DESKTOP = matchMedia("(hover: hover) and (pointer: fine)");
 export function toggleFantasy() { set(!on, 0); }
 
 export const turned = () => (on ? turn : 0);
+// The flip switch: upside down, main, the bar and the fall are each turned, and the window still scrolls
+export const flipped = () => on && turn === 180 && document.documentElement.classList.contains("fz-flip");
 
 const angle = () => screen.orientation?.angle ?? (typeof window.orientation === "number" ? (window.orientation + 360) % 360 : 0);
 
@@ -29,7 +32,9 @@ function set(show, rot = 0) {
   if (show !== was || show) { scrollTo(0, 0); hooks.scrolled(); }
   html.style.setProperty("--rot", `${turn}deg`);
   html.classList.toggle("fz", show);
-  html.classList.toggle("fz-turn", show && turn === 180);
+  const flip = show && turn === 180 && isOn("flip");
+  html.classList.toggle("fz-turn", show && turn === 180 && !flip);
+  html.classList.toggle("fz-flip", flip);
   html.classList.toggle("fz-side", show && Math.abs(turn) === 90);
   state.fantasy = show;
   if (show !== was) hooks.redraw();
@@ -178,7 +183,16 @@ export async function quoteTap() {
   toggleFantasy();
 }
 
-// ?tilt: a diagnostic box of the sensor readings
+// ?tilt, or the tilt switch: a diagnostic box of the sensor readings
+let probeTimer = 0;
+function diagnostic(show) {
+  if (!show) { probe.el?.remove(); probe.el = null; clearInterval(probeTimer); return; }
+  if (probe.el) return;
+  probe.el = Object.assign(document.createElement("pre"), { className: "tilt-probe" });
+  document.body.append(probe.el);
+  probe.show();
+  probeTimer = setInterval(() => { probe.at = 0; probe.show(); }, 500);
+}
 const probe = { o: 0, m: 0, pose: "–", el: null, at: 0,
   show() {
     if (!this.el) return;
@@ -200,12 +214,8 @@ const probe = { o: 0, m: 0, pose: "–", el: null, at: 0,
 
 export function initFlip(h) {
   hooks = { ...hooks, ...h };
-  if (new URLSearchParams(location.search).has("tilt")) {
-    probe.el = Object.assign(document.createElement("pre"), { className: "tilt-probe" });
-    document.body.append(probe.el);
-    probe.show();
-    setInterval(() => { probe.at = 0; probe.show(); }, 500);
-  }
+  diagnostic(new URLSearchParams(location.search).has("tilt") || isOn("tilt"));
+  addEventListener("fm-switch", ({ detail: d }) => { if (d.key === "tilt") diagnostic(d.on); });
   let before = false;
   try { before = localStorage.getItem(KEY) === "1"; } catch {}
   listen();

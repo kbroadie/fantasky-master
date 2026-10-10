@@ -183,8 +183,8 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
   .page > .strip { animation-name: bar-strip; }
   .page > .strip .strip-tab > span { animation-name: bar-strip-label; }
   /* Turned: --p drives it (a timeline-less animation would hold its end) */
-  :is(html.fz-turn, html.fz-side) :is(.brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab svg, .tab span, .page > .strip, .page > .strip .strip-tab > span),
-  :is(html.fz-turn, html.fz-side) .topbar::before, :is(html.fz-turn, html.fz-side) .hdr::before, :is(html.fz-turn, html.fz-side) .hdr::after { animation-name: none; }
+  :is(html.fz-turn, html.fz-side, html.fz-flip) :is(.brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab svg, .tab span, .page > .strip, .page > .strip .strip-tab > span),
+  :is(html.fz-turn, html.fz-side, html.fz-flip) .topbar::before, :is(html.fz-turn, html.fz-side, html.fz-flip) .hdr::before, :is(html.fz-turn, html.fz-side, html.fz-flip) .hdr::after { animation-name: none; }
 }
 /* From --p where there are no scroll-driven animations, or turned (after the base rules; an animation overrides) */
 .topbar::before { transform: translateY(calc(-1 * var(--bar-d) * var(--p, 0))); }
@@ -787,6 +787,11 @@ body:not(.editing) .ed-bar { display: none; } /* Done hides it; it's reused if e
 .ed-dialog a { color: var(--gold3); }
 .ed-dialog b { color: var(--t1); font-weight: 600; }
 .ed-dialog .ed-msg { min-height: 1.4em; margin: 8px 0 12px; }
+.ed-sws { display: grid; gap: 14px; margin: 14px 0 18px; }
+.ed-sw { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+.ed-dialog .ed-sw input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; padding: 0; accent-color: var(--gold2); }
+.ed-sw span { display: grid; gap: 2px; font-size: 15px; }
+.ed-sw small { font-size: 13px; line-height: 1.4; color: var(--t3); }
 
 /* 16px inputs: iOS won't zoom */
 .ed-dialog input, .ed-tt input, .ed-tt select {
@@ -1030,3 +1035,13 @@ html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; b
 /* While anything scrolls (main.js still()), the decorative animations hold still */
 html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word, .dl)::before, html.fz.scrolling :is(.ep-title, .fz-word, .dl)::after,
 html.fz.scrolling :is(.dl i, .dl b, .dl svg, .fz-sea) { animation-play-state: paused !important; }
+/* Flipped layout (the flip switch): upside down, main, the bar and the fall are each turned rather than the page,
+   so the window still scrolls and the phone does it (momentum, taps). Sideways swipes stay the page's own (main.js) */
+html.fz-flip main { rotate: 180deg; padding-top: calc(var(--bar-h) + var(--strip-h) + env(safe-area-inset-bottom)); }
+html.fz-flip .topbar { top: auto; bottom: 0; rotate: 180deg; }
+html.fz-flip #fz-fall { rotate: 180deg; }
+html.fz-flip * { touch-action: pan-y; }
+/* The strips ride in the bar (sticky can't stick inside a turned box): under the header and tabs, over the glass */
+html.fz-flip .topbar > .strip { position: relative; z-index: -1; pointer-events: auto; transition: transform .3s var(--ease); translate: 0 calc(var(--strip-dy) * var(--p, 0)); }
+html.fz-flip .topbar > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2 * var(--p, 0)); }
+body:not([data-page="standings"]) .topbar > #st-tabs, body:not([data-page="episodes"]) .topbar > #ep-tabs, body:not([data-page="cast"]) .topbar > #cast-tabs { display: none; }

@@ -8,7 +8,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, quoteTap, turned, toggleFantasy, DESKTOP } from "./flip.js";
+import { initFlip, quoteTap, turned, flipped, toggleFantasy, DESKTOP } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -93,6 +93,7 @@ function refresh(text) {
 
 function show(page) {
   state.page = page;
+  document.body.dataset.page = page;
   const i = PAGES.indexOf(page);
   $(".tabs").style.setProperty("--i", i);
   $$(".tab").forEach((t, j) => t.setAttribute("aria-selected", j === i));
@@ -112,10 +113,31 @@ const idxOf = (body) => Math.round(body.scrollLeft / body.clientWidth);
 
 // Turned (fantasy): body is a fixed rotated box, main scrolls, screen measures are turned back.
 
-const scroller = () => (turned() ? $("main") : window);
+// Flipped: main is turned but the window scrolls, so the reader's top is the document's bottom
+const scroller = () => (turned() && !flipped() ? $("main") : window);
+const maxY = () => document.documentElement.scrollHeight - innerHeight;
+const readY = () => { const sc = scroller(); return sc !== window ? sc.scrollTop : flipped() ? maxY() - scrollY : scrollY; };
 function toTop(smooth = false) {
-  const sc = scroller();
-  if ((sc === window ? scrollY : sc.scrollTop) > 0) sc.scrollTo({ top: 0, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
+  const sc = scroller(), behavior = smooth && !reducedMotion ? "smooth" : "auto";
+  if (readY() > 0) sc.scrollTo({ top: flipped() ? maxY() : 0, behavior });
+}
+// Flipped: content changing height moves the reader's top, so the place is kept from there
+let flipY = 0;
+addEventListener("scroll", () => { if (flipped()) flipY = readY(); }, { passive: true });
+new ResizeObserver(() => { if (flipped()) scrollTo(0, maxY() - flipY); }).observe($("main"));
+// Flipped: sticky can't stick inside the turned main, so the strips ride in the (turned) bar
+function placeStrips() {
+  let moved = false;
+  for (const [s, page] of [["#st-tabs", "#p-standings"], ["#ep-tabs", "#p-episodes"], ["#cast-tabs", "#p-cast"]].map(([a, b]) => [$(a), $(b)])) {
+    if (flipped() && s.parentElement !== bar) { s.style.removeProperty("--p"); bar.append(s); moved = true; }
+    else if (!flipped() && s.parentElement === bar) { page.prepend(s); moved = true; }
+  }
+  if (moved && state.d) for (const sw of [ST, EP, CAST]) mark(sw, sw.get(), false); // a move loses the strip's scroll
+}
+function turnedOver() {
+  placeStrips();
+  if (flipped()) { flipY = 0; scrollTo(0, maxY()); }
+  barAtTop();
 }
 function local(dx, dy) {
   const t = turned();
@@ -150,6 +172,7 @@ document.addEventListener("touchmove", (e) => {
     if (Math.hypot(tx, ty) < 6) return;
     const across = sideScroller(drag.target);
     drag.axis = across && Math.abs(tx) > Math.abs(ty) * 0.85 ? "x" : "y";
+    if (drag.axis === "y" && flipped()) { drag = null; return; } // the phone scrolls the page itself
     drag.el = drag.axis === "y" ? $("main") : across;
     if (drag.el?.classList.contains("swiper")) {
       drag.from = settling?.el === drag.el ? Math.round(settling.to / drag.el.clientWidth) : idxOf(drag.el);
@@ -250,16 +273,16 @@ function fit(body) {
   const w = body.clientWidth, kids = body.children;
   if (!w || !kids.length) return;
   const f = body.scrollLeft / w, i = Math.min(Math.floor(f), kids.length - 1), t = f - i;
-  if (!(t < 0.01 || t > 0.99 || i + 1 >= kids.length)) {
+  if (!(t < 0.01 || t > 0.99 || i + 1 >= kids.length || flipped())) { // flipped: no footer lift yet
     if (pair?.body !== body || pair.i !== i) {
       const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
-      const view = turned() ? $("main").clientHeight : innerHeight, top = topIn(body);
+      const view = scroller() !== window ? $("main").clientHeight : innerHeight, top = topIn(body);
       const room = view - top - pad - feetH();
       const ha = Math.max(kids[i].offsetHeight, room), hb = Math.max(kids[i + 1].offsetHeight, room), hi = Math.max(ha, hb);
       // Held just below the screen (upside down, with the rainbow above it)
       const foot = $(".fz-foot"), rise = foot?.offsetWidth ? Math.max(0, (foot.offsetWidth * 1.5) / 2 - foot.offsetHeight + 4) : 0;
       // Scrolled past where a short slide's page can go, its footer is where the settled page will show it
-      const sc = scroller(), y = sc === window ? scrollY : sc.scrollTop;
+      const sc = scroller(), y = readY();
       const rest = (sc === window ? document.documentElement.scrollHeight : sc.scrollHeight) - body.offsetHeight;
       const below = y + view + rise;
       const at = (h) => Math.min(top + h + Math.max(0, y - Math.max(0, rest + h - view)), below);
@@ -274,7 +297,7 @@ function fit(body) {
   }
   const s = kids[Math.round(f)] || kids[i];
   const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
-  const view = turned() ? $("main").clientHeight : innerHeight;
+  const view = scroller() !== window ? $("main").clientHeight : innerHeight;
   const room = view - topIn(body) - pad - feetH();
   const h = `${Math.max(s.offsetHeight, room)}px`;
   if (body.style.height !== h) body.style.height = h;
@@ -610,8 +633,8 @@ function barP(y) {
 function barScroll() {
   if (!hraf) hraf = requestAnimationFrame(() => {
     hraf = 0;
-    const sc = scroller(), top = sc === window ? scrollY : sc.scrollTop;
-    const max = sc === window ? document.documentElement.scrollHeight - innerHeight : sc.scrollHeight - sc.clientHeight;
+    const sc = scroller(), top = readY();
+    const max = sc === window ? maxY() : sc.scrollHeight - sc.clientHeight;
     const y = Math.max(0, Math.min(top, max)), dy = y - lastY;
     lastY = y;
     barP(y);
@@ -695,7 +718,7 @@ try {
   try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
   $("#welcome").innerHTML = welcomeCard();
   $("#welcome").hidden = !welcome;
-  initFlip({ redraw, scrolled: barAtTop });
+  initFlip({ redraw: () => { redraw(); turnedOver(); }, scrolled: turnedOver });
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);
