@@ -82,7 +82,8 @@ export function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44
 // start() at o.fps, 60 by default (one still frame if reduced), stop(). Each frame is a full-screen texture the GPU
 // uploads and blends everything over, so fewer frames are what count
 // o: the Moss cards' settings (res, device pixels per CSS pixel; fps, density, figures, bright, speed), the designed look by default
-export function runner(canvas, w, h, reduced, o = {}) {
+// report: told each second how it kept up, for auto-tune (tune.js): frames drawn, drawing's ms a frame, the target
+export function runner(canvas, w, h, reduced, o = {}, report = null) {
   const res = o.res ?? 1;
   canvas.width = Math.round(w * res); canvas.height = Math.round(h * res);
   const g = canvas.getContext("2d");
@@ -92,16 +93,24 @@ export function runner(canvas, w, h, reduced, o = {}) {
   const gap = 1000 / (o.fps ?? 60) - 3; // at any refresh rate
   const raf = globalThis.requestAnimationFrame ? (f) => requestAnimationFrame(f) : (f) => setTimeout(() => f(performance.now()), 16);
   const unraf = globalThis.cancelAnimationFrame ? (id) => cancelAnimationFrame(id) : (id) => clearTimeout(id);
-  let id = 0, last = 0;
+  let id = 0, last = 0, from = 0, frames = 0, spent = 0;
+  const target = o.fps ?? 60;
   const step = (now) => {
     if (!last || now - last >= gap) {
+      const t0 = performance.now();
       draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
       last = now;
+      // The first second is a warm-up (sprites drawn), not counted
+      if (!from) from = now + 1000;
+      else if (now >= from) {
+        frames++; spent += performance.now() - t0;
+        if (now - from >= 1000) { report?.({ fps: (frames * 1000) / (now - from), draw: spent / frames, target }); from = now; frames = 0; spent = 0; }
+      }
     }
     id = raf(step);
   };
   return {
     start() { if (reduced) draw(0); else if (!id) id = raf(step); },
-    stop() { unraf(id); id = 0; last = 0; },
+    stop() { unraf(id); id = 0; last = 0; from = 0; frames = 0; spent = 0; },
   };
 }

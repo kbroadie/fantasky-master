@@ -10,6 +10,9 @@ export const CARDS = [
       ["zoom", "Zoom"], ["roll", "Roll"], ["tilt", "Tilt"], ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
   { title: "Frame rate",
     items: [{ key: "fps", type: "toggle", def: false, main: true }] },
+  // The effects step their quality to what this device keeps up with (tune.js)
+  { title: "Auto-tune",
+    items: [{ key: "autoTune", type: "toggle", def: true, main: true }] },
   { title: "Background effects", view: "fz",
     items: [
       { key: "fall", type: "toggle", def: true, main: true, cls: "no-fall" },
@@ -50,6 +53,25 @@ for (const [k, it] of Object.entries(ITEMS)) {
   values[k] = v == null || (it.options && !it.options.some(([o]) => o === read)) ? it.def : read;
 }
 export const get = (k) => values[k];
+const tell = (k, v) => dispatchEvent(new CustomEvent("fm-switch", { detail: { key: k, value: v } }));
+
+// Auto-tune (tune.js) chooses these where they're left as designed: auto holds what it chose (and its levels, _fall and
+// _pod), pinned the ones set on the cards, which it leaves alone. Both per device. val() is what an effect uses
+export const TUNABLE = ["fallRes", "fallFps", "podRes"];
+const json = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const auto = json("fm-auto", {}), pinned = new Set(json("fm-pinned", []));
+const keep = () => { try { localStorage.setItem("fm-auto", JSON.stringify(auto)); localStorage.setItem("fm-pinned", JSON.stringify([...pinned])); } catch { /* private mode */ } };
+export const tuned = (k) => TUNABLE.includes(k) && values.autoTune && !pinned.has(k) && ITEMS[k].options.some(([o]) => o === auto[k]);
+export const val = (k) => (tuned(k) ? auto[k] : values[k]);
+export const autoGet = (k) => auto[k];
+export const autoUsed = () => Object.keys(auto).length > 0 || pinned.size > 0; // something for Reset to start again
+export function setAuto(k, v) {
+  if (auto[k] === v || pinned.has(k)) return;
+  auto[k] = v;
+  keep();
+  if (TUNABLE.includes(k) && values.autoTune) tell(k, val(k));
+}
+export function pin(k) { if (TUNABLE.includes(k) && !pinned.has(k)) { pinned.add(k); keep(); } }
 export function set(k, v) {
   const it = ITEMS[k];
   values[k] = v;
@@ -58,10 +80,18 @@ export function set(k, v) {
     else localStorage.setItem(id(k), it.type === "toggle" ? (v ? "1" : "0") : String(v));
   } catch { /* private mode: lasts the visit */ }
   apply(it);
-  dispatchEvent(new CustomEvent("fm-switch", { detail: { key: k, value: v } }));
+  tell(k, v);
+  if (k === "autoTune") for (const t of TUNABLE) tell(t, val(t)); // the effects take up, or drop, what it chose
 }
 export const changed = () => Object.keys(ITEMS).filter((k) => get(k) !== ITEMS[k].def).length;
-export function resetAll() { for (const k of Object.keys(ITEMS)) if (get(k) !== ITEMS[k].def) set(k, ITEMS[k].def); }
+// Back to the design, and auto-tune starts again
+export function resetAll() {
+  for (const k of Object.keys(ITEMS)) if (get(k) !== ITEMS[k].def) set(k, ITEMS[k].def);
+  for (const k of Object.keys(auto)) delete auto[k];
+  pinned.clear();
+  keep();
+  for (const t of TUNABLE) tell(t, val(t));
+}
 export const onSwitch = (keys, fn) => addEventListener("fm-switch", ({ detail: d }) => { if (keys.includes(d.key)) fn(d); });
 
 // What CSS can do on its own: a class while a toggle is off, or a custom property

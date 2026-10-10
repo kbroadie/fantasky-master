@@ -1012,6 +1012,7 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 }
 .sw-val.on { color: var(--gold2); text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 .sw-steps { grid-column: 1 / -1; display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 12px; }
+.sw-auto { margin-left: 4px; font: 500 11px var(--fm); letter-spacing: .08em; text-transform: uppercase; color: var(--gold2); }
 .sw-sub { padding: 0 12px 6px; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--t3); }
 .sw-count { padding: 0 12px 12px; margin-top: -2px; font-size: 13px; color: var(--t3); }
 .sw-one { display: block; padding: 0 12px 8px; }

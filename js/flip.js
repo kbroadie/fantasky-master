@@ -2,7 +2,8 @@
 // and off: fantasy mode (state.fantasy, html.fz), low scores win, with the fall behind everything.
 import { $, state, reducedMotion } from "./ui.js";
 import { runner } from "./fall.js";
-import { get, onSwitch } from "./switches.js";
+import { get, val, onSwitch } from "./switches.js";
+import { fallFrames, watchPage } from "./tune.js";
 import { slamFx } from "./slam-fx.js";
 
 let on = false;
@@ -222,16 +223,18 @@ function fall() {
   stopFall();
   const c = $("#fz-fall"), w = c.clientWidth, h = c.clientHeight;
   if (!w || !h || !get("fall")) return;
-  const opts = { res: Math.min(2, devicePixelRatio || 1) * get("fallRes"), fps: get("fallFps"), density: get("fallDensity"), figures: get("fallFigures"), bright: get("fallBright"), speed: get("fallSpeed") };
+  const opts = { res: Math.min(2, devicePixelRatio || 1) * val("fallRes"), fps: val("fallFps"), density: get("fallDensity"), figures: get("fallFigures"), bright: get("fallBright"), speed: get("fallSpeed") };
   if (!worker && !run && moduleWorkers && "transferControlToOffscreen" in c) {
     try {
       worker = new Worker(new URL("./fall-worker.js", import.meta.url), { type: "module" });
       const off = c.transferControlToOffscreen();
       worker.postMessage({ type: "init", canvas: off }, [off]);
+      worker.onmessage = ({ data }) => { if (data.type === "frames") fallFrames(data); }; // how it kept up, for auto-tune
     } catch { worker = null; }
   }
   if (worker) worker.postMessage({ type: "start", w, h, reduced: reducedMotion, opts });
-  else { run = runner(c, w, h, reducedMotion, opts); run.start(); }
+  else { run = runner(c, w, h, reducedMotion, opts, fallFrames); run.start(); }
+  if (!reducedMotion) watchPage();
 }
 // A Moss card's slider moves: start the fall again with it, once a frame at most
 let refall = 0;

@@ -5,8 +5,8 @@ import { derive, currentSeriesKey } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, QUOTE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
-import { castOrder, castTabs, castSlides, castSlide, fill, changedSay } from "./views/cast.js";
-import { get, set, item, shown, resetAll, changed } from "./switches.js";
+import { castOrder, castTabs, castSlides, castSlide, fill, changedSay, resettable } from "./views/cast.js";
+import { get, set, item, shown, resetAll, changed, pin } from "./switches.js";
 import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
@@ -481,13 +481,15 @@ $("#cast-body").addEventListener("click", heatTap);
 const counted = (slide) => {
   const n = changed();
   slide.querySelector(".sw-count").textContent = changedSay(n);
-  slide.querySelector(".sw-reset").disabled = !n;
+  slide.querySelector(".sw-reset").disabled = !resettable();
 };
 $("#cast-body").addEventListener("click", (e) => {
   const slide = e.target.closest(".slide");
   const opt = e.target.closest(".sw-seg [data-v]");
   if (opt) {
     const it = item(opt.dataset.sw);
+    pin(it.key); // chosen here: auto-tune leaves it alone
+    opt.closest(".sw-row")?.querySelector(".sw-auto")?.remove();
     set(it.key, it.type === "steps" ? +opt.dataset.v : opt.dataset.v);
     for (const b of opt.parentElement.children) b.setAttribute("aria-checked", b === opt);
     return counted(slide);
