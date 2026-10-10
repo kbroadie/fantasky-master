@@ -189,7 +189,7 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    numbers are the old compact layout's, measured: the pill 58 → 40px tall,
    the panel 46 → 28, the labels 20px higher in the tabs. */
 html.fz-turn, html.fz-side { --tl: --page; }
-html.fz-turn body, html.fz-side body { timeline-scope: --page; }
+html.fz-turn body, html.fz-side body { timeline-scope: --page, --st, --ep, --cast; } /* and the swipers' (the footer follows a swipe) */
 html.fz-turn main, html.fz-side main { scroll-timeline: --page block; }
 @keyframes bar-glass { to { transform: translateY(calc(-1 * var(--bar-d))); } }
 @keyframes bar-hdr { to { transform: translateY(var(--hdr-dy)); } }
@@ -1191,6 +1191,25 @@ html.fz #foot { display: none; }
    context); the dolphins and the sea are clipped to it in .fz-waves. */
 html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top: 8px; overflow-x: clip; pointer-events: none; }
 .fz-waves { position: absolute; inset: 0; overflow: hidden; }
+/* Layers of their own while a swipe moves them, so moving them repaints nothing */
+.lifting #foot, .lifting #dq, .lifting .fz-bow, .lifting .fz-waves { will-change: translate; }
+/* Mid-swipe the footer follows the swiper's scroll (fit in main.js): each
+   swiper's scroll is a timeline the footer can see (timeline-scope on body),
+   and main.js gives the parts the pair of places (--la, --lb) and the stretch
+   of scroll between them (animation-range). On the compositor. */
+@property --la { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --lb { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@keyframes lift { from { translate: 0 var(--la); } to { translate: 0 var(--lb); } }
+#st-body { scroll-timeline: --st inline; }
+#ep-body { scroll-timeline: --ep inline; }
+#cast-body { scroll-timeline: --cast inline; }
+body { timeline-scope: --st, --ep, --cast; }
+@supports (animation-timeline: scroll()) {
+  #foot, #dq, .fz-bow, .fz-waves { animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; }
+}
+/* Following a swipe (lift in main.js), the rainbow and the waves move, not
+   the footer itself: a translate there would make it a stacking context and
+   bring the rainbow out from behind the page. */
 /* A double rainbow (on request): two bows with the same order, red on top
    down to violet (on request), the outer one fainter, with the sky a little
    brighter within the inner one. Every band blends softly into the next,
@@ -1198,9 +1217,10 @@ html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top
    behind the dolphins. It's screened onto what's behind it, so it only ever
    lightens it, never darkens (on request). It spans the horizon, its feet
    beyond the page's edges, and rises behind the table above (on request):
-   z-index -1 puts it behind the page, over only the fall and the sky. */
-html.fz .fz-foot::before {
-  content: ""; position: absolute; z-index: -1; left: 50%; bottom: 4px; width: 150%; aspect-ratio: 2; translate: -50% 0; opacity: .85; mix-blend-mode: screen;
+   z-index -1 puts it behind the page, over only the fall and the sky.
+   It's an element of its own (.fz-bow), so a swipe can move it (lift). */
+html.fz .fz-bow {
+  position: absolute; z-index: -1; left: -25%; bottom: 4px; width: 150%; aspect-ratio: 2; opacity: .85; mix-blend-mode: screen;
   background: radial-gradient(circle farthest-side at 50% 100%,
     transparent 46%, rgba(255, 240, 255, .07) 58%, rgba(170, 110, 255, 0) 61%,
     rgba(170, 110, 255, .5) 63%, rgba(110, 100, 255, .5) 65%, rgba(80, 150, 255, .55) 67%, rgba(90, 230, 150, .55) 69%, rgba(255, 230, 90, .6) 71%, rgba(255, 160, 70, .55) 73.5%, rgba(255, 70, 110, .5) 76%, rgba(255, 70, 110, 0) 78.5%,
