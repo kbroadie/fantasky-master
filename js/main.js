@@ -128,6 +128,12 @@ function redraw() {
   renderSlides(state.d);
   const i = castOrder(state.d).findIndex((c) => c.key === key);
   if (i >= 0) state.cast = i;
+  // The slides on show are laid out now, not at their placeholder size (content-visibility), so what was tapped can
+  // be kept in place (flip.js) and the swiper fitted to their real height. They go back to auto only after a frame has
+  // recorded that height: sooner, they fell back to the placeholder for a frame and the scroll was clamped to it
+  const shown = [ST, EP, CAST].map((sw) => $(sw.body).children[sw.get()]).filter(Boolean);
+  for (const s of shown) s.style.contentVisibility = "visible";
+  requestAnimationFrame(() => requestAnimationFrame(() => { for (const s of shown) s.style.contentVisibility = ""; }));
   for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); else mark(sw, sw.get(), false);
   writeHash();
 }
