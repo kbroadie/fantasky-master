@@ -18,7 +18,8 @@ export const CARDS = [
     items: [
       { key: "fall", type: "toggle", def: false, main: true, cls: "no-fall" },
       { key: "fallRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
-      { key: "fallFps", type: "steps", label: "Frame rate", def: 15, options: [[15, "15"], [30, "30"], [45, "45"], [60, "60 fps"]] },
+      // Rates a 60 or 120Hz screen divides evenly, so each frame is held as long as the last (45 came out uneven)
+      { key: "fallFps", type: "steps", label: "Frame rate", def: 15, options: [[15, "15"], [20, "20"], [30, "30"], [60, "60 fps"]] },
       { key: "fallDensity", type: "range", label: "Streaks", def: 1, min: 0, max: 3, step: 0.25, unit: "×" },
       { key: "fallFigures", type: "range", label: "Figures", def: 7, min: 0, max: 20, step: 1, unit: "" },
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
