@@ -123,11 +123,14 @@ function onMotion(e) {
  * Upside down: the way up points to the device's bottom edge (more than 35°
  * past level, and more down than sideways), so not flat on its face or on
  * its side. Back up only once clearly so (less than 15°, or sideways).
+ * Lying flat (within 30° of it, face up or down), the screen has no way up,
+ * so it stays as it is (on request: laid flat, it left the dream).
  */
 function judge() {
   warm();
   if (!up) return;
   const [ux, uy] = up;
+  if (Math.hypot(ux, uy) < 0.5) { probe.pose = "flat"; settle(); return; }
   // Held sideways in a landscape page, the edge that's up is the page's top:
   // remember which, rather than trust which way the screen's angle counts.
   const a = angle();
