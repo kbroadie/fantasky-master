@@ -211,9 +211,9 @@ document.addEventListener("touchend", dragEnd, { passive: true });
 document.addEventListener("touchcancel", dragEnd, { passive: true });
 function redraw() {
   const key = $("#cast-tabs .on")?.textContent;
-  const foot = $(".fz-foot");
-  footSeen.unobserve(foot);
-  footSeen.observe(foot);
+  const waves = $(".fz-waves");
+  footSeen.unobserve(waves);
+  footSeen.observe(waves);
   renderStandings(state.d);
   renderSlides(state.d);
   const i = castOrder(state.d).findIndex((c) => c.key === key);
@@ -620,9 +620,10 @@ function barScroll() {
 addEventListener("scroll", barScroll, { passive: true });
 $("main").addEventListener("scroll", barScroll, { passive: true });
 bar.addEventListener("focusin", () => setHidden(false));
-// Dolphins animate only on screen; the latest entry decides (batched entries come oldest first)
-const footSeen = new IntersectionObserver((es) => { const e = es.at(-1); e.target.classList.toggle("run", e.isIntersecting); });
-footSeen.observe($(".fz-foot"));
+// Dolphins animate only on screen; the latest entry decides (batched entries come oldest first).
+// Watches the waves, not the footer: mid-swipe only they rise into view (lift)
+const footSeen = new IntersectionObserver((es) => { const e = es.at(-1); e.target.parentElement.classList.toggle("run", e.isIntersecting); });
+footSeen.observe($(".fz-waves"));
 function barAtTop() { lastY = 0; down = up = 0; barP(0); setHidden(false); }
 
 // Sideways strips fade at the edge where more tabs are hidden
