@@ -430,6 +430,7 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 @keyframes xp-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .board.ease .pc.open .pc-more > div { animation: none; } }
 .pc.open .pc-more { grid-template-rows: 1fr; }
+.pc.open > .pc-head { box-shadow: 0 1px 0 var(--b-gold); } /* the row's thin rule, under the head while open, for the line to grow over */
 .pc-more > div { overflow: hidden; min-height: 0; }
 .pc-more > div { background: linear-gradient(180deg, transparent, rgba(16, 13, 16, .5) 24px); }
 /* Opened card: exactly five rows. Not a scroll box: one swallowed vertical swipes. */
