@@ -5,8 +5,9 @@ import { derive, currentSeriesKey } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, QUOTE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
-import { castOrder, castTabs, castSlides, castSlide } from "./views/cast.js";
-import { isOn, setSwitch } from "./switches.js";
+import { castOrder, castTabs, castSlides, castSlide, shown } from "./views/cast.js";
+import { CARDS, get, set, resetAll } from "./switches.js";
+import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
 import { initFlip, toggleFantasy, warm } from "./flip.js";
@@ -464,14 +465,28 @@ $("#cast-body").addEventListener("click", heatTap);
 // The Moss Easter egg (cast.js): his portrait swaps him and his cards; each card's toggle is a switch
 $("#cast-body").addEventListener("click", (e) => {
   const sw = e.target.closest(".sw-toggle");
-  if (sw) { setSwitch(sw.dataset.sw, !isOn(sw.dataset.sw)); sw.setAttribute("aria-checked", isOn(sw.dataset.sw)); return; }
-  const img = e.target.closest(".cd-img[data-moss]");
-  if (!img) return;
-  state.moss = !state.moss;
-  const slide = img.closest(".slide"), c = state.d.contestants.find((o) => o.key === img.dataset.moss);
+  if (sw) {
+    const k = sw.dataset.sw;
+    set(k, !get(k));
+    sw.setAttribute("aria-checked", get(k));
+    if (CARDS.some((c) => c.items.some((it) => it.main && it.key === k))) sw.closest(".sw-card").classList.toggle("off", !get(k));
+    return;
+  }
+  const img = e.target.closest(".cd-img[data-moss]"), reset = e.target.closest(".sw-reset");
+  if (!img && !reset) return;
+  if (img) state.moss = !state.moss; else resetAll();
+  const slide = (img || reset).closest(".slide"), c = state.d.contestants.find((o) => o.key === slide.querySelector("[data-moss]").dataset.moss);
   slide.innerHTML = castSlide(state.d, c);
   mountPodiumFx($("#cast-body"));
   fitTitles();
+});
+// A Moss card's slider: the setting follows as it moves
+$("#cast-body").addEventListener("input", (e) => {
+  const r = e.target.closest(".sw-range");
+  if (!r) return;
+  set(r.dataset.sw, +r.value);
+  const it = CARDS.flatMap((c) => c.items).find((x) => x.key === r.dataset.sw);
+  r.parentElement.querySelector(".sw-val").textContent = shown(it, +r.value);
 });
 
 // Race charts: tap a line, name or point to follow; again or empty space shows all.
@@ -553,7 +568,7 @@ document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("s
 // Fantasy: the decorative animations hold still while anything scrolls, so the scroll has the frames
 let stillT = 0;
 function still() {
-  if (!state.fantasy) return;
+  if (!state.fantasy || !get("stillScroll")) return;
   if (!stillT) document.documentElement.classList.add("scrolling");
   clearTimeout(stillT);
   stillT = setTimeout(() => { stillT = 0; document.documentElement.classList.remove("scrolling"); }, 200);

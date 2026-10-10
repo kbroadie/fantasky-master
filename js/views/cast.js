@@ -2,7 +2,7 @@
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
-import { SWITCHES, isOn } from "../switches.js";
+import { CARDS, get } from "../switches.js";
 
 // Fantasy: lowest total first
 export const castOrder = (d) => [...d.contestants].sort((a, b) => rankOf(d, a) - rankOf(d, b) || a.key.localeCompare(b.key));
@@ -23,11 +23,27 @@ export function castSlide(d, c) {
 
 // An Easter egg: a tap on Richard Ayoade's portrait makes him Maurice Moss, and his cards the hidden switches (switches.js)
 const isMoss = (c) => c.full === "Richard Ayoade";
-const switchCards = () => SWITCHES.map((s) => `
+export const shown = (it, v) => (it.css === "--fz-a" ? `${Math.round(v * 100)}%` : `${+v.toFixed(2)}${it.unit}`);
+const toggle = (it, name) => `<button type="button" class="sw-toggle" role="switch" aria-checked="${get(it.key)}" aria-label="${esc(name)}" data-sw="${it.key}"></button>`;
+const control = (it) => (it.type === "toggle"
+  ? `<label class="sw-row"><span>${esc(it.label)}</span>${toggle(it, it.label)}</label>`
+  : `<label class="sw-row sw-slide"><span>${esc(it.label)}</span><b class="sw-val">${shown(it, get(it.key))}</b>
+      <input type="range" class="sw-range" data-sw="${it.key}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}"></label>`);
+export const switchCard = (c) => {
+  const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
+  return `
+    <div class="card sw-card${main && !get(main.key) ? " off" : ""}">
+      <div class="card-head"><span>${esc(c.title)}</span>${main ? toggle(main, c.title) : ""}</div>
+      <p class="sw-note">${esc(c.note)}</p>
+      ${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
+    </div>`;
+};
+const switchCards = () => CARDS.map(switchCard).join("") + `
     <div class="card sw-card">
-      <div class="card-head"><span>${esc(s.name)}</span><button type="button" class="sw-toggle" role="switch" aria-checked="${isOn(s.key)}" aria-label="${esc(s.name)}" data-sw="${s.key}"></button></div>
-      <p class="sw-note">${esc(s.note)}</p>
-    </div>`).join("");
+      <div class="card-head"><span>Reset</span></div>
+      <p class="sw-note">Every setting back as designed.</p>
+      <div class="sw-rows"><button type="button" class="ed-btn sw-reset">Reset all</button></div>
+    </div>`;
 
 function median(xs) {
   if (!xs.length) return null;

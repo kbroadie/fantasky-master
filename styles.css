@@ -292,16 +292,19 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   .how-glint { display: none; }
 }
 
-.fps-meter { position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; display: grid; gap: 4px; width: 160px; pointer-events: none; }
-.fps-meter canvas { width: 160px; height: 84px; }
-.fps-bench { pointer-events: auto; padding: 6px 0; font: 500 11px var(--fm); letter-spacing: .06em; text-transform: uppercase; color: #8f8; background: rgba(0, 0, 0, .82); border-radius: 6px; }
+/* Diagnostics (tools.js), switched on Moss's cards: a site card in the corner, the graphs drawn in its tokens */
+.fps-meter {
+  position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; width: 168px; height: 104px; pointer-events: none;
+  border: 1px solid var(--b-gold); border-radius: 12px; background: linear-gradient(135deg, var(--s3), var(--s2)); box-shadow: 0 4px 14px rgba(0, 0, 0, .4);
+}
+.bench-btn { position: fixed; left: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
 .bench-t { width: 100%; margin: 12px 0 4px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
 .bench-t th { font: 500 11px var(--fm); color: var(--t3); text-transform: uppercase; text-align: right; padding: 0 0 6px 8px; }
 .bench-t th:first-child, .bench-t td:first-child { text-align: left; padding-left: 0; }
 .bench-t td { padding: 4px 0 4px 8px; text-align: right; border-top: 1px solid var(--b-dim); white-space: nowrap; }
 .bench-t td:first-child { white-space: normal; color: var(--t1); }
 .bench-t td small { display: block; font: 400 11px var(--fm); color: var(--t3); }
-.bench-t .ok td:not(:first-child) { color: #8f8; } .bench-t .meh td:not(:first-child) { color: #ffd27a; } .bench-t .bad td:not(:first-child) { color: #ff8a7a; }
+.bench-t .ok td:not(:first-child) { color: var(--gold2); } .bench-t .meh td:not(:first-child) { color: var(--bronze); } .bench-t .bad td:not(:first-child) { color: var(--warn); }
 .bench-dlg { max-height: 85vh; overflow-y: auto; }
 
 /* ── Standings */
@@ -836,7 +839,7 @@ body:not(.editing) .ed-bar { display: none; } /* Done hides it; it's reused if e
 
 /* ── Fantasy Fantasky Master (flip.js): an Easter egg, never mentioned. Same tokens redefined as a Lisa Frank dream; sunshine yellow replaces gold. */
 html.fz {
-  --bg: #170828; --s1: rgba(36, 10, 62, .84); --s2: rgba(48, 16, 80, .84); --s3: rgba(60, 22, 98, .88);
+  --bg: #170828; --s1: rgba(36, 10, 62, var(--fz-a, .84)); --s2: rgba(48, 16, 80, var(--fz-a, .84)); --s3: rgba(60, 22, 98, calc(var(--fz-a, .84) + .04));
   --t1: #fff4fd; --t2: #f6cdf3; --t3: #dcaef2; --t4: #ab8ad8;
   --gold: #ffc23d; --gold2: #ffe14d; --gold3: #fff07a; --gold4: #ff9be0;
   --gold-t: rgba(255, 225, 77, .16); --gold-glow: rgba(255, 110, 210, .5);
@@ -1007,3 +1010,15 @@ html.fz.scrolling :is(.dl i, .dl b, .dl svg, .fz-sea) { animation-play-state: pa
 .sw-card .card-head { padding-block: 10px 6px; }
 .sw-note { padding: 0 12px 14px; font-size: 14px; line-height: 1.45; color: var(--t2); }
 @media (prefers-reduced-motion: reduce) { .sw-toggle, .sw-toggle::after { transition: none; } }
+.sw-card.off .sw-rows { opacity: .4; }
+.sw-rows { display: grid; gap: 12px; padding: 0 12px 14px; }
+.sw-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--t1); }
+.sw-slide { display: grid; grid-template-columns: 1fr auto; row-gap: 6px; }
+.sw-val { font: 500 13px var(--fm); color: var(--gold2); }
+.sw-range { grid-column: 1 / -1; width: 100%; height: 22px; margin: 0; accent-color: var(--gold2); }
+.sw-reset { justify-self: start; }
+/* Settings turned off on Moss's cards (switches.js) */
+html.no-fall #fz-fall, html.no-podium .fx, html.no-glint .fz-word::after, html.no-dolphins .dl { display: none; }
+html.no-sparkles .ep-title::before, html.no-sparkles .ep-title::after { content: none; }
+html.no-tabbow .tab-ind::before, html.no-dolphins .fz-sea, html.no-howlight .how-card, html.no-howlight .how-glint { animation: none !important; }
+html.no-howlight .how-glint { display: none; }
