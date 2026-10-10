@@ -1020,6 +1020,13 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--gold-glow); }
 .sw-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--gold-glow); }
 .sw-reset { padding: 6px 10px; }
+/* A choice on a Moss card: one segmented row, like the top tabs */
+.sw-seg { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 2px; margin: 0 12px 12px; padding: 3px; border: 1px solid var(--b-gold); border-radius: 10px; background: var(--s1); }
+.sw-seg button {
+  min-height: 32px; padding: 0 4px; border: 0; border-radius: 7px; background: none; color: var(--t2);
+  font: 500 11px var(--fm); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; -webkit-tap-highlight-color: transparent;
+}
+.sw-seg button[aria-checked="true"] { color: #241400; background: linear-gradient(180deg, var(--gold3), var(--gold2)); }
 /* Settings turned off on Moss's cards (switches.js) */
 html.no-fall #fz-fall, html.no-podium .fx, html.no-howlight .how-glint { display: none; }
 html.no-howlight .how-card { animation: none !important; }
@@ -1034,3 +1041,19 @@ html.fz #foot.run .dk { animation: fz-bob 5s infinite; }
   25%, 75% { translate: 0 0; animation-timing-function: cubic-bezier(.333, .667, .667, 1); }
   50% { translate: 0 5px; animation-timing-function: cubic-bezier(.333, 0, .667, .333); }
 }
+/* Transitions to and from Fantasy Land (flip.js, html[data-vt]; chosen on a Moss card). The browser pictures the page
+   before and after and animates the two pictures, off the main thread */
+@media not (prefers-reduced-motion: reduce) {
+  /* Ripple: the new view grows in a circle from what was tapped, or the dream shrinks back into it (keyframes from flip.js) */
+  html[data-vt="ripple"]::view-transition-old(root), html[data-vt="ripple"]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+  html[data-vt="ripple"].vt-in::view-transition-new(root) { animation: vt-ripple .7s cubic-bezier(.45, 0, .2, 1) both; }
+  html[data-vt="ripple"]:not(.vt-in)::view-transition-old(root) { z-index: 1; animation: vt-ripple .6s cubic-bezier(.45, 0, .2, 1) both; }
+  /* Dream: the old view swims away, blurred and shifting colour, as the new one comes into focus */
+  html[data-vt="dream"]::view-transition-old(root) { animation: vt-dream-out .9s ease-in both; }
+  html[data-vt="dream"]::view-transition-new(root) { animation: vt-dream-in .9s ease-out both; }
+  /* Turn: the players' halves and the Cast tabs glide to their new places; the rest cross-fades */
+  html[data-vt="turn"]::view-transition-group(*) { animation-duration: .8s; animation-timing-function: cubic-bezier(.5, 0, .2, 1); }
+  html[data-vt="turn"]::view-transition-old(root), html[data-vt="turn"]::view-transition-new(root) { animation-duration: .5s; }
+}
+@keyframes vt-dream-out { to { opacity: 0; filter: blur(14px) hue-rotate(160deg) saturate(1.8); transform: scale(1.06); } }
+@keyframes vt-dream-in { from { opacity: 0; filter: blur(14px) hue-rotate(-160deg) saturate(1.8); transform: scale(.96); } }

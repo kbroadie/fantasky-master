@@ -464,6 +464,12 @@ const heatTap = (e) => {
 $("#cast-body").addEventListener("click", heatTap);
 // The Moss Easter egg (cast.js): his portrait swaps him and his cards; each card's toggle is a switch
 $("#cast-body").addEventListener("click", (e) => {
+  const opt = e.target.closest(".sw-seg [data-v]");
+  if (opt) {
+    set(opt.dataset.sw, opt.dataset.v);
+    for (const b of opt.parentElement.children) b.setAttribute("aria-checked", b === opt);
+    return;
+  }
   const sw = e.target.closest(".sw-toggle");
   if (sw?.hasAttribute("data-fz")) { toggleFantasy(".sw-toggle[data-fz]"); return; } // the preview: Moss's page in Fantasy Land, with its cards
   if (sw) {
