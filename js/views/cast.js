@@ -3,6 +3,7 @@ import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../u
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
 import { cardsShown, changed, autoUsed, get, val, tuned, shown } from "../switches.js";
+import { PR } from "../version.js";
 
 // Fantasy: lowest total first
 export const castOrder = (d) => [...d.contestants].sort((a, b) => rankOf(d, a) - rankOf(d, b) || a.key.localeCompare(b.key));
@@ -60,13 +61,15 @@ const switchCard = (c) => {
 export const changedSay = (n = changed()) => (n ? `${n} changed` : autoUsed() ? "Auto-tuned" : "As designed");
 export const resettable = () => changed() > 0 || autoUsed();
 const switchCards = () => {
-  // Defaults spans the row when it would be left alone in one
+  // Defaults fills a row's gap, and Revision spans the row when it would be left alone in one
   const cards = cardsShown(!!state.fantasy), n = changed();
   return `
     <div class="sw-grid">
       ${cards.map(switchCard).join("")}
-      <div class="card sw-card${cards.filter(tiled).length % 2 ? "" : " wide"}"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset"${resettable() ? "" : " disabled"}>Reset</button></div>
+      <div class="card sw-card"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset"${resettable() ? "" : " disabled"}>Reset</button></div>
         <div class="sw-count">${changedSay(n)}</div></div>
+      <div class="card sw-card${cards.filter(tiled).length % 2 ? " wide" : ""}"><div class="card-head"><span>Revision</span><b class="sw-pr">#${PR}</b></div>
+        <div class="sw-count sw-rev">Checking…</div></div>
     </div>`;
 };
 

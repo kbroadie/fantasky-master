@@ -1015,6 +1015,8 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-auto { margin-left: 4px; font: 500 11px var(--fm); letter-spacing: .08em; text-transform: uppercase; color: var(--gold2); }
 .sw-sub { padding: 0 12px 6px; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--t3); }
 .sw-count { padding: 0 12px 12px; margin-top: -2px; font-size: 13px; color: var(--t3); }
+.sw-pr { font: 500 12px var(--fm); font-variant-numeric: tabular-nums; color: var(--gold2); }
+.sw-rev.on { color: var(--gold2); }
 .sw-one { display: block; padding: 0 12px 8px; }
 /* Sliders like the toggles: a gold fill up to the value (--v, set by cast.js and main.js) and a gold knob */
 .sw-range {

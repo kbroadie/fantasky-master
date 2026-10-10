@@ -9,6 +9,7 @@ import { castOrder, castTabs, castSlides, castSlide, fill, changedSay, resettabl
 import { get, set, item, shown, resetAll, changed, pin } from "./switches.js";
 import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
+import { PR, latestPR, revSay } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
 import { initFlip, toggleFantasy, warm } from "./flip.js";
 
@@ -64,6 +65,7 @@ function renderSlides(d) {
   $("#cast-tabs").innerHTML = castTabs(d);
   $("#cast-body").innerHTML = castSlides(d);
   mountPodiumFx($("#cast-body"));
+  revision();
   for (const id of ["#ep-body", "#cast-body"]) for (const s of $(id).children) sizes.observe(s);
   fitTitles();
 }
@@ -548,8 +550,14 @@ $("#cast-body").addEventListener("click", (e) => {
   const c = state.d.contestants.find((o) => o.key === slide.querySelector("[data-moss]").dataset.moss);
   slide.innerHTML = castSlide(state.d, c);
   mountPodiumFx($("#cast-body"));
+  revision();
   fitTitles();
 });
+// Moss's Revision card: is this page the latest merged? Asked only once his cards are on show
+function revision() {
+  if (!$("#cast-body .sw-rev")) return;
+  latestPR().then((n) => { for (const el of $$("#cast-body .sw-rev")) { el.textContent = revSay(n); el.classList.toggle("on", n > PR); } });
+}
 // A Moss card's slider: the setting follows as it moves
 $("#cast-body").addEventListener("input", (e) => {
   const r = e.target.closest(".sw-range");
