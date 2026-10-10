@@ -3,7 +3,9 @@
 export const CARDS = [
   // How the view changes to and from Fantasy Land (flip.js)
   { title: "Transition",
-    items: [{ key: "fzMove", type: "choice", def: "ripple", options: [["off", "Off"], ["ripple", "Ripple"], ["dream", "Dream"], ["turn", "Turn"]] }] },
+    items: [{ key: "fzMove", type: "choice", def: "iris", options: [["off", "Off"], ["iris", "Iris"], ["ripple", "Ripple"], ["blur", "Blur"],
+      ["lens", "Lens"], ["flare", "Flare"], ["swirl", "Swirl"], ["slow", "Slow"], ["flash", "Flash"], ["grade", "Grade"],
+      ["zoom", "Zoom"], ["roll", "Roll"], ["tilt", "Tilt"], ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"]] }] },
   { title: "Frame rate",
     items: [{ key: "fps", type: "toggle", def: false, main: true }] },
   { title: "Background effects", view: "fz",
