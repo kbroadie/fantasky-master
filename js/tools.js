@@ -3,7 +3,6 @@
 // frame, so it costs a little itself; they redraw 4 times a second
 import { get, onSwitch } from "./switches.js";
 
-const token = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 let meter = null;
 function frameRate(show) {
   if (!show) { if (meter) { cancelAnimationFrame(meter.raf); meter.el.remove(); meter = null; } return; }
@@ -17,6 +16,7 @@ function frameRate(show) {
   const recent = [], gaps = [], rates = [];
   let last = 0, drawn = 0;
   const draw = () => {
+    const cs = getComputedStyle(document.documentElement), token = (n) => cs.getPropertyValue(n).trim();
     const ok = token("--gold2"), meh = token("--bronze"), bad = token("--warn"), dim = token("--t3"), rule = token("--b-dim");
     const col = (ms) => (ms > 34 ? bad : ms > 18 ? meh : ok);
     const row = (y, label, value, colour) => {

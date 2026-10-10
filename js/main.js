@@ -5,8 +5,8 @@ import { derive, currentSeriesKey } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, QUOTE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
-import { castOrder, castTabs, castSlides, castSlide, shown } from "./views/cast.js";
-import { CARDS, get, set, resetAll } from "./switches.js";
+import { castOrder, castTabs, castSlides, castSlide } from "./views/cast.js";
+import { get, set, item, shown, resetAll } from "./switches.js";
 import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
@@ -469,7 +469,7 @@ $("#cast-body").addEventListener("click", (e) => {
     const k = sw.dataset.sw;
     set(k, !get(k));
     sw.setAttribute("aria-checked", get(k));
-    if (CARDS.some((c) => c.items.some((it) => it.main && it.key === k))) sw.closest(".sw-card").classList.toggle("off", !get(k));
+    if (item(k).main) sw.closest(".sw-card").classList.toggle("off", !get(k));
     return;
   }
   const img = e.target.closest(".cd-img[data-moss]"), reset = e.target.closest(".sw-reset");
@@ -485,8 +485,7 @@ $("#cast-body").addEventListener("input", (e) => {
   const r = e.target.closest(".sw-range");
   if (!r) return;
   set(r.dataset.sw, +r.value);
-  const it = CARDS.flatMap((c) => c.items).find((x) => x.key === r.dataset.sw);
-  r.parentElement.querySelector(".sw-val").textContent = shown(it, +r.value);
+  r.parentElement.querySelector(".sw-val").textContent = shown(item(r.dataset.sw), +r.value);
 });
 
 // Race charts: tap a line, name or point to follow; again or empty space shows all.

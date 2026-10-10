@@ -2,7 +2,7 @@
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
-import { CARDS, get } from "../switches.js";
+import { CARDS, get, shown } from "../switches.js";
 
 // Fantasy: lowest total first
 export const castOrder = (d) => [...d.contestants].sort((a, b) => rankOf(d, a) - rankOf(d, b) || a.key.localeCompare(b.key));
@@ -23,13 +23,12 @@ export function castSlide(d, c) {
 
 // An Easter egg: a tap on Richard Ayoade's portrait makes him Maurice Moss, and his cards the hidden switches (switches.js)
 const isMoss = (c) => c.full === "Richard Ayoade";
-export const shown = (it, v) => (it.css === "--fz-a" ? `${Math.round(v * 100)}%` : `${+v.toFixed(2)}${it.unit}`);
 const toggle = (it, name) => `<button type="button" class="sw-toggle" role="switch" aria-checked="${get(it.key)}" aria-label="${esc(name)}" data-sw="${it.key}"></button>`;
 const control = (it) => (it.type === "toggle"
   ? `<label class="sw-row"><span>${esc(it.label)}</span>${toggle(it, it.label)}</label>`
   : `<label class="sw-row sw-slide"><span>${esc(it.label)}</span><b class="sw-val">${shown(it, get(it.key))}</b>
       <input type="range" class="sw-range" data-sw="${it.key}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}"></label>`);
-export const switchCard = (c) => {
+const switchCard = (c) => {
   const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
   return `
     <div class="card sw-card${main && !get(main.key) ? " off" : ""}">

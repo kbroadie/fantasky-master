@@ -30,23 +30,26 @@ export const CARDS = [
       { key: "stillScroll", type: "toggle", label: "Hold still while scrolling", def: true },
     ] },
   { title: "Rainbow cards", note: "How solid the rainbow view's cards are. More see-through shows the fall behind them, but everything over it is blended again every frame.",
-    items: [{ key: "fzAlpha", type: "range", label: "Opacity", def: 0.84, min: 0.5, max: 1, step: 0.02, unit: "", css: "--fz-a" }] },
+    items: [{ key: "fzAlpha", type: "range", label: "Opacity", def: 0.84, min: 0.5, max: 1, step: 0.02, pct: true, css: "--fz-a" }] },
   { title: "Scoring cards", note: "The How scoring works cards' drifting pool of light and the glint on their icons.",
     items: [{ key: "howLight", type: "toggle", def: true, main: true, cls: "no-howlight" }] },
 ];
 const ITEMS = Object.fromEntries(CARDS.flatMap((c) => c.items.map((it) => [it.key, it])));
 const id = (k) => `fm-sw-${k}`;
+export const item = (k) => ITEMS[k];
+export const shown = (it, v) => (it.pct ? `${Math.round(v * 100)}%` : `${+v.toFixed(2)}${it.unit}`);
 
-export function get(k) {
-  const it = ITEMS[k];
-  try {
-    const v = localStorage.getItem(id(k));
-    if (v != null) return it.type === "toggle" ? v === "1" : +v;
-  } catch { /* private mode */ }
-  return it.def;
+// Read once: get() runs on every scroll (still() in main.js)
+const values = {};
+for (const [k, it] of Object.entries(ITEMS)) {
+  let v = null;
+  try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
+  values[k] = v == null ? it.def : it.type === "toggle" ? v === "1" : +v;
 }
+export const get = (k) => values[k];
 export function set(k, v) {
   const it = ITEMS[k];
+  values[k] = v;
   try {
     if (v === it.def) localStorage.removeItem(id(k));
     else localStorage.setItem(id(k), it.type === "toggle" ? (v ? "1" : "0") : String(v));
