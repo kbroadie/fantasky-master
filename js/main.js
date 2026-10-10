@@ -5,7 +5,7 @@ import { derive, currentSeriesKey } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, QUOTE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
-import { castOrder, castTabs, castSlides, castSlide } from "./views/cast.js";
+import { castOrder, castTabs, castSlides, castSlide, fill } from "./views/cast.js";
 import { get, set, item, shown, resetAll } from "./switches.js";
 import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
@@ -465,7 +465,7 @@ $("#cast-body").addEventListener("click", heatTap);
 // The Moss Easter egg (cast.js): his portrait swaps him and his cards; each card's toggle is a switch
 $("#cast-body").addEventListener("click", (e) => {
   const sw = e.target.closest(".sw-toggle");
-  if (sw?.hasAttribute("data-fz")) { toggleFantasy(".sw-toggle[data-fz]"); return; } // the preview: Moss's page in the rainbow view
+  if (sw?.hasAttribute("data-fz")) { toggleFantasy(".sw-toggle[data-fz]"); return; } // the preview: Moss's page in Fantasy Land, with its cards
   if (sw) {
     const k = sw.dataset.sw;
     set(k, !get(k));
@@ -485,8 +485,10 @@ $("#cast-body").addEventListener("click", (e) => {
 $("#cast-body").addEventListener("input", (e) => {
   const r = e.target.closest(".sw-range");
   if (!r) return;
-  set(r.dataset.sw, +r.value);
-  r.parentElement.querySelector(".sw-val").textContent = shown(item(r.dataset.sw), +r.value);
+  const it = item(r.dataset.sw);
+  set(it.key, +r.value);
+  r.style.setProperty("--v", fill(it));
+  r.closest(".sw-slide, .sw-card").querySelector(".sw-val").textContent = shown(it, +r.value);
 });
 
 // Race charts: tap a line, name or point to follow; again or empty space shows all.
@@ -552,8 +554,24 @@ addEventListener("scroll", barScroll, { passive: true });
 bar.addEventListener("focusin", () => setHidden(false));
 // Dolphins animate only on screen; the latest entry decides (batched entries come oldest first).
 // Watches the waves, not the footer: mid-swipe only they rise into view (lift)
-const footSeen = new IntersectionObserver((es) => { const e = es.at(-1); e.target.parentElement.classList.toggle("run", e.isIntersecting); $("#foot").classList.toggle("run", e.isIntersecting); });
+const footSeen = new IntersectionObserver((es) => {
+  const e = es.at(-1);
+  if (e.isIntersecting) ducksOnWaves();
+  e.target.parentElement.classList.toggle("run", e.isIntersecting);
+  $("#foot").classList.toggle("run", e.isIntersecting);
+});
 footSeen.observe($(".fz-waves"));
+// The ducks ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
+// with them, so each duck's bob starts where the wave under it is
+function ducksOnWaves() {
+  const sea = $(".fz-waves"), w = sea.offsetWidth;
+  if (!state.fantasy || !w) return;
+  const left = sea.getBoundingClientRect().left, wave = 0.35 * w;
+  for (const dk of $$("#foot .dk")) {
+    const r = dk.getBoundingClientRect(), u = ((((r.left + r.width / 2 - left) / wave - 0.25) % 1) + 1) % 1;
+    dk.style.animationDelay = `${(-5 * u).toFixed(3)}s`;
+  }
+}
 
 // Sideways strips fade at the edge where more tabs are hidden
 function edges() {
@@ -567,7 +585,7 @@ document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("s
 // Fantasy: the decorative animations hold still while anything scrolls, so the scroll has the frames
 let stillT = 0;
 function still() {
-  if (!state.fantasy || !get("stillScroll")) return;
+  if (!state.fantasy) return;
   if (!stillT) document.documentElement.classList.add("scrolling");
   clearTimeout(stillT);
   stillT = setTimeout(() => { stillT = 0; document.documentElement.classList.remove("scrolling"); }, 200);
@@ -588,7 +606,7 @@ function cardLight() {
 const queueLight = () => { if (!lraf) lraf = requestAnimationFrame(cardLight); };
 addEventListener("scroll", queueLight, { passive: true });
 
-addEventListener("resize", () => { for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); queueLight(); edges(); for (const r of $$("#st-body .pc.open")) placeLine(r); if (state.stView) syncBoards(true); });
+addEventListener("resize", () => { ducksOnWaves(); for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); queueLight(); edges(); for (const r of $$("#st-body .pc.open")) placeLine(r); if (state.stView) syncBoards(true); });
 
 addEventListener("hashchange", () => {
   const h = readHash();

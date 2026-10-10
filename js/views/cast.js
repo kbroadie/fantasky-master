@@ -2,7 +2,7 @@
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
-import { CARDS, get, shown } from "../switches.js";
+import { cardsShown, get, shown } from "../switches.js";
 
 // Fantasy: lowest total first
 export const castOrder = (d) => [...d.contestants].sort((a, b) => rankOf(d, a) - rankOf(d, b) || a.key.localeCompare(b.key));
@@ -24,25 +24,39 @@ export function castSlide(d, c) {
 // An Easter egg: a tap on Richard Ayoade's portrait makes him Maurice Moss, and his cards the hidden switches (switches.js)
 const isMoss = (c) => c.full === "Richard Ayoade";
 const toggle = (it, name) => `<button type="button" class="sw-toggle" role="switch" aria-checked="${get(it.key)}" aria-label="${esc(name)}" data-sw="${it.key}"></button>`;
+// --v: how far along the slider is, for its gold fill
+const range = (it, name) => `<input type="range" class="sw-range" data-sw="${it.key}" aria-label="${esc(name)}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}" style="--v:${fill(it)}">`;
+export const fill = (it, v = get(it.key)) => `${(((v - it.min) / (it.max - it.min)) * 100).toFixed(1)}%`;
 const control = (it) => (it.type === "toggle"
   ? `<label class="sw-row"><span>${esc(it.label)}</span>${toggle(it, it.label)}</label>`
-  : `<label class="sw-row sw-slide"><span>${esc(it.label)}</span>
-      <input type="range" class="sw-range" data-sw="${it.key}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}"><b class="sw-val">${shown(it, get(it.key))}</b></label>`);
-// Tiles: a lone toggle is a small tile, an effect with settings spans the row. Rainbow view previews them live here
+  : `<label class="sw-row sw-slide"><span>${esc(it.label)}</span>${range(it, it.label)}<b class="sw-val">${shown(it, get(it.key))}</b></label>`);
+// Tiles: a lone toggle or slider is a small tile, an effect with settings spans the row. Only the cards for the view on show;
+// the Fantasy Land tile switches it, so the page previews them live
 const switchCard = (c) => {
   const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
+  if (!main && rest.length === 1) { // a lone slider: its value in the head
+    const it = rest[0];
+    return `
+    <div class="card sw-card"><div class="card-head"><span>${esc(c.title)}</span><b class="sw-val">${shown(it, get(it.key))}</b></div>
+      <label class="sw-one">${range(it, c.title)}</label></div>`;
+  }
   return `
     <div class="card sw-card${rest.length ? " wide" : ""}${main && !get(main.key) ? " off" : ""}">
       <div class="card-head"><span>${esc(c.title)}</span>${main ? toggle(main, c.title) : ""}</div>
       ${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
     </div>`;
 };
-const switchCards = () => `
+const tile = (title, end, wide = false) => `<div class="card sw-card${wide ? " wide" : ""}"><div class="card-head"><span>${title}</span>${end}</div></div>`;
+const switchCards = () => {
+  // Defaults spans the row when it would be left alone in one
+  const cards = cardsShown(!!state.fantasy), tiles = 1 + cards.filter((c) => c.items.length === 1).length;
+  return `
     <div class="sw-grid">
-      <div class="card sw-card"><div class="card-head"><span>Rainbow view</span><button type="button" class="sw-toggle" role="switch" aria-checked="${!!state.fantasy}" aria-label="Rainbow view" data-fz></button></div></div>
-      ${CARDS.map(switchCard).join("")}
-      <div class="card sw-card"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset">Reset</button></div></div>
+      ${tile("Fantasy Land", `<button type="button" class="sw-toggle" role="switch" aria-checked="${!!state.fantasy}" aria-label="Fantasy Land" data-fz></button>`)}
+      ${cards.map(switchCard).join("")}
+      ${tile("Defaults", `<button type="button" class="ed-btn sw-reset">Reset</button>`, tiles % 2 === 0)}
     </div>`;
+};
 
 function median(xs) {
   if (!xs.length) return null;
