@@ -1,4 +1,4 @@
-// Episode podium effects: winner's gold light (rays, glow, pool, bounce, shadows, dust, glints) and last place's stink gas (heavy, sinks to the card's bottom and spreads like dry ice, collides with all four sides). One canvas at podRes resolution (full by default), between the portraits and the text: what's behind them is drawn first and their shapes cut out of it, then what's in front. Scrolling sloshes gas and stirs dust; only on-screen podiums run; reduced motion gets one still frame.
+// Episode podium effects: winner's gold light (rays, glow, pool, bounce, shadows, dust, glints) and last place's stink gas (heavy, sinks to the card's bottom and spreads like dry ice, collides with all four sides). One canvas at podRes resolution (25% by default), between the portraits and the text: what's behind them is drawn first and their shapes cut out of it, then what's in front. Scrolling sloshes gas and stirs dust; only on-screen podiums run; reduced motion gets one still frame.
 
 import { get, val, onSwitch } from "./switches.js";
 import { podiumFrames } from "./tune.js";

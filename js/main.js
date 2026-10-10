@@ -164,7 +164,17 @@ function lift(p, t) {
   const v = `0 ${Math.round(p.a + (p.b - p.a) * t)}px`;
   if (p.v !== v) { p.v = v; for (const el of lifted) el.style.translate = v; }
 }
-function fit(body) {
+// Room a slide's swiper leaves for it at the least: down to the screen's bottom, less the footer
+const roomIn = (body) => innerHeight - topIn(body) - (parseFloat(getComputedStyle(document.body).paddingBottom) || 0) - feetH();
+// The footer's parts glide when the page's height jumps (a row opening or closing, a card changing), in step with the
+// rows: moved at once and drawn from where they were on the screen (FLIP). Added together, so a change mid-glide carries
+// on from where they are. By transform, as a swipe's lift has their translate
+const FOOT_EASE = "cubic-bezier(.22, 1, .36, 1)"; // --ease, the rows' glide
+function footGlide(dy) {
+  if (reducedMotion || Math.abs(dy) < 1 || document.documentElement.dataset.vt) return;
+  for (const el of lifted) el.animate({ transform: [`translateY(${dy}px)`, "translateY(0)"] }, { duration: GLIDE_MS, easing: FOOT_EASE, composite: "add" });
+}
+function fit(body, glide = false) {
   const w = body.clientWidth, kids = body.children;
   if (!w || !kids.length) return;
   const f = body.scrollLeft / w, i = Math.min(Math.floor(f), kids.length - 1), t = f - i;
@@ -189,16 +199,28 @@ function fit(body) {
     return;
   }
   const s = kids[Math.round(f)] || kids[i];
-  const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
-  const view = innerHeight;
-  const room = view - topIn(body) - pad - feetH();
-  const h = `${Math.max(s.offsetHeight, room)}px`;
-  if (body.style.height !== h) body.style.height = h;
+  const h = `${Math.max(s.offsetHeight, roomIn(body))}px`;
+  if (body.style.height !== h) {
+    const was = parseFloat(body.style.height), y = scrollY;
+    body.style.height = h;
+    // Where they were on the screen: the page's change less any scroll it took back (a shorter page scrolled to its end)
+    if (glide && was) footGlide(was - parseFloat(h) + (scrollY - y));
+  }
   if (pair || document.body.classList.contains("lifting")) { pair = null; lift(null); }
 }
+// A slide on show that changed size glides the footer (fit); not one just drawn, or come into view at its real size, nor
+// while a height is animating (the board's race chart opening), as the footer follows that frame by frame
+const shownAt = new WeakMap();
 const sizes = new ResizeObserver((entries) => {
   pair = null;
-  for (const b of new Set(entries.map((e) => e.target.parentElement))) if (b?.isConnected) fit(b);
+  const glide = new Set();
+  for (const e of entries) {
+    const s = e.target, h = e.contentRect.height, was = shownAt.get(s);
+    if (!s.classList.contains("here") || !h) { shownAt.delete(s); continue; }
+    shownAt.set(s, h);
+    if (was && !s.getAnimations({ subtree: true }).some((a) => a.transitionProperty === "grid-template-rows")) glide.add(s.parentElement);
+  }
+  for (const b of new Set(entries.map((e) => e.target.parentElement))) if (b?.isConnected) fit(b, glide.has(b));
 });
 
 function mark(sw, i, smooth = true) {
@@ -386,6 +408,11 @@ function slideShut(board, row, finish) {
   for (let r = row.nextElementSibling; r; r = r.nextElementSibling) below.push(r);
   if (reducedMotion) { glide(board, finish); return; }
   const h = row.querySelector(".pc-more").offsetHeight;
+  // The footer goes up with them, as far as the page will shorten (and no further than a page scrolled to its end lets it)
+  const body = row.closest(".st-slide").parentElement, now = body.offsetHeight;
+  const less = now - Math.max(row.closest(".st-slide").offsetHeight - h, roomIn(body));
+  const end = document.documentElement.scrollHeight - innerHeight, up = less - Math.max(0, scrollY - (end - less));
+  const foot = up < 1 ? [] : lifted.map((el) => el.animate({ transform: ["translateY(0)", `translateY(${-up}px)`] }, { duration: GLIDE_MS, easing: FOOT_EASE, fill: "forwards", composite: "add" }));
   // Reads as closed at once; only the height waits for the glide
   delete row.dataset.open;
   for (const b of row.querySelectorAll(".sd")) b.setAttribute("aria-expanded", "false");
@@ -400,6 +427,8 @@ function slideShut(board, row, finish) {
     clearTimeout(t);
     board.classList.remove("glide");
     finish();
+    fit(body); // the page shortens now, where the footer is already
+    for (const a of foot) a.cancel();
     for (const r of below) r.style.transform = "";
     board.style.clipPath = "";
     glideEnd = null;
