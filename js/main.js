@@ -258,32 +258,69 @@ const feet = () => [$("#dq"), $(".fz-foot"), $("#foot")];
  * ends with the footer at the bottom of the screen. Mid-swipe the footer
  * moves with the swipe (on request: it popped in when a swipe settled on a
  * short week): the swiper takes the taller of the two slides on show, and the
- * footer is moved by `top` (no transform, so the rainbow behind it stays
- * behind the page) to between where it ends up under each, as far as the
- * swipe has gone, rising from just below the screen when one is off it.
+ * footer moves to between where it ends up under each, as far as the swipe
+ * has gone, rising from just below the screen when one is off it. Both places
+ * are measured once per pair of slides (`pair`); then, where the browser has
+ * scroll-driven animations, the footer's parts are moved by one tied to the
+ * swiper's own scroll (`lift` in the CSS), on the compositor, so a frame of
+ * the swipe costs the main thread nothing (on request: "optimize"); elsewhere,
+ * and turned over, each frame sets their translate. Each part has its own
+ * translate: a custom property would be inherited by every SVG copy of a duck
+ * or dolphin and restyle them all.
  */
+const SDA = CSS.supports("animation-timeline: scroll()");
+const lifted = [$("#dq"), $("#foot"), $(".fz-bow"), $(".fz-waves")].filter(Boolean); // found once: a class lookup a frame cost more than the rest
+let pair = null;
+function lift(p, t) {
+  if (!p) { for (const el of lifted) { el.style.translate = ""; el.style.animationName = ""; } document.body.classList.remove("lifting"); return; }
+  if (!p.sda) for (const el of lifted) el.style.animationName = "";
+  document.body.classList.add("lifting");
+  if (p.sda) {
+    for (const el of lifted) {
+      const st = el.style;
+      st.setProperty("--la", `${p.a}px`); st.setProperty("--lb", `${p.b}px`);
+      st.animationTimeline = p.tl; st.animationRange = `${p.r0}px ${p.r1}px`; st.animationName = "lift";
+    }
+    return;
+  }
+  const v = `0 ${Math.round(p.a + (p.b - p.a) * t)}px`;
+  if (p.v !== v) { p.v = v; for (const el of lifted) el.style.translate = v; }
+}
 function fit(body) {
   const w = body.clientWidth, kids = body.children;
   if (!w || !kids.length) return;
   const f = body.scrollLeft / w, i = Math.min(Math.floor(f), kids.length - 1), t = f - i;
-  const rest = t < 0.01 || t > 0.99 || i + 1 >= kids.length;
-  const a = kids[rest ? Math.round(f) : i] || kids[i], b = rest ? a : kids[i + 1];
-  const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
-  const view = turned() ? $("main").clientHeight : innerHeight, top = topIn(body);
-  const room = view - top - pad - feet().reduce((h, el) => h + (el?.offsetHeight || 0), 0); // the ducks, or upside down the dolphins, and a desktop's quote
-  const ha = Math.max(a.offsetHeight, room), hb = Math.max(b.offsetHeight, room), hi = Math.max(ha, hb);
-  let dy = 0;
-  if (!rest) {
-    // Where the footer would sit, held just below the screen (with the rainbow, upside down, that rises above it)
-    const foot = $(".fz-foot"), rise = foot?.offsetWidth ? Math.max(0, (foot.offsetWidth * 1.5) / 2 - foot.offsetHeight + 4) : 0;
-    const sc = scroller(), below = (sc === window ? scrollY : sc.scrollTop) + view + rise;
-    const at = (h) => Math.min(top + h, below);
-    dy = Math.round(at(ha) + (at(hb) - at(ha)) * t - (top + hi));
+  if (!(t < 0.01 || t > 0.99 || i + 1 >= kids.length)) { // mid-swipe (or held there)
+    if (pair?.body !== body || pair.i !== i) {
+      const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
+      const view = turned() ? $("main").clientHeight : innerHeight, top = topIn(body);
+      const room = view - top - pad - feet().reduce((h, el) => h + (el?.offsetHeight || 0), 0); // the ducks, or upside down the dolphins, and a desktop's quote
+      const ha = Math.max(kids[i].offsetHeight, room), hb = Math.max(kids[i + 1].offsetHeight, room), hi = Math.max(ha, hb);
+      // Held just below the screen (with the rainbow, upside down, that rises above it)
+      const foot = $(".fz-foot"), rise = foot?.offsetWidth ? Math.max(0, (foot.offsetWidth * 1.5) / 2 - foot.offsetHeight + 4) : 0;
+      const sc = scroller(), below = (sc === window ? scrollY : sc.scrollTop) + view + rise;
+      const at = (h) => Math.min(top + h, below);
+      const a = Math.round(at(ha) - (top + hi)), b = Math.round(at(hb) - (top + hi));
+      const same = pair && pair.a === a && pair.b === b && pair.tl === `--${body.id.slice(0, -5)}` && pair.r0 === i * w;
+      // Turned, the page scrolls itself on the main thread anyway, and Chrome's compositor doesn't follow
+      // a swiper's timeline there (measured: the footer stood still), so each frame moves it
+      pair = { body, i, a, b, tl: `--${body.id.slice(0, -5)}`, r0: i * w, r1: (i + 1) * w, sda: SDA && !turned() };
+      if (body.style.height !== `${hi}px`) body.style.height = `${hi}px`;
+      if (!same || !pair.sda) lift(pair, t);
+    } else if (!pair.sda) lift(pair, t);
+    return;
   }
-  if (body.style.height !== `${hi}px`) body.style.height = `${hi}px`;
-  for (const el of feet()) if (el && el.style.top !== (dy ? `${dy}px` : "")) el.style.top = dy ? `${dy}px` : "";
+  // At rest: the slide's own height, and the footer where it falls
+  const s = kids[Math.round(f)] || kids[i];
+  const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
+  const view = turned() ? $("main").clientHeight : innerHeight;
+  const room = view - topIn(body) - pad - feet().reduce((h, el) => h + (el?.offsetHeight || 0), 0);
+  const h = `${Math.max(s.offsetHeight, room)}px`;
+  if (body.style.height !== h) body.style.height = h;
+  if (pair || document.body.classList.contains("lifting")) { pair = null; lift(null); }
 }
 const sizes = new ResizeObserver((entries) => {
+  pair = null; // a slide changed size: measure again
   for (const b of new Set(entries.map((e) => e.target.parentElement))) if (b?.isConnected) fit(b);
 });
 
