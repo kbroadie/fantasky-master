@@ -1,12 +1,15 @@
 // Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js), a card per effect, per device in
-// localStorage. Every effect is at its lowest quality by default, and off but for the podium effects and Fantasy Land's
-// sea: frame pacing comes first, and the cards turn them on and up. Everything applies live (fm-switch events). Each kind of setting has
+// localStorage. Every effect is at its lowest quality by default, and off but for the podium effects, Fantasy Land's sea
+// and its transition: frame pacing comes first, and the cards turn them on and up. Everything applies live (fm-switch events). Each kind of setting has
 // its control: an effect's on/off a switch in its card's head (main), a small fixed set segmented buttons (steps, choice),
 // a strength a slider (range)
+
+// Fantasy Land's transition is Slam where Chromium draws it, else Iris (Safari, and every iOS browser, all WebKit)
+const CHROMIUM = !!navigator.userAgentData?.brands?.some((b) => b.brand === "Chromium");
 export const CARDS = [
   // Fantasy Land's switch in its head (not a setting: it switches the view), and how the view changes (flip.js)
   { title: "Fantasy Land", fz: true,
-    items: [{ key: "fzMove", type: "choice", label: "Transition", def: "off", options: [["iris", "Iris"], ["ripple", "Ripple"], ["blur", "Blur"],
+    items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["blur", "Blur"],
       ["lens", "Lens"], ["flare", "Flare"], ["swirl", "Swirl"], ["slow", "Slow"], ["flash", "Flash"], ["grade", "Grade"],
       ["zoom", "Zoom"], ["roll", "Roll"], ["tilt", "Tilt"], ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
   { title: "Frame rate",
