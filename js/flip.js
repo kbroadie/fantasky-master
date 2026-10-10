@@ -54,6 +54,9 @@ function set(show, anchor, tap) {
 const SLAM = { lift: 0.45, drop: 0.15, wave: 0.7, flip: 0.14 };
 const travel = (dy) => 0.5 + Math.min(0.4, Math.abs(dy) / 2500); // the longer the scroll, the longer it takes
 const slamRows = () => [...document.querySelectorAll("#st-body .slide.here .rows > .pc")];
+// The week's blocks (its hero, the board): pictured whole, above the screen too, so the page scrolls down in its old
+// style, the same layout as after, and only the style changes, with the wave
+const slamBlocks = () => [...(document.querySelector("#st-body .slide.here")?.children || [])];
 function slamReady() {
   const rows = slamRows(), r = rows.at(-1)?.getBoundingClientRect();
   return state.page === "standings" && rows.length > 2 && r && r.bottom > 0 && r.top < innerHeight;
@@ -64,6 +67,7 @@ function slamNames(phase) {
     r.style.viewTransitionName = phase === "old" ? (i === rows.length - 1 ? "vt-slam" : `vt-row-${i}`)
       : phase === "new" ? (i === 0 ? "vt-slam" : `vt-row-${i - 1}`) : "";
   });
+  slamBlocks().forEach((b, i) => { b.style.viewTransitionName = phase === "clear" ? "" : `vt-block-${i}`; });
   // The bar and strip are their own pictures, above the moving rows (a moving picture is drawn over everything else)
   for (const [sel, n] of [[".topbar", "vt-bar"], ["#st-tabs", "vt-strip"]]) $(sel).style.viewTransitionName = phase === "clear" ? "" : n;
 }
@@ -105,7 +109,7 @@ html[data-vt="slam"]::view-transition-new(vt-slam) { animation: vt-slam-in ${end
 @keyframes vt-slam-in { 0%, ${pc(T - 0.02)} { opacity: 0; } ${pc(T + 0.06)}, 100% { opacity: 1; } }
 html[data-vt="slam"]::view-transition-old(root) { animation: vt-scroll ${move}s ${L}s ${E} both; }
 @keyframes vt-scroll { to { transform: translateY(${dy}px); } }
-html[data-vt="slam"]::view-transition-new(root) { animation: vt-radiate ${SLAM.wave}s ${T}s ${E} both; }
+html[data-vt="slam"]::view-transition-new(root) { animation: vt-radiate ${SLAM.wave}s ${T}s linear both; } /* one front at one speed, as the rows and blocks */
 @keyframes vt-radiate { from { clip-path: circle(0 at ${cx}px ${cy}px); } to { clip-path: circle(${Math.ceil(R)}px at ${cx}px ${cy}px); } }`];
   // Each row slides down a place with the table, then flips when the shockwave reaches it
   rows.slice(1).forEach((r, i) => {
@@ -113,6 +117,19 @@ html[data-vt="slam"]::view-transition-new(root) { animation: vt-radiate ${SLAM.w
     css.push(`html[data-vt="slam"]::view-transition-group(vt-row-${i}) { z-index: 1; animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
 html[data-vt="slam"]::view-transition-old(vt-row-${i}) { animation: vt-flip-out ${SLAM.flip}s ${d}s cubic-bezier(.55, 0, 1, .45) both; }
 html[data-vt="slam"]::view-transition-new(vt-row-${i}) { animation: vt-flip-in ${SLAM.flip}s ${(+d + SLAM.flip).toFixed(3)}s cubic-bezier(0, .55, .45, 1) both; }`);
+  });
+  // The blocks scroll with the table, and the wave restyles them as it spreads: a circle on each, from the impact, as fast
+  // as on the rest of the page
+  // The old picture loses the same circle (a hole cut in it), so where the new one is see-through the old doesn't show
+  const hole = (b, x, y, r) => `path(evenodd, "M-2 -2H${Math.ceil(b.width) + 2}V${Math.ceil(b.height) + 2}H-2Z M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z")`;
+  slamBlocks().forEach((el, i) => {
+    const b = el.getBoundingClientRect(), x = cx - b.left, y = cy - b.top;
+    const far = Math.hypot(Math.max(x, b.width - x), Math.max(y, b.height - y)), took = ((far / R) * SLAM.wave).toFixed(3);
+    css.push(`html[data-vt="slam"]::view-transition-group(vt-block-${i}) { animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
+html[data-vt="slam"]::view-transition-old(vt-block-${i}) { animation: vt-hole-${i} ${took}s ${T}s linear both; mix-blend-mode: normal; }
+html[data-vt="slam"]::view-transition-new(vt-block-${i}) { animation: vt-wave-${i} ${took}s ${T}s linear both; mix-blend-mode: normal; }
+@keyframes vt-wave-${i} { from { clip-path: circle(0 at ${x}px ${y}px); } to { clip-path: circle(${Math.ceil(far)}px at ${x}px ${y}px); } }
+@keyframes vt-hole-${i} { from { clip-path: ${hole(b, x, y, 0)}; } to { clip-path: ${hole(b, x, y, Math.ceil(far))}; } }`);
   });
   // The bar and strip change colour as the wave reaches them
   for (const [sel, n] of [[".topbar", "vt-bar"], ["#st-tabs", "vt-strip"]]) {
