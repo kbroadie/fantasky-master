@@ -1005,7 +1005,15 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-rows { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 16px; padding: 2px 12px 12px; }
 .sw-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 1.25; color: var(--t1); }
 .sw-slide { grid-column: 1 / -1; display: grid; grid-template-columns: 6.5em minmax(0, 1fr) 3.4em; gap: 12px; }
-.sw-val { font: 500 12px var(--fm); color: var(--gold2); text-align: right; font-variant-numeric: tabular-nums; }
+/* A slider's value: dim as designed, gold once changed; a tap resets it */
+.sw-val {
+  justify-self: end; min-width: 3.4em; min-height: 28px; padding: 0; border: 0; background: none; color: var(--t3);
+  font: 500 12px var(--fm); text-align: right; font-variant-numeric: tabular-nums; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.sw-val.on { color: var(--gold2); text-decoration: underline dotted 1px; text-underline-offset: 3px; }
+.sw-steps { grid-column: 1 / -1; display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 12px; }
+.sw-sub { padding: 0 12px 6px; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--t3); }
+.sw-count { padding: 0 12px 12px; margin-top: -2px; font-size: 13px; color: var(--t3); }
 .sw-one { display: block; padding: 0 12px 8px; }
 /* Sliders like the toggles: a gold fill up to the value (--v, set by cast.js and main.js) and a gold knob */
 .sw-range {
@@ -1020,8 +1028,10 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--gold-glow); }
 .sw-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--gold-glow); }
 .sw-reset { padding: 6px 10px; }
-/* A choice on a Moss card: segmented, four to a row, like the top tabs */
-.sw-seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin: 0 12px 12px; padding: 3px; border: 1px solid var(--b-gold); border-radius: 10px; background: var(--s1); }
+/* A small fixed set on a Moss card: segmented buttons, like the top tabs; four to a row when there are many */
+.sw-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 3px; border: 1px solid var(--b-gold); border-radius: 10px; background: var(--s1); }
+.sw-seg.grid { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 12px 12px; }
+.sw-seg.grid > :last-child:nth-child(4n + 1) { grid-column: 1 / -1; } /* a last one alone (Off) spans the row */
 .sw-seg button {
   min-height: 32px; padding: 0 4px; border: 0; border-radius: 7px; background: none; color: var(--t2);
   font: 500 11px var(--fm); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; -webkit-tap-highlight-color: transparent;

@@ -5,8 +5,8 @@ import { derive, currentSeriesKey } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, QUOTE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
-import { castOrder, castTabs, castSlides, castSlide, fill } from "./views/cast.js";
-import { get, set, item, shown, resetAll } from "./switches.js";
+import { castOrder, castTabs, castSlides, castSlide, fill, changedSay } from "./views/cast.js";
+import { get, set, item, shown, resetAll, changed } from "./switches.js";
 import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
@@ -292,7 +292,9 @@ $("#series").addEventListener("click", () => {
   show(state.page);
 });
 
-$("#dq").addEventListener("click", (e) => { if (e.target.closest(".st-quote")) toggleFantasy(); });
+// Where a tap landed: the transitions open from it (Iris's circle, Zoom's and Vertigo's centre); none from a keyboard
+const tapAt = (e) => (e.detail ? { x: e.clientX, y: e.clientY } : null);
+$("#dq").addEventListener("click", (e) => { if (e.target.closest(".st-quote")) toggleFantasy("#dq", tapAt(e)); });
 $("#dq").addEventListener("pointerdown", warm, { once: true });
 $("#p-standings").addEventListener("click", (e) => {
   if (e.target.closest(".wl-x")) {
@@ -468,27 +470,45 @@ const heatTap = (e) => {
   card.querySelector(".hs-cap").textContent = was ? "" : slot.dataset.say;
 };
 $("#cast-body").addEventListener("click", heatTap);
-// The Moss Easter egg (cast.js): his portrait swaps him and his cards; each card's toggle is a switch
+// The Moss Easter egg (cast.js): his portrait swaps him and his cards. Each control sets its setting at once, and the
+// Defaults card counts what differs from the design
+const counted = (slide) => {
+  const n = changed();
+  slide.querySelector(".sw-count").textContent = changedSay(n);
+  slide.querySelector(".sw-reset").disabled = !n;
+};
 $("#cast-body").addEventListener("click", (e) => {
+  const slide = e.target.closest(".slide");
   const opt = e.target.closest(".sw-seg [data-v]");
   if (opt) {
-    set(opt.dataset.sw, opt.dataset.v);
+    const it = item(opt.dataset.sw);
+    set(it.key, it.type === "steps" ? +opt.dataset.v : opt.dataset.v);
     for (const b of opt.parentElement.children) b.setAttribute("aria-checked", b === opt);
-    return;
+    return counted(slide);
+  }
+  const val = e.target.closest(".sw-val[data-reset]");
+  if (val) { // a slider's value: back to the design
+    const it = item(val.dataset.reset), r = slide.querySelector(`.sw-range[data-sw="${it.key}"]`);
+    set(it.key, it.def);
+    r.value = it.def;
+    r.style.setProperty("--v", fill(it));
+    val.textContent = shown(it, it.def);
+    val.classList.remove("on");
+    return counted(slide);
   }
   const sw = e.target.closest(".sw-toggle");
-  if (sw?.hasAttribute("data-fz")) { toggleFantasy(".sw-toggle[data-fz]"); return; } // the preview: Moss's page in Fantasy Land, with its cards
+  if (sw?.hasAttribute("data-fz")) return toggleFantasy(".sw-toggle[data-fz]", tapAt(e)); // Moss's page previews it, with its cards
   if (sw) {
     const k = sw.dataset.sw;
     set(k, !get(k));
     sw.setAttribute("aria-checked", get(k));
     if (item(k).main) sw.closest(".sw-card").classList.toggle("off", !get(k));
-    return;
+    return counted(slide);
   }
   const img = e.target.closest(".cd-img[data-moss]"), reset = e.target.closest(".sw-reset");
   if (!img && !reset) return;
   if (img) state.moss = !state.moss; else resetAll();
-  const slide = (img || reset).closest(".slide"), c = state.d.contestants.find((o) => o.key === slide.querySelector("[data-moss]").dataset.moss);
+  const c = state.d.contestants.find((o) => o.key === slide.querySelector("[data-moss]").dataset.moss);
   slide.innerHTML = castSlide(state.d, c);
   mountPodiumFx($("#cast-body"));
   fitTitles();
@@ -497,10 +517,12 @@ $("#cast-body").addEventListener("click", (e) => {
 $("#cast-body").addEventListener("input", (e) => {
   const r = e.target.closest(".sw-range");
   if (!r) return;
-  const it = item(r.dataset.sw);
-  set(it.key, +r.value);
+  const it = item(r.dataset.sw), v = +r.value, val = r.closest(".sw-slide, .sw-card").querySelector(".sw-val");
+  set(it.key, v);
   r.style.setProperty("--v", fill(it));
-  r.closest(".sw-slide, .sw-card").querySelector(".sw-val").textContent = shown(it, +r.value);
+  val.textContent = shown(it, v);
+  val.classList.toggle("on", v !== it.def);
+  counted(r.closest(".slide"));
 });
 
 // Race charts: tap a line, name or point to follow; again or empty space shows all.

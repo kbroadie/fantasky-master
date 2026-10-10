@@ -2,7 +2,7 @@
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
-import { cardsShown, get, shown } from "../switches.js";
+import { cardsShown, changed, get, shown } from "../switches.js";
 
 // Fantasy: lowest total first
 export const castOrder = (d) => [...d.contestants].sort((a, b) => rankOf(d, a) - rankOf(d, b) || a.key.localeCompare(b.key));
@@ -24,28 +24,31 @@ export function castSlide(d, c) {
 // An Easter egg: a tap on Richard Ayoade's portrait makes him Maurice Moss, and his cards the hidden switches (switches.js)
 const isMoss = (c) => c.full === "Richard Ayoade";
 const toggle = (it, name) => `<button type="button" class="sw-toggle" role="switch" aria-checked="${get(it.key)}" aria-label="${esc(name)}" data-sw="${it.key}"></button>`;
-// --v: how far along the slider is, for its gold fill
+// A small fixed set: segmented buttons, one tap each (a grid when there are many)
+const segs = (it, name, grid = false) => `<div class="sw-seg${grid ? " grid" : ""}" role="radiogroup" aria-label="${esc(name)}">${it.options.map(([v, label]) =>
+  `<button type="button" role="radio" aria-checked="${get(it.key) === v}" data-sw="${it.key}" data-v="${v}">${esc(label)}</button>`).join("")}</div>`;
+// A strength: a slider (--v, how far along, for its gold fill) and its value, gold once changed; a tap on it resets it
 const range = (it, name) => `<input type="range" class="sw-range" data-sw="${it.key}" aria-label="${esc(name)}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}" style="--v:${fill(it)}">`;
 export const fill = (it, v = get(it.key)) => `${(((v - it.min) / (it.max - it.min)) * 100).toFixed(1)}%`;
-const control = (it) => (it.type === "toggle"
-  ? `<label class="sw-row"><span>${esc(it.label)}</span>${toggle(it, it.label)}</label>`
-  : `<label class="sw-row sw-slide"><span>${esc(it.label)}</span>${range(it, it.label)}<b class="sw-val">${shown(it, get(it.key))}</b></label>`);
-// Tiles: a lone toggle or slider is a small tile, an effect with settings spans the row. Only the cards for the view on show;
-// the Fantasy Land tile switches it, so the page previews them live
+const value = (it, name) => `<button type="button" class="sw-val${get(it.key) !== it.def ? " on" : ""}" data-reset="${it.key}" aria-label="${esc(name)}: reset">${shown(it, get(it.key))}</button>`;
+const control = (it) => (it.type === "steps"
+  ? `<div class="sw-row sw-steps"><span>${esc(it.label)}</span>${segs(it, it.label)}</div>`
+  : `<div class="sw-row sw-slide"><span>${esc(it.label)}</span>${range(it, it.label)}${value(it, it.label)}</div>`);
+// Tiles: a lone switch or slider is a small tile, an effect with settings spans the row. Only the cards for the view on show
+const tiled = (c) => c.items.length === 1 && c.items[0].type !== "choice";
 const switchCard = (c) => {
   const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
-  if (rest[0]?.type === "choice") { // a choice: its options in a row across the card
+  if (c.fz) { // Fantasy Land: its switch, and the transition it plays, so a pick is tried at once
     const it = rest[0];
     return `
-    <div class="card sw-card wide"><div class="card-head"><span>${esc(c.title)}</span></div>
-      <div class="sw-seg" role="radiogroup" aria-label="${esc(c.title)}">${it.options.map(([v, name]) =>
-        `<button type="button" role="radio" aria-checked="${get(it.key) === v}" data-sw="${it.key}" data-v="${v}">${esc(name)}</button>`).join("")}</div></div>`;
+    <div class="card sw-card wide"><div class="card-head"><span>${esc(c.title)}</span><button type="button" class="sw-toggle" role="switch" aria-checked="${!!state.fantasy}" aria-label="${esc(c.title)}" data-fz></button></div>
+      <div class="sw-sub">${esc(it.label)}</div>${segs(it, it.label, true)}</div>`;
   }
   if (!main && rest.length === 1) { // a lone slider: its value in the head
     const it = rest[0];
     return `
-    <div class="card sw-card"><div class="card-head"><span>${esc(c.title)}</span><b class="sw-val">${shown(it, get(it.key))}</b></div>
-      <label class="sw-one">${range(it, c.title)}</label></div>`;
+    <div class="card sw-card"><div class="card-head"><span>${esc(c.title)}</span>${value(it, c.title)}</div>
+      <div class="sw-one">${range(it, c.title)}</div></div>`;
   }
   return `
     <div class="card sw-card${rest.length ? " wide" : ""}${main && !get(main.key) ? " off" : ""}">
@@ -53,15 +56,16 @@ const switchCard = (c) => {
       ${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
     </div>`;
 };
-const tile = (title, end, wide = false) => `<div class="card sw-card${wide ? " wide" : ""}"><div class="card-head"><span>${title}</span>${end}</div></div>`;
+// How many settings differ from the design; Reset does nothing without any
+export const changedSay = (n = changed()) => (n ? `${n} changed` : "As designed");
 const switchCards = () => {
   // Defaults spans the row when it would be left alone in one
-  const cards = cardsShown(!!state.fantasy), tiles = 1 + cards.filter((c) => c.items.length === 1 && c.items[0].type !== "choice").length;
+  const cards = cardsShown(!!state.fantasy), n = changed();
   return `
     <div class="sw-grid">
-      ${tile("Fantasy Land", `<button type="button" class="sw-toggle" role="switch" aria-checked="${!!state.fantasy}" aria-label="Fantasy Land" data-fz></button>`)}
       ${cards.map(switchCard).join("")}
-      ${tile("Defaults", `<button type="button" class="ed-btn sw-reset">Reset</button>`, tiles % 2 === 0)}
+      <div class="card sw-card${cards.filter(tiled).length % 2 ? "" : " wide"}"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset"${n ? "" : " disabled"}>Reset</button></div>
+        <div class="sw-count">${changedSay(n)}</div></div>
     </div>`;
 };
 
