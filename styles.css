@@ -187,13 +187,16 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    rides up, its labels dropping to stay centred in its 32px band. Scrolled
    back, it all opens the same way. Where the browser has scroll-driven
    animations (Chrome, Safari 26) they run on the compositor, so they keep
-   up while the page flies; elsewhere main.js sets --p (0–1) as it scrolls.
-   Turned over, main scrolls the page, so the timeline is its (--page). The
+   up while the page flies; elsewhere, and turned over, main.js sets --p
+   (0–1) as it scrolls and the rules after the animations follow it (an
+   animation, where there is one, overrides them). Turned over, the page
+   scrolls itself on the main thread anyway, and animations on main's own
+   timeline were restyled on every frame of every scroll (on request:
+   rainbow view scrolling was slow on an iPhone); --p is written only when it
+   changes, so past the first 50px a scroll costs the bar nothing. The
    numbers are the old compact layout's, measured: the pill 58 → 40px tall,
    the panel 46 → 28, the labels 20px higher in the tabs. */
-html.fz-turn, html.fz-side { --tl: --page; }
-html.fz-turn body, html.fz-side body { timeline-scope: --page, --st, --ep, --cast; } /* and the swipers' (the footer follows a swipe) */
-html.fz-turn main, html.fz-side main { scroll-timeline: --page block; }
+html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* the swipers' (the footer follows a swipe) */
 @keyframes bar-glass { to { transform: translateY(calc(-1 * var(--bar-d))); } }
 @keyframes bar-hdr { to { transform: translateY(var(--hdr-dy)); } }
 @keyframes bar-shade { to { opacity: 1; transform: translateY(var(--hdr-dy)); } }
@@ -203,7 +206,7 @@ html.fz-turn main, html.fz-side main { scroll-timeline: --page block; }
 @keyframes bar-tabs { to { translate: 0 var(--tabs-dy); } }
 @keyframes bar-pill { to { scale: 1 calc(40 / 58); } }
 @keyframes bar-ind { to { scale: 1 calc(28 / 46); } }
-@keyframes bar-icon { 60% { opacity: 0; } to { opacity: 0; translate: 0 2px; } }
+@keyframes bar-icon { 60% { opacity: 0; } to { opacity: 0; transform: translateY(2px); } } /* transform, not translate: Chrome won't run an SVG's translate on the compositor */
 @keyframes bar-label { to { translate: 0 -20px; } }
 @keyframes bar-tab { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 18px 0); } } /* its hit area ends with the compact pill, clear of the strip */
 @keyframes bar-strip { to { translate: 0 var(--strip-dy); } }
@@ -230,23 +233,26 @@ html.fz-turn main, html.fz-side main { scroll-timeline: --page block; }
   .tab span { animation-name: bar-label; }
   .page > .strip { animation-name: bar-strip; }
   .page > .strip .strip-tab > span { animation-name: bar-strip-label; }
+  /* Turned over, --p (below) moves the bar instead: with no timeline an animation would hold its end */
+  :is(html.fz-turn, html.fz-side) :is(.brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab svg, .tab span, .page > .strip, .page > .strip .strip-tab > span),
+  :is(html.fz-turn, html.fz-side) .topbar::before, :is(html.fz-turn, html.fz-side) .hdr::before, :is(html.fz-turn, html.fz-side) .hdr::after { animation-name: none; }
 }
-@supports not (animation-timeline: scroll()) {
-  .topbar::before { transform: translateY(calc(-1 * var(--bar-d) * var(--p, 0))); }
-  .hdr::before { transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
-  .hdr::after { opacity: var(--p, 0); transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
-  .brand { transform: translateY(calc(var(--hdr-dy) / 2 * var(--p, 0))) scale(calc(1 - .22 * var(--p, 0))); }
-  .cd { transform: translateY(calc(var(--hdr-dy) / 2 * var(--p, 0))); }
-  #cd-what { opacity: max(0, 1 - 2 * var(--p, 0)); }
-  .tabs { translate: 0 calc(var(--tabs-dy) * var(--p, 0)); }
-  .tabs-bg { --k: calc(1 - 18 / 58 * var(--p, 0)); scale: 1 var(--k); border-radius: 18px / calc(18px / var(--k)); }
-  .tab-ind { --k: calc(1 - 18 / 46 * var(--p, 0)); scale: 1 var(--k); border-radius: 13px / calc(13px / var(--k)); }
-  .tab { clip-path: inset(0 0 calc(18px * var(--p, 0)) 0); }
-  .tab svg { opacity: max(0, 1 - var(--p, 0) / .6); translate: 0 calc(2px * var(--p, 0)); }
-  .tab span { translate: 0 calc(-20px * var(--p, 0)); }
-  .page > .strip { translate: 0 calc(var(--strip-dy) * var(--p, 0)); }
-  .page > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2 * var(--p, 0)); }
-}
+/* The same frames from --p, where there are no scroll-driven animations or the page is turned (after
+   the base rules, so they win; an animation, where there is one, overrides them) */
+.topbar::before { transform: translateY(calc(-1 * var(--bar-d) * var(--p, 0))); }
+.hdr::before { transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
+.hdr::after { opacity: var(--p, 0); transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
+.brand { transform: translateY(calc(var(--hdr-dy) / 2 * var(--p, 0))) scale(calc(1 - .22 * var(--p, 0))); }
+.cd { transform: translateY(calc(var(--hdr-dy) / 2 * var(--p, 0))); }
+#cd-what { opacity: max(0, 1 - 2 * var(--p, 0)); }
+.tabs { translate: 0 calc(var(--tabs-dy) * var(--p, 0)); }
+.tabs-bg { --k: calc(1 - 18 / 58 * var(--p, 0)); scale: 1 var(--k); border-radius: 18px / calc(18px / var(--k)); }
+.tab-ind { --k: calc(1 - 18 / 46 * var(--p, 0)); scale: 1 var(--k); border-radius: 13px / calc(13px / var(--k)); }
+.tab { clip-path: inset(0 0 calc(18px * var(--p, 0)) 0); }
+.tab svg { opacity: max(0, 1 - var(--p, 0) / .6); transform: translateY(calc(2px * var(--p, 0))); }
+.tab span { translate: 0 calc(-20px * var(--p, 0)); }
+.page > .strip { translate: 0 calc(var(--strip-dy) * var(--p, 0)); }
+.page > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2 * var(--p, 0)); }
 @keyframes bar-strip-label { to { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2); } }
 
 /* ── Pages ─────────────────────────────────────────────────────────── */
@@ -391,10 +397,12 @@ html.fz-turn main, html.fz-side main { scroll-timeline: --page block; }
 /* Underlined while the tilt still needs allowing (Safari), so it reads as a tap (askHint in flip.js) */
 .tilt-ask .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 /* On a desktop it's right side up and underlined, and a click switches fantasy mode on and off (main.js) */
-.dq { display: none; }
+/* By its id: the class .dq is also the Every task card's DQ cells, which
+   these rules once hid on phones (and padded out on desktops) */
+#dq { display: none; }
 @media (hover: hover) and (pointer: fine) {
   /* One quote under every tab (#dq), not one under each week's board */
-  .dq { display: block; padding: 4px var(--px) 0; }
+  #dq { display: block; padding: 4px var(--px) 0; }
   .st-slide .st-quote { display: none; }
   .st-quote { transform: none; cursor: pointer; transition: color .2s; }
   .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
@@ -871,17 +879,20 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .hs-slot { display: flex; gap: 2px; height: 24px; padding: 0; border-radius: 4px; }
 button.hs-slot.on { box-shadow: 0 0 0 1.5px var(--t1); position: relative; z-index: 1; }
 .hs-slot.tbd { border-radius: 3px; background: rgba(255, 255, 255, .025); }
+/* The fill step (--f) is the score, 0–5; in fantasy mode it's turned round (below) */
+.hs-cell, .hs-key { --f: clamp(0, var(--v), 5); }
 .hs-cell {
   flex: 1; min-width: 0; border-radius: 3px;
-  background: color-mix(in srgb, var(--c) calc(var(--v) * 19% + 5%), var(--s2));
+  background: color-mix(in srgb, var(--c) calc(var(--f) * 19% + 5%), var(--s2));
 }
 .hs-cell[style*="--v:0"] { background: none; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); } /* 0: an outline in their colour */
 /* DQ: the 0 outline with a cross through it, both in the outline's colour */
 .hs-cell.dq, .hs-key.dq {
   --x: color-mix(in srgb, var(--c) 55%, transparent);
-  background:
+  --cross:
     linear-gradient(to top right, transparent calc(50% - .75px), var(--x) calc(50% - .75px) calc(50% + .75px), transparent calc(50% + .75px)),
     linear-gradient(to bottom right, transparent calc(50% - .75px), var(--x) calc(50% - .75px) calc(50% + .75px), transparent calc(50% + .75px));
+  background: var(--cross);
   box-shadow: inset 0 0 0 1.5px var(--x);
 }
 /* n/a: no task of that type that episode, a short dash instead of a square */
@@ -890,11 +901,18 @@ button.hs-slot.on { box-shadow: 0 0 0 1.5px var(--t1); position: relative; z-ind
 .hs-avg { font-size: 13px; font-weight: 700; color: var(--t2); text-align: right; }
 .hs-cap { padding: 6px 12px 12px; font-size: 13px; line-height: 1.4; color: var(--t3); } /* one line until a long caption needs two */
 .hs-legend { display: inline-flex; align-items: center; gap: 2px; }
-.hs-key { width: 9px; height: 9px; border-radius: 2px; background: color-mix(in srgb, var(--c) calc(var(--v) * 19% + 5%), var(--s2)); }
+.hs-key { width: 9px; height: 9px; border-radius: 2px; background: color-mix(in srgb, var(--c) calc(var(--f) * 19% + 5%), var(--s2)); }
 .hs-key[style*="--v:0"] { background: none; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); }
 .hs-key.dq { margin: 0 3px 0 10px; }
 .hs-key:first-of-type { margin-left: 4px; }
 .hs-key:last-of-type { margin-right: 4px; }
+/* Fantasy mode, low scores win: the steps run the other way (on request), 0 the
+   strongest fill and 5 the empty outline, and a DQ (0 points) a full square
+   with the cross cut through it in the card's colour. The key follows. */
+html.fz .hs-cell, html.fz .hs-key { --f: clamp(0, 5 - var(--v), 5); }
+html.fz .hs-cell[style*="--v:0"], html.fz .hs-key[style*="--v:0"] { background: color-mix(in srgb, var(--c) calc(var(--f) * 19% + 5%), var(--s2)); box-shadow: none; }
+html.fz .hs-cell[style*="--v:5"], html.fz .hs-key[style*="--v:5"] { background: none; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); }
+html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cross), var(--c); box-shadow: none; }
 
 /* Performance radar: hairline σ rings and axes with ticks, a dashed
    all-series average ring, one filled shape with small vertex points */
@@ -1137,7 +1155,9 @@ html.fz .st-leaders b::after { content: "👑"; margin-left: .2em; font-size: .8
 @media (prefers-reduced-motion: no-preference) {
   html.fz .fz-word.glint::after { animation: fz-glint .9s ease-in-out; }
   html.fz .tab-ind::before { animation: fz-slide 6s linear infinite; }
-  html.fz .ep-title::before, html.fz .ep-title::after { animation: fz-twinkle 2.2s ease-in-out infinite; }
+  /* Only the slide on show twinkles (.here, from mark in main.js): the others aren't drawn, so their
+     sparkles couldn't run on the compositor and were stepped on the main thread every frame */
+  html.fz .here .ep-title::before, html.fz .here .ep-title::after { animation: fz-twinkle 2.2s ease-in-out infinite; }
 }
 @keyframes fz-slide { to { transform: translateX(-50%); } }
 @keyframes fz-glint { from { background-position: 150% 0; } to { background-position: -50% 0; } }

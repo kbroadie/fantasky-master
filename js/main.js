@@ -359,6 +359,7 @@ const sizes = new ResizeObserver((entries) => {
 function mark(sw, i, smooth = true) {
   const tabs = $(sw.tabs), t = tabs.children[i];
   [...tabs.children].forEach((b, j) => b.classList.toggle("on", j === i));
+  [...$(sw.body).children].forEach((s, j) => s.classList.toggle("here", j === i)); // the slide on show: only its sparkles twinkle (fantasy mode)
   if (t) tabs.scrollTo({ left: t.offsetLeft - (tabs.clientWidth - t.offsetWidth) / 2, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
   edges();
 }
@@ -736,10 +737,14 @@ function setHidden(on) {
   bar.classList.toggle("hidden", on);
   document.body.classList.toggle("bar-hidden", on);
 }
-/** How far the bar has compacted (0–1), where the CSS can't follow the scroll itself. */
+/** How far the bar has compacted (0–1), where the CSS doesn't follow the scroll itself (no scroll-driven animations, or the page turned). */
+let barPNow = "";
 function barP(y) {
-  if (linked) return;
-  const p = String(Math.min(1, y / 50)); // --bar-d
+  // Turned over too: the page scrolls itself there, and the animations were
+  // restyled every frame of every scroll; written only when it changes
+  const p = linked && !turned() ? "0" : String(Math.min(1, y / 50)); // --bar-d
+  if (p === barPNow) return;
+  barPNow = p;
   for (const el of [bar, ...$$(".page > .strip")]) el.style.setProperty("--p", p);
 }
 // The same whichever scrolls the page: the window, or main while it's turned
