@@ -96,7 +96,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
 - **Fantasy Fantasky Master, the Easter egg** (`flip.js`, `html.fz`):
   - Hold a phone upside down (or click the quote under the boards on a desktop) and the whole app becomes a Lisa Frank dream where low scores win.
   - It has the same pages, inverted ranks and emphases, and a rainbow fall drawn in a worker (30 fps, half resolution, stopped in hidden tabs). The dolphins' footer replaces the ducks.
-  - Turned, the body is a fixed rotated box and `main` scrolls itself (`selfScroll`). On iOS, the secret tap on the quote asks for the tilt permission.
+  - Turned, the body is a fixed rotated box and `main` scrolls itself (`selfScroll`). On iOS, the secret tap on the quote asks for the tilt permission; once Safari has refused it (it never asks again), the quote switches the dream on and off, unturned, as on a desktop.
   - **Nothing on the site or in README.md mentions it.** It's documented only here, in NOTES.md and in §6.12 of the systems doc. Keep it that way.
 
 ## Commands

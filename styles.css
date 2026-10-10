@@ -936,7 +936,7 @@ html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y:
 html.fz-turn *, html.fz-side * { touch-action: none; }
 html.fz-turn *, html.fz-side * { scrollbar-width: none; }
 html.fz-turn ::-webkit-scrollbar, html.fz-side ::-webkit-scrollbar { display: none; }
-@media not all and (hover: hover) and (pointer: fine) { html.fz .st-quote { display: none; } } /* a desktop keeps it, to switch back */
+@media not all and (hover: hover) and (pointer: fine) { html.fz:not(.tilt-off) .st-quote { display: none; } } /* a desktop, or a phone Safari refused the tilt, keeps it to switch back */
 /* Inside main a sticky strip counts from below the spacer, so 0 */
 html.fz-turn .page > .strip, html.fz-side .page > .strip { top: 0; }
 html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .94), rgba(38, 8, 68, .96)); -webkit-backdrop-filter: none; backdrop-filter: none; }
