@@ -1155,6 +1155,8 @@ html.vt-open :is(.brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab sv
 html.vt-open :is(.topbar, .page > .strip) { --p: 0 !important; }
 html.vt-glass:not(.fz) .topbar::before { background: #070507; }
 html.vt-glass.fz .topbar::before { background: linear-gradient(180deg, #3a0c60, #260844); }
+/* Slam's dust, sparks, smoke and shine (slam-fx.js): over everything, for the transition only */
+.vt-fx { position: fixed; inset: 0; z-index: 30; width: 100%; height: 100%; pointer-events: none; }
 /* Slam brings the bar back in its last picture, not after it (flip.js) */
 html[data-vt="slam"] :is(.topbar, .page > .strip) { transition: none; }
 /* Slam's rows flip over as its shockwave reaches them (the rest of Slam is written by flip.js, from where things are) */

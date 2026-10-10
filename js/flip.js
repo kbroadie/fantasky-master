@@ -3,6 +3,7 @@
 import { $, state, reducedMotion } from "./ui.js";
 import { runner } from "./fall.js";
 import { get, onSwitch } from "./switches.js";
+import { slamFx } from "./slam-fx.js";
 
 let on = false;
 let hooks = { redraw() {} };
@@ -38,8 +39,12 @@ function set(show, anchor, tap) {
   name();
   if (how === "ripple") for (const a of document.querySelectorAll("#vt-wave animate")) a.beginElement();
   const before = how === "slam" ? slamBefore() : null;
-  const vt = document.startViewTransition(() => { swap(); name(); if (before) slamAfter(before); });
+  let fx = null;
+  const vt = document.startViewTransition(() => { swap(); name(); if (before) fx = slamAfter(before); });
+  // Slam's effects keep the transition's time: the camera's animation is their clock
+  vt.ready.then(() => fx?.start(document.getAnimations().find((a) => a.effect?.pseudoElement === "::view-transition"))).catch(() => {});
   vt.finished.finally(() => {
+    fx?.stop();
     delete html.dataset.vt; html.classList.remove("vt-in");
     if (how === "turn") nameMovers(true);
     if (how === "slam") { slamNames("clear"); html.classList.remove("vt-open"); }
@@ -51,7 +56,7 @@ function set(show, anchor, tap) {
 // page scrolls to the top behind it; the row slams down as the new top row (last place leads the other view), and a shockwave
 // flips every other row to its new state as the new colours radiate out from the impact. The rows are named one by one:
 // old row i becomes new row i + 1, and the last old row the first new one. Timings in seconds
-const SLAM = { lift: 0.45, drop: 0.15, wave: 0.7, flip: 0.14 };
+const SLAM = { loose: 0.3, lift: 0.6, drop: 0.15, wave: 0.7, flip: 0.14 }; // it shakes loose, then lifts by lift
 const travel = (dy) => 0.5 + Math.min(0.4, Math.abs(dy) / 2500); // the longer the scroll, the longer it takes
 const slamRows = () => [...document.querySelectorAll("#st-body .slide.here .rows > .pc")];
 // The week's blocks (its hero, the board): pictured whole, above the screen too, so the page scrolls down in its old
@@ -101,6 +106,11 @@ function slamAfter({ from: o, y, bg }) {
   // The row's motion ends by settling into the place the browser gives it (no last keyframe: the group's own transform),
   // not at a place measured here, which was a fraction of a pixel off, so it twitched as the page took over
   const ps = (t) => `${((t / (T + 0.12)) * 100).toFixed(2)}%`;
+  // Shaking loose: small jolts, growing, before it lifts
+  const shake = Array.from({ length: 7 }, (_, i) => {
+    const k = (i + 1) / 8, j = (i % 2 ? -1 : 1) * (0.6 + 1.6 * k);
+    return `${ps(SLAM.loose * k)} { transform: translate(${(o.left + j).toFixed(1)}px, ${(o.top - 0.6 * k * (i % 2)).toFixed(1)}px) rotate(${(j * 0.35).toFixed(2)}deg); animation-timing-function: linear; }`;
+  });
   const L = SLAM.lift, M = L + move, ox = o.left + o.width / 2, oy = o.top + o.height / 2;
   const css = [`
 html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; transform-origin: ${ox}px ${oy}px; background: ${bg}; }
@@ -110,7 +120,9 @@ html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; t
   ${pc(T + 0.14)} { transform: translateY(3px); } ${pc(T + 0.2)} { transform: translateY(-1px); } ${pc(T + 0.26)}, 100% { transform: none; } }
 html[data-vt="slam"]::view-transition-group(vt-slam) { z-index: 3; animation: vt-slam ${T + 0.12}s linear backwards; }
 @keyframes vt-slam {
-  0% { transform: translate(${o.left}px, ${o.top}px); animation-timing-function: ${E}; }
+  0% { transform: translate(${o.left}px, ${o.top}px); animation-timing-function: linear; }
+  ${shake.join("\n  ")}
+  ${ps(SLAM.loose)} { transform: translate(${o.left}px, ${o.top}px); animation-timing-function: ${E}; }
   ${ps(L)} { transform: translate(${o.left}px, ${o.top - 8}px) scale(1.06); box-shadow: 0 14px 34px rgba(0, 0, 0, .55); animation-timing-function: ${E}; }
   ${ps(M)} { transform: translate(${n.left}px, ${n.top - 64}px) scale(1.12); box-shadow: 0 24px 44px rgba(0, 0, 0, .5); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
   ${ps(T)} { transform: translate(${n.left}px, ${n.top}px) scale(1.02, .9); box-shadow: 0 0 0 rgba(0, 0, 0, 0); animation-timing-function: ${E}; } }
@@ -148,7 +160,15 @@ html[data-vt="slam"]::view-transition-new(vt-block-${i}) { animation: vt-wave-${
     css.push(`html[data-vt="slam"]::view-transition-group(${n}) { z-index: 2; animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
 html[data-vt="slam"]::view-transition-old(${n}), html[data-vt="slam"]::view-transition-new(${n}) { animation-delay: ${d}s; animation-duration: .2s; }`);
   }
+  // Dust and smoke as it breaks loose, sparks and smoke where it lands, and a shine across it (slam-fx.js): a canvas
+  // over everything, the new view's only, drawn live
+  const fx = slamFx({ from: o, to: n, loose: SLAM.loose, lift: L, impact: T, end, fantasy: document.documentElement.classList.contains("fz") });
+  fx.canvas.style.viewTransitionName = "vt-fx";
+  document.body.append(fx.canvas);
+  css.push(`html[data-vt="slam"]::view-transition-group(vt-fx) { z-index: 4; animation: none; }
+html[data-vt="slam"]::view-transition-new(vt-fx) { animation: none; }`);
   stageCss.textContent += css.join("\n");
+  return fx;
 }
 
 // What depends on the tap: Iris's circle, and the centre Zoom and Vertigo move about. Written here, as a custom
