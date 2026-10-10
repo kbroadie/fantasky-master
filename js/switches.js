@@ -1,6 +1,6 @@
 // Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js), a card per effect, per device in
-// localStorage. Every effect is off by default, at its lowest quality: frame pacing comes first, and the cards turn them
-// on and up. Everything applies live (fm-switch events). Each kind of setting has
+// localStorage. Every effect is at its lowest quality by default, and off but for the podium effects and Fantasy Land's
+// sea: frame pacing comes first, and the cards turn them on and up. Everything applies live (fm-switch events). Each kind of setting has
 // its control: an effect's on/off a switch in its card's head (main), a small fixed set segmented buttons (steps, choice),
 // a strength a slider (range)
 export const CARDS = [
@@ -25,15 +25,17 @@ export const CARDS = [
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
       { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
     ] },
-  // Fantasy Land's motion: the sparkles' twinkle, the glint on Fantasy, the sliding tab rainbow, the leaping dolphins, the
-  // rolling sea and the bobbing ducks. Off, it's all there, still, but the dolphins
+  // Fantasy Land's footer: the rolling sea, the ducks bobbing on it and the leaping dolphins. Off, it's still, without them
+  { title: "Footer", view: "fz",
+    items: [{ key: "fzSea", type: "toggle", def: true, main: true, cls: "no-sea" }] },
+  // The rest of its motion: the sparkles' twinkle, the glint on Fantasy and the sliding tab rainbow. Off, all there, still
   { title: "Decorations", view: "fz",
     items: [{ key: "fzDeco", type: "toggle", def: false, main: true, cls: "no-deco" }] },
   { title: "Card opacity", view: "fz",
     items: [{ key: "fzAlpha", type: "range", def: 0.84, min: 0.5, max: 1, step: 0.02, pct: true, css: "--fz-a" }] },
   { title: "Podium effects",
     items: [
-      { key: "podium", type: "toggle", def: false, main: true, cls: "no-podium" },
+      { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
       { key: "podRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
       { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
       { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },

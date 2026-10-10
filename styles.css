@@ -1040,11 +1040,14 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-seg button[aria-checked="true"] { color: #241400; background: linear-gradient(180deg, var(--gold3), var(--gold2)); }
 /* Settings turned off on Moss's cards (switches.js) */
 html.no-fall #fz-fall, html.no-podium .fx, html.no-howlight .how-glint { display: none; }
-/* Decorations off: Fantasy Land all there but still. The dolphins, which would hang mid-leap, are hidden; the ducks hold
-   where the still sea puts them (their bob paused at its start, as under reduced motion) */
-html.no-deco .tab-ind::before, html.no-deco .ep-title::before, html.no-deco .ep-title::after, html.no-deco .fz-sea { animation: none !important; }
-html.no-deco .dl, html.no-deco .fz-word::after { display: none; }
-html.no-deco #foot .dk { animation-play-state: paused !important; }
+/* Decorations off: Fantasy Land's sparkles, glint and tab rainbow all there but still */
+html.no-deco .tab-ind::before, html.no-deco .ep-title::before, html.no-deco .ep-title::after { animation: none !important; }
+html.no-deco .fz-word::after { display: none; }
+/* Its footer off: the sea still; the dolphins, which would hang mid-leap, hidden; the ducks hold where the still sea puts
+   them (their bob paused at its start, as under reduced motion) */
+html.no-sea .fz-sea { animation: none !important; }
+html.no-sea .dl { display: none; }
+html.no-sea #foot .dk { animation-play-state: paused !important; }
 html.no-howlight .how-card { animation: none !important; }
 /* In the dream the ducks float on the dolphins' sea, riding its waves: main.js starts each one's bob where the wave under it is.
    The sea moves a wavelength in 5s; its crests and troughs are parabolas, so each quarter is a quadratic ease, ±5px */
