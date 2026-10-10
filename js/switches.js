@@ -1,11 +1,11 @@
 // Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js): toggles and sliders, a card per
 // effect, per device in localStorage. Defaults are the site as designed; everything applies live (fm-switch events)
 export const CARDS = [
-  { title: "Frame rate", note: "Live graphs in the corner: frames a second over the last 10 seconds, and how long each frame took. They time the main thread, so scrolling the phone does itself can stay smooth when they dip.",
+  { title: "Frame rate",
     items: [{ key: "fps", type: "toggle", def: false, main: true }] },
-  { title: "Benchmark", note: "A button in the corner that runs every interaction at three speeds, timing every frame, then gives a table of results to copy. Its scrolling is scripted, so it shows what scrolling costs to draw.",
+  { title: "Benchmark",
     items: [{ key: "bench", type: "toggle", def: false, main: true }] },
-  { title: "Falling background", note: "The rainbow view's fall: streaks, stick figures and dreamy emoji. Each frame redraws the whole screen, so frame rate and density cost the most.",
+  { title: "Falling background",
     items: [
       { key: "fall", type: "toggle", def: true, main: true, cls: "no-fall" },
       { key: "fallFps", type: "range", label: "Frame rate", def: 30, min: 10, max: 60, step: 5, unit: " fps" },
@@ -14,14 +14,14 @@ export const CARDS = [
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
       { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
     ] },
-  { title: "Podium effects", note: "The episode winner's gold light and last place's stink gas, and the Cast leader's light. Drawn on one canvas a frame while on screen.",
+  { title: "Podium effects",
     items: [
       { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
       { key: "podRes", type: "range", label: "Resolution", def: 0.5, min: 0.25, max: 1, step: 0.25, unit: "×" },
       { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
       { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
     ] },
-  { title: "Rainbow decorations", note: "The rainbow view's moving extras. Holding still while scrolling pauses them all while anything moves, so the scroll has the frames.",
+  { title: "Rainbow decorations",
     items: [
       { key: "sparkles", type: "toggle", label: "Title sparkles", def: true, cls: "no-sparkles" },
       { key: "glint", type: "toggle", label: "Glint on Fantasy", def: true, cls: "no-glint" },
@@ -29,9 +29,9 @@ export const CARDS = [
       { key: "dolphins", type: "toggle", label: "Leaping dolphins", def: true, cls: "no-dolphins" },
       { key: "stillScroll", type: "toggle", label: "Hold still while scrolling", def: true },
     ] },
-  { title: "Rainbow cards", note: "How solid the rainbow view's cards are. More see-through shows the fall behind them, but everything over it is blended again every frame.",
+  { title: "Rainbow cards",
     items: [{ key: "fzAlpha", type: "range", label: "Opacity", def: 0.84, min: 0.5, max: 1, step: 0.02, pct: true, css: "--fz-a" }] },
-  { title: "Scoring cards", note: "The How scoring works cards' drifting pool of light and the glint on their icons.",
+  { title: "Scoring cards",
     items: [{ key: "howLight", type: "toggle", def: true, main: true, cls: "no-howlight" }] },
 ];
 const ITEMS = Object.fromEntries(CARDS.flatMap((c) => c.items.map((it) => [it.key, it])));

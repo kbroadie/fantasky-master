@@ -465,6 +465,7 @@ $("#cast-body").addEventListener("click", heatTap);
 // The Moss Easter egg (cast.js): his portrait swaps him and his cards; each card's toggle is a switch
 $("#cast-body").addEventListener("click", (e) => {
   const sw = e.target.closest(".sw-toggle");
+  if (sw?.hasAttribute("data-fz")) { toggleFantasy(); return; } // the preview: Moss's page in the rainbow view
   if (sw) {
     const k = sw.dataset.sw;
     set(k, !get(k));

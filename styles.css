@@ -41,7 +41,6 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
 body {
   font-family: var(--ff); color: var(--t1); background: var(--bg);
   max-width: 680px; margin: 0 auto; min-height: 100vh;
-  padding-bottom: calc(24px + env(safe-area-inset-bottom));
   -webkit-font-smoothing: antialiased; font-synthesis: none;
   font-variant-numeric: tabular-nums;
 }
@@ -739,8 +738,9 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 
 /* ── Wider screens */
 /* ── Footer: ducks */
-.foot { padding: 8px var(--px) 0; text-align: center; }
-.ducks { display: flex; align-items: center; justify-content: center; }
+/* The same height as the dolphins' footer (136px under an 8px margin), so both views end alike; the ducks centred in it */
+.foot { display: flex; align-items: center; justify-content: center; height: 136px; margin-top: 8px; padding: 0 var(--px) env(safe-area-inset-bottom); }
+.ducks { flex: 1; display: flex; align-items: center; justify-content: center; }
 /* Each duck's span is its tap target */
 .dk { display: flex; padding: 10px 3.5px; cursor: default; -webkit-tap-highlight-color: transparent; }
 .ducks::before, .ducks::after { content: ""; flex: 1; height: 1px; max-width: 120px; }
@@ -940,7 +940,6 @@ html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
 html.fz #foot { display: none; }
 /* Clips only sideways (overflow-x: clip: no scroll box, no stacking context), so the rainbow can rise behind the table */
 html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top: 8px; overflow-x: clip; pointer-events: none; }
-html.fz body { padding-bottom: 0; }
 .fz-waves { position: absolute; inset: 0; overflow: hidden; }
 .lifting #foot, .lifting #dq, .lifting .fz-bow, .lifting .fz-waves { will-change: translate; }
 /* Mid-swipe lift: scroll-driven, on each swiper's named timeline (timeline-scope on body); main.js sets --la/--lb and the range */
@@ -1008,16 +1007,20 @@ html.fz.scrolling :is(.dl i, .dl b, .dl svg, .fz-sea) { animation-play-state: pa
 .sw-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--t3); transition: transform .2s var(--ease), background .2s var(--ease); }
 .sw-toggle[aria-checked="true"] { background: linear-gradient(180deg, var(--gold3), var(--gold2)); }
 .sw-toggle[aria-checked="true"]::after { transform: translateX(18px); background: #241400; }
-.sw-card .card-head { padding-block: 10px 6px; }
-.sw-note { padding: 0 12px 14px; font-size: 14px; line-height: 1.45; color: var(--t2); }
 @media (prefers-reduced-motion: reduce) { .sw-toggle, .sw-toggle::after { transition: none; } }
+/* Moss's cards as tiles: two to a row, an effect with sliders across both */
+.sw-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-auto-flow: row dense; gap: 12px; margin-bottom: 12px; }
+.sw-grid > .card { margin: 0; }
+.sw-card.wide { grid-column: 1 / -1; }
+.sw-card .card-head { gap: 10px; padding: 10px 12px; letter-spacing: .1em; }
+.sw-card .card-head > span { min-width: 0; }
 .sw-card.off .sw-rows { opacity: .4; }
-.sw-rows { display: grid; gap: 12px; padding: 0 12px 14px; }
-.sw-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--t1); }
-.sw-slide { display: grid; grid-template-columns: 1fr auto; row-gap: 6px; }
-.sw-val { font: 500 13px var(--fm); color: var(--gold2); }
-.sw-range { grid-column: 1 / -1; width: 100%; height: 22px; margin: 0; accent-color: var(--gold2); }
-.sw-reset { justify-self: start; }
+.sw-rows { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 16px; padding: 2px 12px 12px; }
+.sw-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 1.25; color: var(--t1); }
+.sw-slide { grid-column: 1 / -1; display: grid; grid-template-columns: 7.5em minmax(0, 1fr) 3.4em; gap: 10px; }
+.sw-val { font: 500 12px var(--fm); color: var(--gold2); text-align: right; }
+.sw-range { width: 100%; height: 22px; margin: 0; accent-color: var(--gold2); }
+.sw-reset { padding: 6px 10px; }
 /* Settings turned off on Moss's cards (switches.js) */
 html.no-fall #fz-fall, html.no-podium .fx, html.no-glint .fz-word::after, html.no-dolphins .dl { display: none; }
 html.no-sparkles .ep-title::before, html.no-sparkles .ep-title::after { content: none; }

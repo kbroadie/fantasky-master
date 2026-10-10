@@ -26,22 +26,22 @@ const isMoss = (c) => c.full === "Richard Ayoade";
 const toggle = (it, name) => `<button type="button" class="sw-toggle" role="switch" aria-checked="${get(it.key)}" aria-label="${esc(name)}" data-sw="${it.key}"></button>`;
 const control = (it) => (it.type === "toggle"
   ? `<label class="sw-row"><span>${esc(it.label)}</span>${toggle(it, it.label)}</label>`
-  : `<label class="sw-row sw-slide"><span>${esc(it.label)}</span><b class="sw-val">${shown(it, get(it.key))}</b>
-      <input type="range" class="sw-range" data-sw="${it.key}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}"></label>`);
+  : `<label class="sw-row sw-slide"><span>${esc(it.label)}</span>
+      <input type="range" class="sw-range" data-sw="${it.key}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}"><b class="sw-val">${shown(it, get(it.key))}</b></label>`);
+// Tiles: a lone toggle is a small tile, an effect with settings spans the row. Rainbow view previews them live here
 const switchCard = (c) => {
   const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
   return `
-    <div class="card sw-card${main && !get(main.key) ? " off" : ""}">
+    <div class="card sw-card${rest.length ? " wide" : ""}${main && !get(main.key) ? " off" : ""}">
       <div class="card-head"><span>${esc(c.title)}</span>${main ? toggle(main, c.title) : ""}</div>
-      <p class="sw-note">${esc(c.note)}</p>
       ${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
     </div>`;
 };
-const switchCards = () => CARDS.map(switchCard).join("") + `
-    <div class="card sw-card">
-      <div class="card-head"><span>Reset</span></div>
-      <p class="sw-note">Every setting back as designed.</p>
-      <div class="sw-rows"><button type="button" class="ed-btn sw-reset">Reset all</button></div>
+const switchCards = () => `
+    <div class="sw-grid">
+      <div class="card sw-card"><div class="card-head"><span>Rainbow view</span><button type="button" class="sw-toggle" role="switch" aria-checked="${!!state.fantasy}" aria-label="Rainbow view" data-fz></button></div></div>
+      ${CARDS.map(switchCard).join("")}
+      <div class="card sw-card"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset">Reset</button></div></div>
     </div>`;
 
 function median(xs) {
