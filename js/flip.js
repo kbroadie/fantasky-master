@@ -75,6 +75,10 @@ function slamNames(phase) {
 // shows it
 function slamScroll() {
   scrollTo(0, 0);
+  // The bar comes back now, as scrolling up brings it, and with the strip at once (styles.css): sliding back after the
+  // new picture was taken, they ended the transition a pixel off and jumped
+  $(".topbar").classList.remove("hidden");
+  document.body.classList.remove("bar-hidden");
   const r = slamRows()[0]?.getBoundingClientRect();
   if (r && r.bottom > innerHeight - 24) scrollBy(0, r.bottom - innerHeight + 24);
 }
@@ -89,6 +93,9 @@ function slamAfter({ from: o, y }) {
   const R = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy));
   const at = (d) => (T + (d / R) * SLAM.wave).toFixed(3); // when the shockwave reaches a point d from the impact
   const E = "cubic-bezier(.33, 0, .67, 1)", end = T + SLAM.wave + 2 * SLAM.flip, pc = (t) => `${((t / end) * 100).toFixed(2)}%`;
+  // The row's motion ends by settling into the place the browser gives it (no last keyframe: the group's own transform),
+  // not at a place measured here, which was a fraction of a pixel off, so it twitched as the page took over
+  const ps = (t) => `${((t / (T + 0.12)) * 100).toFixed(2)}%`;
   const L = SLAM.lift, M = L + move, ox = o.left + o.width / 2, oy = o.top + o.height / 2;
   const css = [`
 html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; transform-origin: ${ox}px ${oy}px; }
@@ -96,13 +103,12 @@ html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; t
   0% { transform: none; animation-timing-function: ${E}; } ${pc(L)} { transform: scale(1.18); animation-timing-function: ${E}; }
   ${pc(M)}, ${pc(T)} { transform: none; } ${pc(T + 0.04)} { transform: translateY(8px); } ${pc(T + 0.09)} { transform: translateY(-5px); }
   ${pc(T + 0.14)} { transform: translateY(3px); } ${pc(T + 0.2)} { transform: translateY(-1px); } ${pc(T + 0.26)}, 100% { transform: none; } }
-html[data-vt="slam"]::view-transition-group(vt-slam) { z-index: 3; animation: vt-slam ${end}s linear both; }
+html[data-vt="slam"]::view-transition-group(vt-slam) { z-index: 3; animation: vt-slam ${T + 0.12}s linear backwards; }
 @keyframes vt-slam {
   0% { transform: translate(${o.left}px, ${o.top}px); animation-timing-function: ${E}; }
-  ${pc(L)} { transform: translate(${o.left}px, ${o.top - 8}px) scale(1.06); box-shadow: 0 14px 34px rgba(0, 0, 0, .55); animation-timing-function: ${E}; }
-  ${pc(M)} { transform: translate(${n.left}px, ${n.top - 64}px) scale(1.12); box-shadow: 0 24px 44px rgba(0, 0, 0, .5); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
-  ${pc(T)} { transform: translate(${n.left}px, ${n.top}px) scale(1.02, .9); box-shadow: 0 0 0 rgba(0, 0, 0, 0); animation-timing-function: ${E}; }
-  ${pc(T + 0.12)}, 100% { transform: translate(${n.left}px, ${n.top}px); } }
+  ${ps(L)} { transform: translate(${o.left}px, ${o.top - 8}px) scale(1.06); box-shadow: 0 14px 34px rgba(0, 0, 0, .55); animation-timing-function: ${E}; }
+  ${ps(M)} { transform: translate(${n.left}px, ${n.top - 64}px) scale(1.12); box-shadow: 0 24px 44px rgba(0, 0, 0, .5); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  ${ps(T)} { transform: translate(${n.left}px, ${n.top}px) scale(1.02, .9); box-shadow: 0 0 0 rgba(0, 0, 0, 0); animation-timing-function: ${E}; } }
 html[data-vt="slam"]::view-transition-old(vt-slam) { animation: vt-slam-out ${end}s linear both; }
 html[data-vt="slam"]::view-transition-new(vt-slam) { animation: vt-slam-in ${end}s linear both; }
 @keyframes vt-slam-out { ${pc(T - 0.02)} { opacity: 1; } ${pc(T + 0.06)}, 100% { opacity: 0; } }
