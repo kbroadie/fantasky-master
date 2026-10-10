@@ -300,8 +300,14 @@ function fit(body) {
       const ha = Math.max(kids[i].offsetHeight, room), hb = Math.max(kids[i + 1].offsetHeight, room), hi = Math.max(ha, hb);
       // Held just below the screen (with the rainbow, upside down, that rises above it)
       const foot = $(".fz-foot"), rise = foot?.offsetWidth ? Math.max(0, (foot.offsetWidth * 1.5) / 2 - foot.offsetHeight + 4) : 0;
-      const sc = scroller(), below = (sc === window ? scrollY : sc.scrollTop) + view + rise;
-      const at = (h) => Math.min(top + h, below);
+      // Where the footer shows under a slide, as a place on the page as it is now. Scrolled further
+      // down than a short slide's page allows (at the end of a long week), the page will pull back
+      // up when the swipe settles, so its footer shows where it will then be, at the screen's
+      // bottom, not up the screen (on request: it rose up the screen, then dropped back).
+      const sc = scroller(), y = sc === window ? scrollY : sc.scrollTop;
+      const rest = (sc === window ? document.documentElement.scrollHeight : sc.scrollHeight) - body.offsetHeight; // the page without the swiper
+      const below = y + view + rise;
+      const at = (h) => Math.min(top + h + Math.max(0, y - Math.max(0, rest + h - view)), below);
       const a = Math.round(at(ha) - (top + hi)), b = Math.round(at(hb) - (top + hi));
       const same = pair && pair.a === a && pair.b === b && pair.tl === `--${body.id.slice(0, -5)}` && pair.r0 === i * w;
       // Turned, the page scrolls itself on the main thread anyway, and Chrome's compositor doesn't follow
