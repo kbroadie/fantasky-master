@@ -19,6 +19,7 @@ js/league.js                    pure scoring engine (derive): must match the sys
 js/csv.js, js/checks.js, js/ops.js  CSV parsing and round-trip, the data rules, edits as row ops
 js/alltime.js, js/heroes.js     all-time stats (radar, badges, facts); profile photo crops
 js/edit.js, js/wiki.js          edit mode; Taskmaster Wiki reader
+js/switches.js                  hidden per-device switches (the duck menu's Switches)
 js/podium-fx.js                 podium effects (gold light, stink gas): one half-res canvas between portraits and text
 js/flip.js, js/fall.js, js/fall-worker.js   the Easter egg (below) and its falling background
 tools/                          check-data, sync-wiki, import-stats, screenshots, share-images
@@ -88,6 +89,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
   - Picks and scores are entered on the page. Episodes are edited in place, with a "Get scores from the wiki" button.
   - Every change is an op, replayed onto a fresh copy from GitHub on Save. It must pass `checkData` first.
   - The commissioner's fine-grained token stays only in that browser's localStorage (`fm-gh-key`), never in the site.
+  - **Switches** (in the bar and in the key dialog, so no key is needed): per-device toggles from `switches.js` (`fm-sw-*` in localStorage): Flipped layout (an experiment, below) and Tilt diagnostic (also `?tilt`). Add any new switch there.
 - **Wiki sync** (`.github/workflows/wiki-sync.yml`, `tools/sync-wiki.mjs`):
   - Runs Thursday nights and hourly through Friday.
   - Fills in the next episode's scores once the wiki's table is complete, and titles that are placeholders or differ. It never touches scored episodes and never touches picks.
@@ -96,7 +98,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
 - **Fantasy Fantasky Master, the Easter egg** (`flip.js`, `html.fz`):
   - Hold a phone upside down (or click the quote under the boards on a desktop) and the whole app becomes a Lisa Frank dream where low scores win.
   - It has the same pages, inverted ranks and emphases, and a rainbow fall drawn in a worker (30 fps, stopped in hidden tabs); its decorative animations hold still while anything scrolls. The dolphins' footer replaces the ducks.
-  - Turned, the body is a fixed rotated box and `main` scrolls itself (`selfScroll`). On iOS, the secret tap on the quote asks for the tilt permission; once Safari has refused it (it never asks again), the quote switches the dream on and off, unturned, as on a desktop.
+  - Turned, the body is a fixed rotated box and `main` scrolls itself (`selfScroll`). With the Flipped layout switch on, 180° is `html.fz-flip` instead: `main`, the bar and the fall are each turned and the window still scrolls, so the phone does it (momentum, taps); the strips ride in the bar (`placeStrips`), the place is kept from the reader's top (`flipY`, the document's bottom), sideways swipes stay the page's own, and the footer doesn't follow a swipe yet. If the experiment is kept, the old 180° path goes; if not, `fz-flip` and the switch go. On iOS, the secret tap on the quote asks for the tilt permission; once Safari has refused it (it never asks again), the quote switches the dream on and off, unturned, as on a desktop.
   - **Nothing on the site or in README.md mentions it.** It's documented only here, in NOTES.md and in §6.12 of the systems doc. Keep it that way.
 
 ## Commands
