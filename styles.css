@@ -430,6 +430,9 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .board.ease .pc.open .pc-more > div { animation: xp-in .3s var(--ease); } /* the card fades in as it's uncovered, on the board tapped on only */
 @keyframes xp-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .board.ease .pc.open .pc-more > div { animation: none; } }
+/* Closing (open, no longer data-open): the card fades as the rows glide up over it, so it never shows through see-through rows (the rainbow view's) */
+.pc.open:not([data-open]) .pc-more > div { opacity: 0; transition: opacity .2s var(--ease); }
+@media (prefers-reduced-motion: reduce) { .pc.open:not([data-open]) .pc-more > div { transition: none; } }
 .pc.open .pc-more { grid-template-rows: 1fr; }
 .pc.open > .pc-head { box-shadow: 0 1px 0 var(--b-gold); } /* the row's thin rule, under the head while open, for the line to grow over */
 .pc-more > div { overflow: hidden; min-height: 0; }
