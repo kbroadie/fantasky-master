@@ -987,9 +987,8 @@ html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; b
 @keyframes fz-splash-in { 0% { opacity: 0; transform: translateY(6px) scale(.5); } 4% { opacity: 1; } 14%, 100% { opacity: 0; transform: translateY(-10px) scale(1.2); } }
 @keyframes fz-splash-out { 0%, 42% { opacity: 0; transform: translateY(6px) scale(.5); } 47% { opacity: 1; } 58%, 100% { opacity: 0; transform: translateY(-10px) scale(1.25); } }
 @keyframes fz-sea { to { transform: translateX(-25%); } }
-/* While anything scrolls (main.js still()), the decorative animations hold still */
-html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word, .dl)::before, html.fz.scrolling :is(.ep-title, .fz-word, .dl)::after,
-html.fz.scrolling :is(.dl i, .dl b, .dl svg, .fz-sea) { animation-play-state: paused !important; }
+/* While anything scrolls (main.js still()), the decorative animations hold still, all but the footer's */
+html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling :is(.ep-title, .fz-word)::after { animation-play-state: paused !important; }
 /* The Moss Easter egg's cards (cast.js) */
 .sw-toggle { position: relative; flex: none; width: 44px; height: 26px; border-radius: 13px; border: 1px solid var(--b-gold); background: var(--s1); transition: background .2s var(--ease); -webkit-tap-highlight-color: transparent; }
 .sw-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--t3); transition: transform .2s var(--ease), background .2s var(--ease); }
@@ -1029,7 +1028,6 @@ html.no-howlight .how-card { animation: none !important; }
 html.fz #foot { position: relative; height: 0; margin: 0; }
 html.fz .ducks::before, html.fz .ducks::after { display: none; }
 html.fz #foot.run .dk { animation: fz-bob 5s infinite; }
-html.fz.scrolling #foot.run .dk { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { html.fz #foot.run .dk { animation-play-state: paused; } } /* still, where the still sea is */
 @keyframes fz-bob {
   0%, 100% { translate: 0 -5px; animation-timing-function: cubic-bezier(.333, 0, .667, .333); }

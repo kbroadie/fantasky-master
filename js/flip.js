@@ -43,12 +43,12 @@ const moduleWorkers = (() => {
   } catch {}
   return ok;
 })();
-const FALL = ["fall", "fallFps", "fallDensity", "fallFigures", "fallBright", "fallSpeed"];
+const FALL = ["fall", "fallRes", "fallFps", "fallDensity", "fallFigures", "fallBright", "fallSpeed"];
 function fall() {
   stopFall();
   const c = $("#fz-fall"), w = c.clientWidth, h = c.clientHeight;
   if (!w || !h || !get("fall")) return;
-  const opts = { fps: get("fallFps"), density: get("fallDensity"), figures: get("fallFigures"), bright: get("fallBright"), speed: get("fallSpeed") };
+  const opts = { res: Math.min(2, devicePixelRatio || 1) * get("fallRes"), fps: get("fallFps"), density: get("fallDensity"), figures: get("fallFigures"), bright: get("fallBright"), speed: get("fallSpeed") };
   if (!worker && !run && moduleWorkers && "transferControlToOffscreen" in c) {
     try {
       worker = new Worker(new URL("./fall-worker.js", import.meta.url), { type: "module" });
