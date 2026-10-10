@@ -1,6 +1,6 @@
-// Episode podium effects: winner's gold light (rays, glow, pool, bounce, shadows, dust, glints) and last place's stink gas (heavy, sinks to the card's bottom and spreads like dry ice, collides with all four sides). Canvases: back (behind portraits), light (screen), gas (veil in front). Scrolling sloshes gas and stirs dust; only on-screen podiums run; reduced motion gets one still frame.
+// Episode podium effects: winner's gold light (rays, glow, pool, bounce, shadows, dust, glints) and last place's stink gas (heavy, sinks to the card's bottom and spreads like dry ice, collides with all four sides). One canvas at half resolution, between the portraits and the text: what's behind them is drawn first and their shapes cut out of it, then what's in front. Scrolling sloshes gas and stirs dust; only on-screen podiums run; reduced motion gets one still frame.
 
-const DPR = Math.min(2, window.devicePixelRatio || 1);
+const DPR = Math.min(2, window.devicePixelRatio || 1) / 2;
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -60,16 +60,9 @@ class Scene {
     this.pod = pod;
     pod.__fx = this;
     pod.classList.add("has-fx");
-    // Only the layers this podium uses
-    const layer = (cls) => Object.assign(document.createElement("canvas"), { className: `fx ${cls}`, ariaHidden: "true" });
-    this.back = layer("fx-back");
-    this.light = pod.querySelector(".pod-col.win") ? layer("fx-light") : null;
-    this.gasC = pod.querySelector(".pod-col.last") ? layer("fx-gas") : null;
-    this.canvases = [this.back, this.light, this.gasC].filter(Boolean);
-    pod.prepend(this.back);
-    pod.append(...this.canvases.slice(1));
-    this.ctx = this.canvases.map((c) => c.getContext("2d"));
-    [this.bctx, this.lctx, this.gctx] = [this.back, this.light, this.gasC].map((c) => c?.getContext("2d"));
+    this.c = Object.assign(document.createElement("canvas"), { className: "fx", ariaHidden: "true" });
+    pod.prepend(this.c);
+    this.x = this.c.getContext("2d");
     this.cache = null;
     this.gas = [];
     this.dust = [];
@@ -89,10 +82,8 @@ class Scene {
     this.h = this.pod.clientHeight;
     if (!this.w) return;
     this.cache = null;
-    for (const c of this.canvases) {
-      c.width = Math.round(this.w * DPR);
-      c.height = Math.round(this.h * DPR);
-    }
+    this.c.width = Math.round(this.w * DPR);
+    this.c.height = Math.round(this.h * DPR);
     const rect = (el) => {
       let x = 0, y = 0;
       for (let n = el; n && n !== this.pod; n = n.offsetParent) { x += n.offsetLeft; y += n.offsetTop; }
@@ -100,7 +91,7 @@ class Scene {
       return { x, y, w, h, cx: x + w / 2, cy: y + h / 2 };
     };
     const cols = [...this.pod.querySelectorAll(".pod-col")];
-    this.frames = cols.map((col) => ({ ...rect(col.querySelector(".fp")), win: col.classList.contains("win"), last: col.classList.contains("last") }));
+    this.frames = cols.map((col) => ({ ...rect(col.querySelector(".fp")), img: col.querySelector(".fp"), win: col.classList.contains("win"), last: col.classList.contains("last") }));
     this.win = this.frames.find((f) => f.win) || null;
     this.losers = this.frames.filter((f) => f.last);
     this.floor = Math.max(...this.frames.map((f) => f.y + f.h)) + 2;
@@ -127,7 +118,7 @@ class Scene {
     this.gas = []; this.dust = []; this.glints = [];
     this.spawnGas = this.spawnDust = 0;
     this.cache = null;
-    for (const c of this.ctx) { c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, c.canvas.width, c.canvas.height); }
+    this.x.setTransform(1, 0, 0, 1, 0, 0); this.x.clearRect(0, 0, this.c.width, this.c.height);
   }
 
   step(dt) {
@@ -213,13 +204,17 @@ class Scene {
     const f = this.win, floor = this.floor;
     const paint = (fn) => {
       const c = document.createElement("canvas");
-      c.width = this.back.width; c.height = this.back.height;
+      c.width = this.c.width; c.height = this.c.height;
       const x = c.getContext("2d");
       x.setTransform(DPR, 0, 0, DPR, 0, 0);
       fn(x);
       return c;
     };
     this.cache = {};
+    // The portraits' shapes (their own alpha; a box until an image loads), cut out of what's behind them
+    this.cache.mask = paint((x) => {
+      for (const o of this.frames) if (o.img.complete && o.img.naturalWidth) x.drawImage(o.img, o.x, o.y, o.w, o.h); else x.fillRect(o.x, o.y, o.w, o.h);
+    });
     if (f) {
       this.cache.glow = paint((x) => {
         x.globalCompositeOperation = "lighter";
@@ -280,16 +275,17 @@ class Scene {
 
   draw() {
     if (!this.w) return;
-    const back = this.bctx, light = this.lctx, gas = this.gctx;
-    for (const c of this.ctx) { c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, this.w, this.h); }
+    const x = this.x;
+    x.setTransform(DPR, 0, 0, DPR, 0, 0); x.clearRect(0, 0, this.w, this.h);
     const t = this.t, f = this.win;
     const st = this.statics(), put = (x, img, a) => { x.globalAlpha = a; x.drawImage(img, 0, 0, this.w, this.h); };
     const I = 0.82 + 0.1 * Math.sin(t * 1.4) + 0.05 * Math.sin(t * 3.7 + 1.2) + this.energy * 0.35;
 
+    // Behind the portraits
     if (f) {
-      back.globalCompositeOperation = "lighter";
-      for (let k = I; k > 0.001; k--) put(back, st.glow, Math.min(1, k));
-      back.globalAlpha = 1;
+      x.globalCompositeOperation = "lighter";
+      for (let k = I; k > 0.001; k--) put(x, st.glow, Math.min(1, k));
+      x.globalAlpha = 1;
       const R = f.h * 1.3;
       const rays = 18, spin = t * 0.07;
       for (let i = 0; i < rays; i++) {
@@ -297,19 +293,46 @@ class Scene {
         const len = R * (1.35 + 0.35 * Math.sin(t * 0.9 + i * 2.3));
         const half = 0.035 + 0.025 * Math.sin(t * 0.7 + i);
         const alpha = (0.13 + 0.09 * Math.sin(t * 1.1 + i * 2.1)) * I;
-        const rg = back.createRadialGradient(f.cx, f.cy, 0, f.cx, f.cy, len);
+        const rg = x.createRadialGradient(f.cx, f.cy, 0, f.cx, f.cy, len);
         rg.addColorStop(0, `rgba(255,226,150,${alpha})`);
         rg.addColorStop(1, "rgba(255,200,100,0)");
-        back.fillStyle = rg;
-        back.beginPath();
-        back.moveTo(f.cx, f.cy);
-        back.arc(f.cx, f.cy, len, a - half, a + half);
-        back.closePath();
-        back.fill();
+        x.fillStyle = rg;
+        x.beginPath();
+        x.moveTo(f.cx, f.cy);
+        x.arc(f.cx, f.cy, len, a - half, a + half);
+        x.closePath();
+        x.fill();
       }
-      back.globalCompositeOperation = "source-over";
-      put(back, st.shade, 1);
-      put(light, st.bounce, Math.min(1, I / 1.5));
+      x.globalCompositeOperation = "source-over";
+      put(x, st.shade, 1);
+    }
+    if (st.murk) {
+      x.globalCompositeOperation = "lighter";
+      put(x, st.murk, (0.3 + 0.05 * Math.sin(t * 1.1)) / 0.35);
+      x.globalCompositeOperation = "source-over";
+    }
+    const puffs = sprites().gas, alive = [];
+    for (const p of this.gas) {
+      const life = p.age / p.life;
+      const a = p.a * Math.min(1, p.age / 0.9) * (life > 0.65 ? (1 - life) / 0.35 : 1);
+      if (a <= 0.005) continue;
+      const s = p.s0 * (1 + life * 0.9), low = p.low || 0;
+      const sw = s * (1 + 0.8 * low), sh = s * (1 - 0.45 * low);
+      x.globalAlpha = Math.min(0.5, a * (1 + 0.9 * low));
+      x.drawImage(puffs[p.spr], p.x - sw / 2, p.y - sh / 2, sw, sh);
+      if (low > 0.5) alive.push([p, a * 0.28 * low, sw, sh]);
+    }
+    x.globalCompositeOperation = "destination-out";
+    put(x, st.mask, 1);
+    x.globalCompositeOperation = "source-over";
+
+    // In front of them
+    if (f) {
+      // Bounce light; screened it never dimmed whites, so only a third of it falls on the portraits
+      put(x, st.bounce, Math.min(1, I / 1.5));
+      x.globalCompositeOperation = "destination-out";
+      put(x, st.mask, 0.65);
+      x.globalCompositeOperation = "source-over";
       // No rim light: it traced the box, and read as a greenish band over the gold
       const { dust, spark } = sprites();
       for (const p of this.dust) {
@@ -317,46 +340,27 @@ class Scene {
         const a = fade * (0.55 + 0.45 * Math.sin(p.age * p.tw + p.seed)) * Math.min(1.3, I);
         if (a <= 0.02) continue;
         const s = p.r * 7;
-        light.globalAlpha = a;
-        light.drawImage(dust, p.x - s / 2, p.y - s / 2, s, s);
+        x.globalAlpha = a;
+        x.drawImage(dust, p.x - s / 2, p.y - s / 2, s, s);
       }
       for (const s of this.glints) {
         const k = Math.sin((s.age / s.life) * Math.PI), r = s.r * (0.6 + k);
-        light.globalAlpha = k;
-        light.drawImage(spark, s.x - r * 1.5, s.y - r * 1.5, r * 3, r * 3);
-        light.strokeStyle = "rgba(255,250,225,.9)";
-        light.lineWidth = 0.8;
-        light.beginPath();
-        light.moveTo(s.x - r * 1.6, s.y); light.lineTo(s.x + r * 1.6, s.y);
-        light.moveTo(s.x, s.y - r * 1.6); light.lineTo(s.x, s.y + r * 1.6);
-        light.stroke();
-      }
-      light.globalAlpha = 1;
-    }
-
-    if (st.murk) {
-      back.globalCompositeOperation = "lighter";
-      put(back, st.murk, (0.3 + 0.05 * Math.sin(t * 1.1)) / 0.35);
-      back.globalCompositeOperation = "source-over";
-    }
-    back.globalAlpha = 1;
-
-    const puffs = sprites().gas;
-    for (const p of this.gas) {
-      const life = p.age / p.life;
-      const a = p.a * Math.min(1, p.age / 0.9) * (life > 0.65 ? (1 - life) / 0.35 : 1);
-      if (a <= 0.005) continue;
-      const s = p.s0 * (1 + life * 0.9), low = p.low || 0;
-      const sw = s * (1 + 0.8 * low), sh = s * (1 - 0.45 * low);
-      back.globalAlpha = Math.min(0.5, a * (1 + 0.9 * low));
-      back.drawImage(puffs[p.spr], p.x - sw / 2, p.y - sh / 2, sw, sh);
-      if (low > 0.5) {
-        gas.globalAlpha = a * 0.28 * low;
-        gas.drawImage(puffs[p.spr], p.x - sw / 2, p.y - sh / 2, sw, sh);
+        x.globalAlpha = k;
+        x.drawImage(spark, s.x - r * 1.5, s.y - r * 1.5, r * 3, r * 3);
+        x.strokeStyle = "rgba(255,250,225,.9)";
+        x.lineWidth = 0.8;
+        x.beginPath();
+        x.moveTo(s.x - r * 1.6, s.y); x.lineTo(s.x + r * 1.6, s.y);
+        x.moveTo(s.x, s.y - r * 1.6); x.lineTo(s.x, s.y + r * 1.6);
+        x.stroke();
       }
     }
-    back.globalAlpha = 1;
-    if (gas) gas.globalAlpha = 1;
+    // The low bank's veil, round the foot of the portraits
+    for (const [p, a, sw, sh] of alive) {
+      x.globalAlpha = a;
+      x.drawImage(puffs[p.spr], p.x - sw / 2, p.y - sh / 2, sw, sh);
+    }
+    x.globalAlpha = 1;
   }
 }
 
