@@ -19,7 +19,8 @@ js/league.js                    pure scoring engine (derive): must match the sys
 js/csv.js, js/checks.js, js/ops.js  CSV parsing and round-trip, the data rules, edits as row ops
 js/alltime.js, js/heroes.js     all-time stats (radar, badges, facts); profile photo crops
 js/edit.js, js/wiki.js          edit mode; Taskmaster Wiki reader
-js/switches.js                  hidden per-device switches (the duck menu's Switches)
+js/switches.js                  hidden per-device switches (the duck menu's Switches), and the frame rate graphs
+js/bench.js                     the benchmark (the graphs' button): scripted interactions at three speeds, loaded only when run
 js/podium-fx.js                 podium effects (gold light, stink gas): one half-res canvas between portraits and text
 js/flip.js, js/fall.js, js/fall-worker.js   the Easter egg (below) and its falling background
 tools/                          check-data, sync-wiki, import-stats, screenshots, share-images
@@ -89,7 +90,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
   - Picks and scores are entered on the page. Episodes are edited in place, with a "Get scores from the wiki" button.
   - Every change is an op, replayed onto a fresh copy from GitHub on Save. It must pass `checkData` first.
   - The commissioner's fine-grained token stays only in that browser's localStorage (`fm-gh-key`), never in the site.
-  - **Switches** (in the bar and in the key dialog, so no key is needed): per-device toggles from `switches.js` (`fm-sw-*` in localStorage): Rainbow view right side up (`html.quote-up`: the quote is right side up under every tab, as on a desktop, and switches the dream, unturned; the tilt and screen turns are ignored), Flipped layout (an experiment, below), Frame rate (live corner graphs of the main thread's frames a second over the last 10s and frame time over the last 160 frames, redrawn 4 times a second; its own loop costs a little) and Tilt diagnostic (also `?tilt`). Add any new switch there.
+  - **Switches** (in the bar and in the key dialog, so no key is needed): per-device toggles from `switches.js` (`fm-sw-*` in localStorage): Rainbow view right side up (`html.quote-up`: the quote is right side up under every tab, as on a desktop, and switches the dream, unturned; the tilt and screen turns are ignored), Flipped layout (an experiment, below), Frame rate (live corner graphs of the main thread's frames a second over the last 10s and frame time over the last 160 frames, redrawn 4 times a second; its own loop costs a little; its Benchmark button runs `bench.js`: scrolling, swipes, rows, race charts, How scoring works and tabs at slow, medium and fast, then a results table to copy. Its scrolling is scripted, so it measures what scrolling costs to draw, not the phone's own scrolling) and Tilt diagnostic (also `?tilt`). Add any new switch there.
 - **Wiki sync** (`.github/workflows/wiki-sync.yml`, `tools/sync-wiki.mjs`):
   - Runs Thursday nights and hourly through Friday.
   - Fills in the next episode's scores once the wiki's table is complete, and titles that are placeholders or differ. It never touches scored episodes and never touches picks.

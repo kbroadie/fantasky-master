@@ -21,9 +21,11 @@ function frameRate(show) {
   if (!show) { if (meter) { cancelAnimationFrame(meter.raf); meter.el.remove(); meter = null; } return; }
   if (meter) return;
   const W = 160, H = 84, dpr = Math.min(2, devicePixelRatio || 1);
-  const el = Object.assign(document.createElement("canvas"), { className: "fps-meter", width: W * dpr, height: H * dpr, ariaHidden: "true" });
+  const el = Object.assign(document.createElement("div"), { className: "fps-meter" });
+  el.innerHTML = `<canvas width="${W * dpr}" height="${H * dpr}" aria-hidden="true"></canvas><button type="button" class="fps-bench">Benchmark</button>`;
   document.body.append(el);
-  const g = el.getContext("2d");
+  el.lastChild.addEventListener("click", (e) => { e.stopPropagation(); import("./bench.js").then((b) => b.run(el.lastChild)); });
+  const g = el.firstChild.getContext("2d");
   g.scale(dpr, dpr);
   meter = { el, raf: 0 };
   const recent = [], gaps = [], rates = []; // recent: frame times in the last second

@@ -297,7 +297,19 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
 }
 
 .tilt-probe { position: fixed; left: 8px; bottom: 8px; z-index: 100; margin: 0; padding: 8px 10px; max-width: calc(100vw - 16px); white-space: pre-wrap; font: 400 11px/1.45 var(--fm); color: #9f9; background: rgba(0, 0, 0, .82); border-radius: 8px; pointer-events: none; }
-.fps-meter { position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; width: 160px; height: 84px; pointer-events: none; }
+.fps-meter { position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; display: grid; gap: 4px; width: 160px; pointer-events: none; }
+.fps-meter canvas { width: 160px; height: 84px; }
+.fps-bench { pointer-events: auto; padding: 6px 0; font: 500 11px var(--fm); letter-spacing: .06em; text-transform: uppercase; color: #8f8; background: rgba(0, 0, 0, .82); border-radius: 6px; }
+.bench-t { width: 100%; margin: 12px 0 4px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.bench-t th { font: 500 11px var(--fm); color: var(--t3); text-transform: uppercase; text-align: right; padding: 0 0 6px 8px; }
+.bench-t th:first-child, .bench-t td:first-child { text-align: left; padding-left: 0; }
+.bench-t td { padding: 4px 0 4px 8px; text-align: right; border-top: 1px solid var(--b-dim); white-space: nowrap; }
+.bench-t td:first-child { white-space: normal; color: var(--t1); }
+.bench-t td small { display: block; font: 400 11px var(--fm); color: var(--t3); }
+.bench-t .ok td:not(:first-child) { color: #8f8; } .bench-t .meh td:not(:first-child) { color: #ffd27a; } .bench-t .bad td:not(:first-child) { color: #ff8a7a; }
+.bench-dlg { max-height: 85vh; overflow-y: auto; }
+html:is(.fz-turn, .fz-flip) .bench-dlg { rotate: 180deg; }
+html.fz-side .bench-dlg { rotate: var(--rot); }
 
 /* ── Standings */
 /* Two boards side by side: fixed place column, then Show and League halves per row. Nothing sorts. */
