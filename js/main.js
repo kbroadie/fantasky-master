@@ -60,6 +60,7 @@ function renderStandings(d) {
   for (const s of $("#st-body").children) { sizes.observe(s); syncOpen(s); }
   if (state.stView) syncBoards(true);
   queueLight();
+  fitTitles();
 }
 
 function renderSlides(d) {
@@ -70,7 +71,30 @@ function renderSlides(d) {
   $("#cast-body").innerHTML = castSlides(d);
   mountPodiumFx($("#cast-body"));
   for (const id of ["#ep-body", "#cast-body"]) for (const s of $(id).children) sizes.observe(s);
+  fitTitles();
 }
+
+/**
+ * Fantasy mode's titles have a sparkle either side of the whole title and
+ * each line centred (styles.css). A title that wraps would take all the width
+ * it's given, leaving its sparkles far out at the sides, so its block (.ep-w)
+ * is made as wide as its widest line (on request: two-line titles didn't look
+ * centred).
+ * Measured all at once, then set.
+ */
+function fitTitles() {
+  const ts = state.fantasy ? $$(".ep-title .ep-w") : [];
+  if (!ts.length) return;
+  for (const t of ts) t.style.width = "";
+  // The words are inline and each line centred, so their width is the widest
+  // line's, in the page's own terms however it's turned (screen boxes would
+  // turn with it, and could catch it mid-turn)
+  const ws = ts.map((t) => (t.firstElementChild.getClientRects().length > 1 ? t.firstElementChild.offsetWidth + 1 : 0));
+  ts.forEach((t, i) => { if (ws[i]) t.style.width = `${ws[i]}px`; });
+}
+// Turned to the side and back, the page's width changes with no window resize
+let pageW = 0;
+new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== pageW) { pageW = w; fitTitles(); } }).observe($("main"));
 
 /**
  * Edit mode (edit.js): re-render from the data file's new text, in place: the
