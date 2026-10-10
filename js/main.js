@@ -137,12 +137,15 @@ function topIn(el) {
 
 // Sideways (a quarter turn, html.fz-side), Chrome's own touch scrolling picks
 // the scroller by the swipe's direction on the screen rather than in the
-// turned page, so nothing scrolls (measured; upside down, at 180°, the axes
-// only flip and it works). There the page scrolls itself (touch-action: none
+// turned page, so nothing scrolls (measured). Turned either way, the page scrolls itself (touch-action: none
 // in the CSS): a drag moves main, or the sideways scroller under the finger,
 // a flick carries on, and a swiper settles on the next slide or back, as
 // scroll snapping would. edgeNav still sees the touches.
-const sideTurned = () => Math.abs(turned()) === 90;
+// Upside down too (on request: "swiping in rainbow view just peeks then springs
+// back"): there the browser drags the right way but flings the wrong way, so
+// scroll snapping pulled every swipe back. Whenever the page is turned, it
+// scrolls itself.
+const selfScroll = () => turned() !== 0;
 const sideScroller = (el) => [".swiper", ".strip.scroll", ".tt-wrap"].map((q) => el.closest?.(q)).find((s) => s && s.scrollWidth > s.clientWidth + 1);
 // Tuned to feel like the browser's own (on request: "doesn't work as effortlessly"):
 // a 6px start, a slight lean to sideways swipes, a light flick enough to
@@ -153,7 +156,7 @@ document.addEventListener("touchstart", (e) => {
   const moving = !!(coast || settleRaf);
   cancelAnimationFrame(coast); cancelAnimationFrame(settleRaf);
   coast = settleRaf = 0;
-  if (!sideTurned() || e.touches.length > 1) { drag = null; return; }
+  if (!selfScroll() || e.touches.length > 1) { drag = null; return; }
   const t = e.touches[0];
   drag = { x0: t.clientX, y0: t.clientY, x: t.clientX, y: t.clientY, axis: null, el: null, target: e.target, moves: [], moving };
 }, { passive: true });
@@ -649,6 +652,31 @@ function moving() {
   clearTimeout(mv);
   mv = setTimeout(() => bar.classList.remove("moving"), 360);
 }
+/**
+ * Compact or open the bar, by transforms only, so it stays smooth while the
+ * page flies (on request: "choppy when quickly scrolling"). The masthead's
+ * parts slide by CSS transitions; the tabs change size at once and glide from
+ * where they were (FLIP: their pill, the panel, each icon and label start at
+ * their old place and size and ease to the new, by translate and scale).
+ */
+const barParts = () => [$(".tabs-bg"), $(".tab-ind"), ...$$(".tab svg"), ...$$(".tab span")];
+function barTo(compact) {
+  if (bar.classList.contains("compact") === compact) return;
+  if (reducedMotion) { bar.classList.toggle("compact", compact); return; }
+  const parts = barParts(), first = parts.map((el) => el.getBoundingClientRect());
+  for (const el of parts) for (const a of el.getAnimations()) if (a.id === "bar") a.cancel();
+  bar.classList.toggle("compact", compact);
+  // Turned, an element's top on the page is another edge on the screen
+  const t = turned(), top = (r) => (t === 180 ? -r.bottom : t === 90 ? -r.right : t === -90 ? r.left : r.top);
+  const tall = (r) => (Math.abs(t) === 90 ? r.width : r.height);
+  parts.forEach((el, i) => {
+    const a = first[i], b = el.getBoundingClientRect();
+    const dy = top(a) - top(b), sy = tall(a) / tall(b);
+    if (!b.height || (Math.abs(dy) < .5 && Math.abs(sy - 1) < .01)) return;
+    el.animate([{ translate: `0 ${dy}px`, scale: `1 ${sy}` }, { translate: "0 0", scale: "1 1" }], { id: "bar", duration: 300, easing: "cubic-bezier(.22, 1, .36, 1)" });
+  });
+  moving();
+}
 function barScroll() {
   if (!hraf) hraf = requestAnimationFrame(() => {
     hraf = 0;
@@ -657,7 +685,7 @@ function barScroll() {
     const y = Math.max(0, Math.min(top, max)), dy = y - lastY;
     lastY = y;
     const on = bar.classList.contains("compact");
-    if (bar.classList.toggle("compact", on ? y > 4 : y > 16) !== on) moving();
+    barTo(on ? y > 4 : y > 16);
     if (y < 120) { down = up = 0; return setHidden(false); }
     if (dy > 0) { down += dy; up = 0; if (down > 12) setHidden(true); }
     else if (dy < 0) { up -= dy; down = 0; if (up > 8) setHidden(false); }
