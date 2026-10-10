@@ -3,7 +3,7 @@
 // only hot gets its quality back). Only what's left as designed is tuned (switches.js: val, setAuto); a choice on
 // Moss's cards wins, and Defaults starts it again. The falling background loses resolution, then frame rate; the
 // podium effects, resolution.
-import { get, autoGet, setAuto } from "./switches.js";
+import { get, autoGet, setAuto, onSwitch } from "./switches.js";
 
 const LEVELS = {
   fall: [{ fallRes: 1, fallFps: 60 }, { fallRes: 0.75, fallFps: 60 }, { fallRes: 0.5, fallFps: 60 }, { fallRes: 0.5, fallFps: 45 }, { fallRes: 0.5, fallFps: 30 }, { fallRes: 0.25, fallFps: 30 }],
@@ -13,6 +13,13 @@ const BAD = 2, GOOD = 12; // seconds in a row that step it down, or up
 const seen = { fall: { bad: 0, good: 0, up: false, quiet: 0 }, pod: { bad: 0, good: 0, up: false, quiet: 0 } };
 
 const level = (fx) => autoGet(`_${fx}`) ?? 0;
+// Switched on, it starts from full quality (the settings themselves default to the lowest) and steps down from there
+function begin() {
+  if (!get("autoTune")) return;
+  for (const fx of Object.keys(LEVELS)) if (autoGet(`_${fx}`) == null) { setAuto(`_${fx}`, 0); for (const [k, v] of Object.entries(LEVELS[fx][0])) setAuto(k, v); }
+}
+begin();
+onSwitch(["autoTune"], begin);
 function step(fx, by) {
   const now = level(fx), to = Math.max(0, Math.min(LEVELS[fx].length - 1, now + by));
   if (to === now) return;

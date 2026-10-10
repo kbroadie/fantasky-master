@@ -636,7 +636,7 @@ function still() {
 let lraf = 0;
 function cardLight() {
   lraf = 0;
-  if (reducedMotion || state.page !== "standings") return;
+  if (reducedMotion || !get("howLight") || state.page !== "standings") return; // the scoring cards' light, off by default
   const cards = $(ST.body).children[ST.get()]?.querySelectorAll(".st-hero.explain .how-card") || [];
   if (!cards.length) return;
   const mid = innerHeight / 2;
