@@ -221,8 +221,6 @@ function glints() {
   glinter = setInterval(() => { if (!document.hidden) word.classList.add("glint"); }, 4000);
 }
 function stopFall() { worker?.postMessage({ type: "stop" }); run?.stop(); }
-/** For the next ms, draw the fall at half rate, so an animation of the page's own runs smoothly (main.js). */
-export function hush(ms) { worker?.postMessage({ type: "hush", ms }); run?.hush(ms); }
 
 /**
  * Where the browser has the permission request and no readings have come yet

@@ -33,6 +33,11 @@
   --bar-h: calc(var(--hdr-h) + var(--tabs-h) + 2 * var(--tabs-m)); /* open, without the safe area */
   --bar-d: calc(var(--hdr-h) - var(--hdr-hc) + var(--tabs-h) - var(--tabs-hc) + 2 * (var(--tabs-m) - var(--tabs-mc))); /* what compacting saves */
   --strip-h: 44px; --strip-hc: 32px; /* the sub-tab strips, open and compact */
+  /* How far each part moves as the bar compacts (scroll-linked, below) */
+  --hdr-dy: calc(var(--hdr-hc) - var(--hdr-h));
+  --tabs-dy: calc(var(--hdr-hc) + var(--tabs-mc) - var(--hdr-h) - var(--tabs-m));
+  --strip-dy: calc(-1 * (var(--bar-d) + var(--strip-h) - var(--strip-hc)));
+  --tl: scroll(root); /* the timeline that compacts it: the page's scroll (main's, turned) */
   --ease: cubic-bezier(.22, 1, .36, 1);
 }
 
@@ -59,16 +64,17 @@ strong { color: var(--t1); font-weight: 700; }
    (main's padding-top), so compacting it never re-lays out the page (that
    made the animation choppy, on request) and the page never moves: moving it
    let scroll anchoring flip the bar open and shut in a loop. Compacting
-   shrinks the masthead to one thin line and the tabs to their labels, by
-   transforms only (on request: "choppy when quickly scrolling the page"; it
-   had animated heights, which need the main thread every frame, and that's
-   busy while the page flies): the masthead keeps its height and slides its
-   background, brand and countdown; the tabs change size once and glide from
-   where they were (barTo in main.js). */
+   shrinks the masthead to one thin line and the tabs to their labels, in step
+   with the scroll over its first --bar-d (on request: "instead of snapping
+   states… dynamically scaled with the scroll"), by transforms only, so the
+   compositor runs it while the main thread is busy: nothing changes size in
+   the layout. The parts move as set out under "The bar compacts with the
+   scroll" below. */
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; margin: 0 auto; max-width: inherit; z-index: 5;
   display: flow-root; /* the tabs' margin mustn't collapse into the bar's */
   transition: transform .3s var(--ease);
+  pointer-events: none; /* its boxes keep their open size, so taps go by what shows (below) */
 }
 /* Hidden while scrolling down (on request; .hidden, set in main.js): the
    compact bar slides up out of sight. Under a notch or status bar a frosted
@@ -88,9 +94,10 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: calc(var(--bar-h) + env(safe-area-inset-top)); pointer-events: none;
   background: linear-gradient(180deg, rgba(7, 5, 7, .35), rgba(7, 5, 7, .6));
   -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
-  transition: transform .3s var(--ease);
 }
-.topbar.compact::before { transform: translateY(calc(-1 * var(--bar-d))); }
+/* Taps land on what shows: the glass (which slides up with the bar, so the
+   strip under a compact bar takes its own taps), the masthead and the tabs */
+.topbar::before, .hdr, .tab { pointer-events: auto; }
 .hdr {
   display: flex; align-items: center; gap: 8px;
   height: calc(var(--hdr-h) + env(safe-area-inset-top));
@@ -101,24 +108,19 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .hdr::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: rgba(70, 8, 8, .5); border-bottom: 1px solid var(--b-gold);
-  transition: transform .3s var(--ease);
 }
-.compact .hdr::before { transform: translateY(calc(var(--hdr-hc) - var(--hdr-h))); }
-/* Its shadow, once compact, is a fade that eases in by opacity (a box-shadow
-   transition re-blurred the shadow every frame of the bar's animation) */
+/* Its shadow fades in as it compacts, by opacity (a box-shadow re-blurred
+   the shadow every frame) */
 .hdr::after {
   content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 16px; pointer-events: none;
   background: linear-gradient(rgba(0, 0, 0, .32), rgba(0, 0, 0, .1) 45%, transparent); opacity: 0;
-  transition: opacity .3s var(--ease), transform .3s var(--ease);
 }
-.compact .hdr::after { opacity: 1; transform: translateY(calc(var(--hdr-hc) - var(--hdr-h))); }
 .brand {
   display: flex; align-items: center; gap: .3em;
   font-family: var(--ff-head); font-weight: 400; font-size: clamp(12px, 3.5vw, 21px); letter-spacing: 0; white-space: nowrap;
   text-shadow: 0 0 18px var(--red-glow), 0 1px 0 rgba(0, 0, 0, .7);
-  transform-origin: left center; transition: transform .3s var(--ease);
+  transform-origin: left center;
 }
-.compact .brand { transform: translateY(calc((var(--hdr-hc) - var(--hdr-h)) / 2)) scale(.78); }
 .brand .g, .series { color: var(--gold3); text-shadow: 0 0 14px var(--gold-glow); }
 /* The series number is a button: a gold chip with a swap icon */
 .series {
@@ -132,18 +134,15 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 
 /* Countdown: one line of text, "Ep 5 airs in 5d 18h", numbers in gold
    Inter. The air date itself is on the episode page. */
-.cd { margin-left: auto; min-width: 0; transition: transform .3s var(--ease); }
-.compact .cd { transform: translateY(calc((var(--hdr-hc) - var(--hdr-h)) / 2)); }
+.cd { margin-left: auto; min-width: 0; }
 .cd-pill {
   display: inline-flex; align-items: baseline; gap: 4px;
   font-size: 14px; line-height: 1.15; color: var(--gold3); white-space: nowrap;
 }
-.cd-what { font-size: 12px; font-weight: 500; color: var(--t2); transition: opacity .25s var(--ease); }
-/* Compact, the countdown is just the gold time (on request): the words step
-   out of the flow and fade where they stood, left of the time, which stays
-   put (the countdown is right-aligned). */
-.cd-pill { position: relative; }
-.compact #cd-what { position: absolute; right: calc(100% + 4px); opacity: 0; white-space: nowrap; pointer-events: none; }
+.cd-what { font-size: 12px; font-weight: 500; color: var(--t2); }
+/* Compact, the countdown is just the gold time (on request): the words fade
+   where they stood, left of the time, which stays put (the countdown is
+   right-aligned). */
 .cd-pill b { font-weight: 800; letter-spacing: -.01em; }
 .cd-pill small { font-family: var(--fm); font-size: 11px; color: var(--t2); margin-left: 1px; }
 .cd-tz { margin-left: 6px; font-family: var(--fm); font-size: 11px; color: var(--t3); } /* the device's time zone, after the countdown */
@@ -153,9 +152,7 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .tabs {
   position: relative; display: flex; height: var(--tabs-h); margin: var(--tabs-m) 10px; padding: 5px; border: 1px solid transparent;
 }
-/* The masthead keeps its height, so compact the tabs come up over its lower part */
-.compact .tabs { height: var(--tabs-hc); margin-block: calc(var(--tabs-mc) - var(--hdr-h) + var(--hdr-hc)) var(--tabs-mc); }
-/* The pill behind the tabs, a box of its own so it can glide (barTo) */
+/* The pill behind the tabs, a box of its own so it can shrink to the compact height */
 .tabs-bg {
   position: absolute; inset: -1px; border-radius: 18px; pointer-events: none; transform-origin: 50% 0;
   background: rgba(11, 9, 11, .55); border: 1px solid var(--b-gold);
@@ -173,10 +170,81 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 }
 .tab[aria-selected="true"] { color: #2a0404; }
 .tab:active { transform: scale(.93); }
-.tab svg { width: 24px; height: 22px; flex-shrink: 0; fill: currentColor; transition: opacity .25s var(--ease); }
-/* Compact, the icon takes no room (the label comes up over it) and fades */
-.compact .tab svg { margin-bottom: -22px; opacity: 0; }
+.tab svg { width: 24px; height: 22px; flex-shrink: 0; fill: currentColor; }
 .tab span { font-family: var(--fm); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
+
+/* ── The bar compacts with the scroll ──────────────────────────────── */
+/* Over the first --bar-d (50px) of the page's scroll, every part moves in
+   step with it (on request, in place of a compact state that snapped in and
+   eased): the glass and the masthead's background slide up, the brand rises
+   and shrinks to .78, the countdown rises and its "Ep 5 airs in" fades, the
+   tabs rise, their pill and gold panel squeeze to the compact height (their
+   corners kept round: a box squeezed by k has a vertical radius of r / k),
+   the icons fade as the labels come up over them, and the sub-tab strip
+   rides up, its labels dropping to stay centred in its 32px band. Scrolled
+   back, it all opens the same way. Where the browser has scroll-driven
+   animations (Chrome, Safari 26) they run on the compositor, so they keep
+   up while the page flies; elsewhere main.js sets --p (0–1) as it scrolls.
+   Turned over, main scrolls the page, so the timeline is its (--page). The
+   numbers are the old compact layout's, measured: the pill 58 → 40px tall,
+   the panel 46 → 28, the labels 20px higher in the tabs. */
+html.fz-turn, html.fz-side { --tl: --page; }
+html.fz-turn body, html.fz-side body { timeline-scope: --page; }
+html.fz-turn main, html.fz-side main { scroll-timeline: --page block; }
+@keyframes bar-glass { to { transform: translateY(calc(-1 * var(--bar-d))); } }
+@keyframes bar-hdr { to { transform: translateY(var(--hdr-dy)); } }
+@keyframes bar-shade { to { opacity: 1; transform: translateY(var(--hdr-dy)); } }
+@keyframes bar-brand { to { transform: translateY(calc(var(--hdr-dy) / 2)) scale(.78); } }
+@keyframes bar-cd { to { transform: translateY(calc(var(--hdr-dy) / 2)); } }
+@keyframes bar-what { 50%, to { opacity: 0; } }
+@keyframes bar-tabs { to { translate: 0 var(--tabs-dy); } }
+@keyframes bar-pill { to { scale: 1 calc(40 / 58); } }
+@keyframes bar-ind { to { scale: 1 calc(28 / 46); } }
+@keyframes bar-icon { 60% { opacity: 0; } to { opacity: 0; translate: 0 2px; } }
+@keyframes bar-label { to { translate: 0 -20px; } }
+@keyframes bar-tab { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 18px 0); } } /* its hit area ends with the compact pill, clear of the strip */
+@keyframes bar-strip { to { translate: 0 var(--strip-dy); } }
+@keyframes bar-pill-r { 12.5% { border-radius: 18px / 18.73px; } 25% { border-radius: 18px / 19.51px; } 37.5% { border-radius: 18px / 20.37px; } 50% { border-radius: 18px / 21.31px; } 62.5% { border-radius: 18px / 22.33px; } 75% { border-radius: 18px / 23.46px; } 87.5% { border-radius: 18px / 24.71px; } 100% { border-radius: 18px / 26.10px; } }
+@keyframes bar-ind-r { 12.5% { border-radius: 13px / 13.67px; } 25% { border-radius: 13px / 14.41px; } 37.5% { border-radius: 13px / 15.24px; } 50% { border-radius: 13px / 16.16px; } 62.5% { border-radius: 13px / 17.21px; } 75% { border-radius: 13px / 18.40px; } 87.5% { border-radius: 13px / 19.77px; } 100% { border-radius: 13px / 21.36px; } }
+@supports (animation-timeline: scroll()) {
+  .topbar::before, .hdr::before, .hdr::after, .brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab svg, .tab span,
+  .page > .strip, .page > .strip .strip-tab > span {
+    animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both;
+    animation-timeline: var(--tl); animation-range: 0 var(--bar-d);
+  }
+  .topbar::before { animation-name: bar-glass; }
+  .hdr::before { animation-name: bar-hdr; }
+  .hdr::after { animation-name: bar-shade; }
+  .brand { animation-name: bar-brand; }
+  .cd { animation-name: bar-cd; }
+  #cd-what { animation-name: bar-what; }
+  .tabs { animation-name: bar-tabs; }
+  /* The squeeze is transforms alone, so the compositor runs it; the round corners are a second animation */
+  .tabs-bg { animation-name: bar-pill, bar-pill-r; }
+  .tab-ind { animation-name: bar-ind, bar-ind-r; }
+  .tab { animation-name: bar-tab; }
+  .tab svg { animation-name: bar-icon; }
+  .tab span { animation-name: bar-label; }
+  .page > .strip { animation-name: bar-strip; }
+  .page > .strip .strip-tab > span { animation-name: bar-strip-label; }
+}
+@supports not (animation-timeline: scroll()) {
+  .topbar::before { transform: translateY(calc(-1 * var(--bar-d) * var(--p, 0))); }
+  .hdr::before { transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
+  .hdr::after { opacity: var(--p, 0); transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
+  .brand { transform: translateY(calc(var(--hdr-dy) / 2 * var(--p, 0))) scale(calc(1 - .22 * var(--p, 0))); }
+  .cd { transform: translateY(calc(var(--hdr-dy) / 2 * var(--p, 0))); }
+  #cd-what { opacity: max(0, 1 - 2 * var(--p, 0)); }
+  .tabs { translate: 0 calc(var(--tabs-dy) * var(--p, 0)); }
+  .tabs-bg { --k: calc(1 - 18 / 58 * var(--p, 0)); scale: 1 var(--k); border-radius: 18px / calc(18px / var(--k)); }
+  .tab-ind { --k: calc(1 - 18 / 46 * var(--p, 0)); scale: 1 var(--k); border-radius: 13px / calc(13px / var(--k)); }
+  .tab { clip-path: inset(0 0 calc(18px * var(--p, 0)) 0); }
+  .tab svg { opacity: max(0, 1 - var(--p, 0) / .6); translate: 0 calc(2px * var(--p, 0)); }
+  .tab span { translate: 0 calc(-20px * var(--p, 0)); }
+  .page > .strip { translate: 0 calc(var(--strip-dy) * var(--p, 0)); }
+  .page > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2 * var(--p, 0)); }
+}
+@keyframes bar-strip-label { to { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2); } }
 
 /* ── Pages ─────────────────────────────────────────────────────────── */
 .page { display: none; }
@@ -556,16 +624,16 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
    (on request: animating their top, height and margin was choppy). The strip
    keeps its size and slides up by what the bar saves plus its own 12px, which
    tucks its top under the bar, leaving a 32px band; the labels (each tab's
-   span) drop by half that so they stay centred in it. */
+   span) drop by half that so they stay centred in it, in step with the
+   scroll (bar-strip, above). */
 .page > .strip {
   position: sticky; z-index: 4; top: calc(var(--bar-h) + env(safe-area-inset-top));
   transition: transform .3s var(--ease);
 }
-.topbar.compact ~ main .page > .strip { transform: translateY(calc(-1 * (var(--bar-d) + var(--strip-h) - var(--strip-hc)))); }
-/* With the bar hidden, the strip goes to the top (its 32px band just under the safe area). */
-.topbar.hidden ~ main .page > .strip { transform: translateY(calc(-1 * (var(--bar-h) + var(--strip-h) - var(--strip-hc)))); }
-.strip-tab > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: translate .3s var(--ease); }
-.topbar.compact ~ main .page > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2); }
+/* With the bar hidden, the strip goes on up to the top (its 32px band just
+   under the safe area): a transform on top of its compacting translate. */
+.topbar.hidden ~ main .page > .strip { transform: translateY(calc(var(--bar-d) - var(--bar-h))); }
+.strip-tab > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .strip.scroll { overflow-x: auto; scrollbar-width: none; }
 .strip.scroll::-webkit-scrollbar { display: none; }
 /* A strip that scrolls fades at the edge where more tabs are hidden (on
@@ -1061,9 +1129,6 @@ html.fz .st-leaders b::after { content: "👑"; margin-left: .2em; font-size: .8
 @media (prefers-reduced-motion: no-preference) {
   html.fz .fz-word.glint::after { animation: fz-glint .9s ease-in-out; }
   html.fz .tab-ind::before { animation: fz-slide 6s linear infinite; }
-  /* Held still while the bar compacts or opens (.moving, main.js), so it has the frames to itself */
-  html.fz .topbar.moving .tab-ind::before, html.fz .topbar.moving .fz-word::after,
-  html.fz .topbar.moving ~ main .ep-title::before, html.fz .topbar.moving ~ main .ep-title::after { animation-play-state: paused; }
   html.fz .ep-title::before, html.fz .ep-title::after { animation: fz-twinkle 2.2s ease-in-out infinite; }
 }
 @keyframes fz-slide { to { transform: translateX(-50%); } }
