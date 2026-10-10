@@ -1,17 +1,4 @@
-// Edit mode: the commissioner's way to enter picks and episode scores from the
-// page itself. Tap all seven footer ducks to open it. Changes show on the page
-// straight away and stay local until Save, which writes them into
-// data/fantasky_master_data.csv on GitHub (the Contents API), so they're live
-// for everyone once Pages redeploys, about a minute later.
-//
-// Saving needs a GitHub fine-grained token that can edit this repo's contents.
-// It's kept in this browser's localStorage only, never in the site. The ducks
-// just open the door; the token is the lock.
-//
-// Every change is an op ({ pick } or { scores }) replayed onto the file: first
-// onto the copy the page loaded (so the page updates), then, on Save, onto a
-// fresh copy from GitHub (so nobody else's edits are overwritten). The file is
-// checked with the same rules CI runs (checks.js) before it's sent.
+// Edit mode (tap all seven footer ducks). Changes are ops replayed onto the page's copy at once, and on Save onto a fresh copy from GitHub (Contents API), checked with checks.js first. The token lives only in this browser's localStorage: the ducks are the door, the token the lock.
 import { $, esc, framed, icon, TASK_NAME, state } from "./ui.js";
 import { parseRows, toCSV, parseCSV } from "./csv.js";
 import { checkData } from "./checks.js";
@@ -39,8 +26,6 @@ function addOp(op) {
   onData(replay(base));
   status();
 }
-
-// ── GitHub ──────────────────────────────────────────────────────────────────
 
 const gh = (url, opts = {}) => fetch(url, {
   ...opts, cache: "no-store",
@@ -102,8 +87,6 @@ async function save() {
     status(e.message, "bad");
   }
 }
-
-// ── Opening: the ducks, the key, the bar ────────────────────────────────────
 
 let lit = 0, litTimer = 0;
 function duck(dk) {
@@ -218,9 +201,6 @@ function status(text, kind = "") {
   $('#ed-bar [data-ed="save"]').disabled = !n || kind === "busy";
 }
 
-// ── Picks (Standings rows) ──────────────────────────────────────────────────
-
-/** In edit mode, an opened row chooses the player's pick for the week on show. */
 export function pickChooser(d, p, w) {
   const cur = p.weeks[w - 1]?.pick ?? null;
   const opts = d.names.map((n) => `<button type="button" class="pk${cur === n ? " on" : ""}" data-pick="${esc(n)}" aria-pressed="${cur === n}">${framed(d.cast[n])}<b style="color:${d.cast[n].color}">${esc(n)}</b></button>`).join("");
@@ -230,20 +210,12 @@ export function pickChooser(d, p, w) {
   </div>`;
 }
 
-// ── Episodes: edited in place ───────────────────────────────────────────────
-// In edit mode the episode page itself is the form: the title is an input set
-// like the heading, and the task table's names and scores are inputs (a task's
-// type icon cycles Prize → Filmed → Team → Live). What's typed is kept in a
-// draft and applied when you leave the table, so moving between boxes never
-// redraws the page under the keyboard; Save applies any draft first. A
-// "Get from the wiki" button under the title fills in the scores (or, before
-// an episode airs, its title).
+// Episodes are edited in place; typing goes to a draft applied on leaving the table, so the page never redraws under the keyboard.
 
 const draftKey = (ep) => `${state.key}/${ep}`;
 const notes = {}; // the wiki button's last message, by "series/ep"
 const TYPE_ORDER = ["P", "F", "T", "L"];
 
-/** The episode's scores as they are now, as a draft. */
 function current(d, ep) {
   const e = d.episodes[ep - 1];
   return {
@@ -263,12 +235,10 @@ function draftFor(d, ep) {
 }
 const dirtyCount = () => Object.values(drafts).filter((x) => x.dirty).length;
 
-/** The title, as an input set like the heading. */
 export function edTitle(e) {
   return `<input class="ep-title ed-title" data-f="title" data-ep="${e.ep}" data-fk="t${e.ep}" value="${esc(e.title || "")}" placeholder="Episode ${e.ep}" aria-label="Episode ${e.ep} title" enterkeyhint="done" autocomplete="off">`;
 }
 
-/** Under the title: fill in from the wiki. */
 export function edStrip(d, e) {
   const aired = e.ep <= Math.max(d.weeksAired, d.weeksScored), note = notes[draftKey(e.ep)];
   return `<div class="ed-strip" data-ep="${e.ep}">
@@ -277,7 +247,6 @@ export function edStrip(d, e) {
   </div>`;
 }
 
-/** The task table with inputs, for an aired episode. */
 export function edTable(d, e, order) {
   const dr = drafts[draftKey(e.ep)] || (e.ep <= d.weeksScored ? current(d, e.ep) : draftFor(d, e.ep));
   const num = (v) => (/^\d+$/.test(String(v).trim()) ? +v : 0);
@@ -301,7 +270,6 @@ export function edTable(d, e, order) {
     </div>`;
 }
 
-/** Read the table into its draft and update the totals, without redrawing. */
 function readTable(card) {
   const d = state.d, ep = +card.dataset.ep, dr = draftFor(d, ep);
   card.querySelectorAll("tbody tr[data-i]").forEach((tr) => {
@@ -386,19 +354,13 @@ async function fromWiki(ep) {
   } catch (err) { say(err.message, true); }
 }
 
-// ── Setup ───────────────────────────────────────────────────────────────────
-
-/**
- * text: the data file as the page loaded it. onChange(text): re-render the
- * page from this text (called on every change, after a save, and on leaving).
- */
+// onChange(text): re-render the page from this text
 export function initEdit(text, onChange) {
   base = text;
   onData = onChange;
 
   $("#foot").addEventListener("click", (e) => { const dk = e.target.closest(".dk"); if (dk) duck(dk); });
 
-  // Standings: choose a pick.
   $("#p-standings").addEventListener("click", (e) => {
     const b = e.target.closest(".pk-edit [data-pick]");
     if (!b || !state.edit) return;
@@ -406,7 +368,6 @@ export function initEdit(text, onChange) {
     addOp({ kind: "pick", s: state.key, ep: +box.dataset.week, player: box.dataset.player, c: b.dataset.pick || null });
   });
 
-  // Episodes: edited in place.
   const eps = $("#ep-body");
   eps.addEventListener("input", (e) => { const card = e.target.closest(".ed-tt"); if (card && state.edit) readTable(card); });
   // Leaving the table applies it (after focus has moved, so the page can put it back).

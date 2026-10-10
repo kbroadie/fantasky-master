@@ -1,18 +1,13 @@
-/* Fantasky Master. Mobile-first; wider layouts in @media at the end.
-   Palette: Taskmaster red and gold on near-black; gold means "best". Fonts from v1 (see CLAUDE.md).
-   Nothing is set smaller than 11px. */
+/* Mobile-first; wider layouts in @media at the end. Nothing under 11px. */
 
 :root {
   --red: #c41818; --red-glow: rgba(196, 24, 24, .35); --red-t: rgba(196, 24, 24, .10);
-  --warn: #ff5d55; /* the pick-rule line under a name: bright enough to read at 11px on the dark rows */
+  --warn: #ff5d55; /* pick-rule line: readable at 11px */
   --gold: #b88018; --gold2: #d4a028; --gold3: #ecc040; --gold4: #8a6010;
   --gold-t: rgba(184, 128, 24, .12); --gold-glow: rgba(212, 160, 40, .30);
   --silver: #c9bba4; --bronze: #c98a45;
-  /* The two boards' colours: red for the Show, blue for the League (the
-     scoring cards, the table's column heads and its theme, the leaders line) */
   --show: #e5484d; --show-hi: #ff8f86; --show-glow: rgba(229, 72, 77, .30); --show-edge: rgba(229, 72, 77, .38);
   --league: #3e7bfa; --league-hi: #93b8ff; --league-glow: rgba(62, 123, 250, .30); --league-edge: rgba(90, 140, 250, .38);
-  /* A fine film grain (SVG noise), for textured surfaces */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
   --bg: #070507; --s1: #100d10; --s2: #171417; --s3: #1f1b1f;
@@ -25,15 +20,13 @@
   --fm: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --px: 16px;
-  /* Top bar heights, open and compact. The bar is fixed over a spacer of its
-     open height (main's padding), so compacting never moves the page. */
+  /* Bar heights, open and compact; fixed over a spacer, so compacting never moves the page */
   --hdr-h: 62px; --hdr-hc: 36px;
   --tabs-h: 58px; --tabs-hc: 40px;
   --tabs-m: 8px; --tabs-mc: 5px;
   --bar-h: calc(var(--hdr-h) + var(--tabs-h) + 2 * var(--tabs-m)); /* open, without the safe area */
   --bar-d: calc(var(--hdr-h) - var(--hdr-hc) + var(--tabs-h) - var(--tabs-hc) + 2 * (var(--tabs-m) - var(--tabs-mc))); /* what compacting saves */
   --strip-h: 44px; --strip-hc: 32px; /* the sub-tab strips, open and compact */
-  /* How far each part moves as the bar compacts (scroll-linked, below) */
   --hdr-dy: calc(var(--hdr-hc) - var(--hdr-h));
   --tabs-dy: calc(var(--hdr-hc) + var(--tabs-mc) - var(--hdr-h) - var(--tabs-m));
   --strip-dy: calc(-1 * (var(--bar-d) + var(--strip-h) - var(--strip-hc)));
@@ -43,7 +36,6 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html { -webkit-text-size-adjust: 100%; }
-/* No scroll bar for the page (on request), upright as upside down */
 html { scrollbar-width: none; }
 html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
 body {
@@ -55,33 +47,21 @@ body {
   -webkit-font-smoothing: antialiased; font-synthesis: none;
   font-variant-numeric: tabular-nums;
 }
-/* Every underlined link and button is dotted (on request) */
 a { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-user-select: none; user-select: none; }
 :focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; border-radius: 4px; }
 strong { color: var(--t1); font-weight: 700; }
 .loading-msg, .err { padding: 40px var(--px); text-align: center; color: var(--t3); font-family: var(--fm); font-size: 13px; }
 
-/* ── Top bar: masthead + tabs, pinned ───────────────────────────────── */
-/* The bar is fixed, out of the page's flow, over a spacer of its open height
-   (main's padding-top), so compacting it never re-lays out the page (that
-   made the animation choppy, on request) and the page never moves: moving it
-   let scroll anchoring flip the bar open and shut in a loop. Compacting
-   shrinks the masthead to one thin line and the tabs to their labels, in step
-   with the scroll over its first --bar-d (on request: "instead of snapping
-   states… dynamically scaled with the scroll"), by transforms only, so the
-   compositor runs it while the main thread is busy: nothing changes size in
-   the layout. The parts move as set out under "The bar compacts with the
-   scroll" below. */
+/* ── Top bar */
+/* Fixed over a spacer (main's padding-top): compacting never re-lays out or moves the page. Transforms only, in step with the scroll. */
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; margin: 0 auto; max-width: inherit; z-index: 5;
   display: flow-root; /* the tabs' margin mustn't collapse into the bar's */
   transition: transform .3s var(--ease);
-  pointer-events: none; /* its boxes keep their open size, so taps go by what shows (below) */
+  pointer-events: none; /* boxes keep their open size; taps go by what shows */
 }
-/* Hidden while scrolling down (on request; .hidden, set in main.js): the
-   compact bar slides up out of sight. Under a notch or status bar a frosted
-   band stays (body.bar-hidden::before), so the page never runs under it. */
+/* Hidden on scroll down; a frosted band stays under a notch */
 .topbar.hidden { transform: translateY(calc(-1 * (var(--bar-h) - var(--bar-d)) - env(safe-area-inset-top))); }
 body::before {
   content: ""; position: fixed; z-index: 6; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); pointer-events: none;
@@ -90,16 +70,12 @@ body::before {
 }
 body.bar-hidden::before { opacity: 1; }
 main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
-/* Frosted glass: content scrolls underneath as a soft blur. It's its own
-   layer at the open height, which slides up when the bar compacts (a
-   transform, so the blur is never re-rendered at a new size each frame). */
+/* Glass: its own layer at the open height, slid up (never re-blurred at a new size) */
 .topbar::before {
   content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: calc(var(--bar-h) + env(safe-area-inset-top)); pointer-events: none;
   background: linear-gradient(180deg, rgba(7, 5, 7, .35), rgba(7, 5, 7, .6));
   -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
 }
-/* Taps land on what shows: the glass (which slides up with the bar, so the
-   strip under a compact bar takes its own taps), the masthead and the tabs */
 .topbar::before, .hdr, .tab { pointer-events: auto; }
 .hdr {
   display: flex; align-items: center; gap: 8px;
@@ -107,13 +83,11 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   padding: env(safe-area-inset-top) var(--px) 0;
   position: relative; z-index: 0;
 }
-/* Its background and rule, at the open height, slide up to the compact one */
 .hdr::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: rgba(70, 8, 8, .5); border-bottom: 1px solid var(--b-gold);
 }
-/* Its shadow fades in as it compacts, by opacity (a box-shadow re-blurred
-   the shadow every frame) */
+/* Shadow fades by opacity: a box-shadow re-blurred every frame */
 .hdr::after {
   content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 16px; pointer-events: none;
   background: linear-gradient(rgba(0, 0, 0, .32), rgba(0, 0, 0, .1) 45%, transparent); opacity: 0;
@@ -125,7 +99,6 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   transform-origin: left center;
 }
 .brand .g, .series { color: var(--gold3); text-shadow: 0 0 14px var(--gold-glow); }
-/* The series number is a button: a gold chip with a swap icon */
 .series {
   display: inline-flex; align-items: center; gap: 3px; min-height: 32px; padding: 2px 6px;
   font: inherit; border-radius: 8px; border: 1px solid rgba(236, 192, 64, .45); background: var(--gold-t);
@@ -135,27 +108,21 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .series:active { opacity: .6; }
 .series.past { color: var(--t2); text-shadow: none; }
 
-/* Countdown: one line of text, "Ep 5 airs in 5d 18h", numbers in gold
-   Inter. The air date itself is on the episode page. */
 .cd { margin-left: auto; min-width: 0; }
 .cd-pill {
   display: inline-flex; align-items: baseline; gap: 4px;
   font-size: 14px; line-height: 1.15; color: var(--gold3); white-space: nowrap;
 }
 .cd-what { font-size: 12px; font-weight: 500; color: var(--t2); }
-/* Compact, the countdown is just the gold time (on request): the words fade
-   where they stood, left of the time, which stays put (the countdown is
-   right-aligned). */
+/* Compact: just the gold time; the words fade where they stood */
 .cd-pill b { font-weight: 800; letter-spacing: -.01em; }
 .cd-pill small { font-family: var(--fm); font-size: 11px; color: var(--t2); margin-left: 1px; }
 .cd-tz { margin-left: 6px; font-family: var(--fm); font-size: 11px; color: var(--t3); } /* the device's time zone, after the countdown */
 .cd-tz[hidden] { display: none; }
 
-/* Tabs: one gold panel slides behind the active tab */
 .tabs {
   position: relative; display: flex; height: var(--tabs-h); margin: var(--tabs-m) 10px; padding: 5px; border: 1px solid transparent;
 }
-/* The pill behind the tabs, a box of its own so it can shrink to the compact height */
 .tabs-bg {
   position: absolute; inset: -1px; border-radius: 18px; pointer-events: none; transform-origin: 50% 0;
   background: rgba(11, 9, 11, .55); border: 1px solid var(--b-gold);
@@ -176,26 +143,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .tab svg { width: 24px; height: 22px; flex-shrink: 0; fill: currentColor; }
 .tab span { font-family: var(--fm); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
 
-/* ── The bar compacts with the scroll ──────────────────────────────── */
-/* Over the first --bar-d (50px) of the page's scroll, every part moves in
-   step with it (on request, in place of a compact state that snapped in and
-   eased): the glass and the masthead's background slide up, the brand rises
-   and shrinks to .78, the countdown rises and its "Ep 5 airs in" fades, the
-   tabs rise, their pill and gold panel squeeze to the compact height (their
-   corners kept round: a box squeezed by k has a vertical radius of r / k),
-   the icons fade as the labels come up over them, and the sub-tab strip
-   rides up, its labels dropping to stay centred in its 32px band. Scrolled
-   back, it all opens the same way. Where the browser has scroll-driven
-   animations (Chrome, Safari 26) they run on the compositor, so they keep
-   up while the page flies; elsewhere, and turned over, main.js sets --p
-   (0–1) as it scrolls and the rules after the animations follow it (an
-   animation, where there is one, overrides them). Turned over, the page
-   scrolls itself on the main thread anyway, and animations on main's own
-   timeline were restyled on every frame of every scroll (on request:
-   rainbow view scrolling was slow on an iPhone); --p is written only when it
-   changes, so past the first 50px a scroll costs the bar nothing. The
-   numbers are the old compact layout's, measured: the pill 58 → 40px tall,
-   the panel 46 → 28, the labels 20px higher in the tabs. */
+/* ── The bar compacts with the scroll */
+/* Over the first --bar-d (50px) every part moves with the scroll: scroll-driven animations on the compositor, else (and turned) --p from main.js with the fallback rules below. Squeezed boxes keep round corners (vertical radius r / k, a second animation). Open/compact sizes: pill 58 → 40, panel 46 → 28, labels up 20. */
 html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* the swipers' (the footer follows a swipe) */
 @keyframes bar-glass { to { transform: translateY(calc(-1 * var(--bar-d))); } }
 @keyframes bar-hdr { to { transform: translateY(var(--hdr-dy)); } }
@@ -225,7 +174,7 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
   .cd { animation-name: bar-cd; }
   #cd-what { animation-name: bar-what; }
   .tabs { animation-name: bar-tabs; }
-  /* The squeeze is transforms alone, so the compositor runs it; the round corners are a second animation */
+  /* Squeeze by transform (compositor); corners a second animation */
   .tabs-bg { animation-name: bar-pill, bar-pill-r; }
   .tab-ind { animation-name: bar-ind, bar-ind-r; }
   .tab { animation-name: bar-tab; }
@@ -233,12 +182,11 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
   .tab span { animation-name: bar-label; }
   .page > .strip { animation-name: bar-strip; }
   .page > .strip .strip-tab > span { animation-name: bar-strip-label; }
-  /* Turned over, --p (below) moves the bar instead: with no timeline an animation would hold its end */
+  /* Turned: --p drives it (a timeline-less animation would hold its end) */
   :is(html.fz-turn, html.fz-side) :is(.brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab svg, .tab span, .page > .strip, .page > .strip .strip-tab > span),
   :is(html.fz-turn, html.fz-side) .topbar::before, :is(html.fz-turn, html.fz-side) .hdr::before, :is(html.fz-turn, html.fz-side) .hdr::after { animation-name: none; }
 }
-/* The same frames from --p, where there are no scroll-driven animations or the page is turned (after
-   the base rules, so they win; an animation, where there is one, overrides them) */
+/* From --p where there are no scroll-driven animations, or turned (after the base rules; an animation overrides) */
 .topbar::before { transform: translateY(calc(-1 * var(--bar-d) * var(--p, 0))); }
 .hdr::before { transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
 .hdr::after { opacity: var(--p, 0); transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
@@ -255,16 +203,12 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
 .page > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2 * var(--p, 0)); }
 @keyframes bar-strip-label { to { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2); } }
 
-/* ── Pages ─────────────────────────────────────────────────────────── */
+/* ── Pages */
 .page { display: none; }
 .page.active { display: block; }
 .kicker { font-family: var(--fm); font-size: 11px; color: var(--t3); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 6px; }
 
-/* Shared header block (Standings hero, episode head, Cast header), one pattern
-   on every tab: a DM Mono kicker, the Bungee title, then one line of Inter
-   (names in Nunito, figures bold). A stage: a soft red light from above with
-   the scoring cards' film grain, closed by a gold hairline that fades out at
-   both ends (like the footer's) rather than a hard rule. */
+/* Hero pattern (Standings hero, episode head, Cast header): mono kicker, Bungee title, Inter line; red light from above, grain, fading gold hairline. */
 .hero, .ep-head {
   position: relative; padding: 12px var(--px);
   background: var(--grain), radial-gradient(90% 100% at 50% 0%, rgba(196, 24, 24, .16), transparent 80%);
@@ -279,7 +223,6 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
 .ep-sub b { font-weight: 700; color: var(--t1); }
 .ep-sub .cn { font-family: var(--ff-name); font-weight: 800; }
 
-/* Standings hero: one headline, "Week 4 Standings", set like an episode title */
 .st-hero { text-align: center; padding-block: 18px 16px; } /* the same as .ep-head */
 .st-hero .ep-title { margin-bottom: 0; }
 .st-hero .ep-sub { margin-top: 6px; }
@@ -287,9 +230,6 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
 .st-leaders b { font-family: var(--ff-name); font-weight: 800; color: var(--gold2); }
 .st-leaders .st-show { color: var(--show-hi); }
 .st-leaders .st-league { color: var(--league-hi); }
-/* "How scoring works" under the leaders line opens both explanations below
-   it (the hero grows; tap again to close). A gold label with a chevron, so
-   it reads as something to tap. */
 .st-how {
   display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; padding: 6px 8px;
   font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--gold2);
@@ -300,19 +240,7 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
 .st-explain { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease); }
 .st-hero.explain .st-explain { grid-template-rows: 1fr; }
 .st-explain > div { overflow: hidden; min-height: 0; }
-/* The two systems as a pair of the app's own cards, themed: red for the Show,
-   blue for the League. The same language as everywhere else (a .card with a
-   hairline edge, the episode head's mono kicker over a Bungee title, Inter
-   body, and a footer like the task table's total row), elevated with texture
-   and light:
-   - a fine film grain over the card (SVG noise, --grain);
-   - a pool of the theme colour glowing from the top, drifting slowly and
-     shifting as the card moves up the screen (--lx, set in main.js);
-   - the icon in a lit tile with a soft glow, and a glint that flares on it
-     every so often, the two cards out of step.
-   Paused while closed; still under reduced motion. The words are the
-   league's, unchanged, in their order: the title, the rule, the range. The
-   cards share rows (subgrid), so each level lines up across both. */
+/* How scoring works cards: the league's exact words. Grain, a drifting pool of light (--lx from main.js), a glint on the icon; paused while closed, still under reduced motion; rows shared by subgrid. */
 .how-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(3, auto); gap: 0 10px; max-width: 30rem; margin: 14px auto 4px; text-align: left; }
 .card.how-card {
   --lx: 0;
@@ -328,7 +256,6 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
 }
 .card.how-card.show { --hc: var(--show); --hc-hi: var(--show-hi); --hc-glow: var(--show-glow); --hc-deep: #2a0d10; --hc-edge: var(--show-edge); }
 .card.how-card.league { --hc: var(--league); --hc-hi: var(--league-hi); --hc-glow: var(--league-glow); --hc-deep: #0c1428; --hc-edge: var(--league-edge); animation-duration: 17s; animation-delay: -6s; }
-/* The glow drifts across the top: its layer is wider than the card */
 @keyframes how-drift { from { background-position: 0 0, 0% 0, 0 0; } to { background-position: 0 0, 100% 0, 0 0; } }
 .how-head { padding: 14px 12px 0; }
 .how-icon {
@@ -357,51 +284,35 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
 .how-name { display: block; font-family: var(--ff-head); font-weight: 400; font-size: clamp(20px, 6.2vw, 27px); line-height: 1.05; letter-spacing: .01em; text-transform: uppercase; color: var(--t1); text-shadow: 0 0 18px color-mix(in srgb, var(--hc) 45%, transparent); }
 .how-rule { padding: 10px 12px 14px; font-size: 13px; line-height: 1.5; color: var(--t2); text-wrap: pretty; }
 .how-rule strong { font-weight: 700; color: var(--hc-hi); }
-/* The footer, like the task table's total row */
 .how-range {
   align-self: end; display: flex; flex-direction: column; padding: 9px 12px 10px;
   border-top: 1px solid var(--hc-edge); background: color-mix(in srgb, var(--hc) 9%, rgba(0, 0, 0, .25));
 }
 .how-range b { font-size: 24px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--hc-hi); text-shadow: 0 0 12px color-mix(in srgb, var(--hc) 55%, transparent); }
 .how-range span { margin-top: 3px; font-family: var(--fm); font-size: 11px; font-weight: 500; letter-spacing: .06em; white-space: nowrap; text-transform: uppercase; color: var(--t3); }
-/* Closed, or reduced motion: nothing moves */
 .st-hero:not(.explain) .how-card, .st-hero:not(.explain) .how-glint { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
   .card.how-card { animation: none; background-position: 0 0, 50% 0, 0 0; }
   .how-glint { display: none; }
 }
 
-/* The tilt diagnostic, only with ?tilt in the address (flip.js) */
 .tilt-probe { position: fixed; left: 8px; bottom: 8px; z-index: 100; margin: 0; padding: 8px 10px; max-width: calc(100vw - 16px); white-space: pre-wrap; font: 400 11px/1.45 var(--fm); color: #9f9; background: rgba(0, 0, 0, .82); border-radius: 8px; pointer-events: none; }
 
-/* ── Standings ─────────────────────────────────────────────────────── */
-/* Both boards side by side, in a rounded card like the cards on the other
-   tabs. Each row is a place: its number in a fixed column at the left (1, 2,
-   3… in order, never moving), set apart on a darker strip with a gold
-   hairline, then the Show's player at that place and the League's, each as
-   name then points. Nothing sorts:
-   each board is already in its own order. */
-/* Tracks: the place strip (--rk, flush to the card's edge, the number
-   centred in it), then two equal halves, each padded --pad on both sides
-   (so every name starts --pad after a rule and every score ends --pad before
-   the next rule or the card's edge), a name and right-aligned points (--sc)
-   with --g between. --pe is the head's side padding, now 0: the strip and the
-   League's half run to the card's edges. */
-/* A contestant's quote under the board, small, faint and upside down: the secret tap (table.js) */
+/* ── Standings */
+/* Two boards side by side: fixed place column, then Show and League halves per row. Nothing sorts. */
+/* Tracks: --rk place strip, two halves padded --pad, points column --sc, --g gap; --pe (head padding) is 0. */
+/* The secret tap (fantasy Easter egg): small, faint, upside down */
 .st-quote {
   display: block; margin: 2px auto 0; padding: 8px 16px; max-width: 34em; border: 0; background: none; color: var(--t4);
   font: 400 11px/1.45 var(--ff); text-align: center; text-wrap: balance; transform: rotate(180deg);
   cursor: default; -webkit-tap-highlight-color: transparent;
 }
 .st-quote cite { font-style: normal; white-space: nowrap; }
-/* Underlined while the tilt still needs allowing (Safari), so it reads as a tap (askHint in flip.js) */
 .tilt-ask .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
-/* On a desktop it's right side up and underlined, and a click switches fantasy mode on and off (main.js) */
-/* By its id: the class .dq is also the Every task card's DQ cells, which
-   these rules once hid on phones (and padded out on desktops) */
+/* Desktop: right side up, underlined; a click toggles fantasy mode */
+/* By id: .dq is also the Every task DQ cells */
 #dq { display: none; }
 @media (hover: hover) and (pointer: fine) {
-  /* One quote under every tab (#dq), not one under each week's board */
   #dq { display: block; padding: 4px var(--px) 0; }
   .st-slide .st-quote { display: none; }
   .st-quote { transform: none; cursor: pointer; transition: color .2s; }
@@ -409,21 +320,13 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
   .st-quote:hover { color: var(--t2); }
 }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
-/* The head lines up with the rows: the place column's strip, then the Show's
-   half over the left half and the League's over the right. */
 .card.board { position: relative; margin: 12px var(--px); }
-/* The Show's red glows from the top of its half, the League's blue from
-   the top of its, through the translucent head, with the film grain. */
 .card.board::before, .card.board::after { content: ""; position: absolute; inset: 0 0 auto; height: 90px; z-index: 0; pointer-events: none; }
 .card.board::before { background: var(--grain), radial-gradient(55% 110% at 22% 0%, rgba(229, 72, 77, .36), transparent 80%); }
 .card.board::after { background: radial-gradient(55% 110% at 78% 0%, rgba(62, 123, 250, .36), transparent 80%); }
 .board .rows { position: relative; z-index: 1; }
 .board .pc:last-child { border-bottom: 0; }
-/* The head names the two halves in the week strip's language: DM Mono caps
-   under the scoring cards' crown and trophy, each half tinted from the top in
-   its colour with a 2px bar under it. Each half is also a button: it swaps the
-   rows for that board's race chart; pressed, its bar thickens and the other
-   half steps back. */
+/* Head: crown/trophy over DM Mono caps, tinted halves with a 2px bar; each half toggles its board's race chart */
 .st-head {
   position: relative; z-index: 1; display: grid; grid-template-columns: calc(var(--pe) + var(--rk)) minmax(0, 1fr) minmax(0, 1fr) var(--pe);
   border-bottom: 1px solid var(--b-gold); background: linear-gradient(180deg, rgba(31, 27, 31, .35), rgba(20, 17, 20, .6));
@@ -442,17 +345,8 @@ button.st-side { border: 0; padding: 0; margin: 0; cursor: pointer; -webkit-tap-
 button.st-side.league { border-left: 1px solid var(--b-gold); }
 .st-side.on { box-shadow: inset 0 -3px 0 var(--c); }
 .board[data-chart] .st-side:not(.on) { opacity: .5; }
-/* A pressed head: the board's race chart opens above the rows, pushing them
-   down, styled like an opened row's player race card (on request): inset by the same padding in
-   a card with the board's edge colour, the same head ("SHOW RACE SO FAR", the
-   board's name in its colour, a lowercase legend at the right), the same faint
-   white gridlines; drawn at its real width. Its lines are lighter than
-   Episodes', as fifteen cross. */
-/* It opens like a row's card (on request): its space grows from nothing
-   (grid rows 0fr → 1fr, .3s, only on the board tapped, .ease), pushing the
-   rows down, and closes the same way; then its lines draw in left to right
-   and the labels and dots fade in, like an opened player's race card (.draw,
-   set in main.js on the board tapped). */
+/* Board race chart: styled like an opened row's race card, drawn at real width */
+/* Opens by grid rows 0fr → 1fr on the board tapped (.ease), then lines draw in (.draw) */
 .board .st-chart { display: grid; grid-template-rows: 0fr; position: relative; z-index: 1; background: linear-gradient(170deg, var(--s2), var(--s1)); }
 .board.ease .st-chart { transition: grid-template-rows .3s var(--ease); }
 .board[data-chart] .st-chart { grid-template-rows: 1fr; }
@@ -475,59 +369,35 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .rc-tick { font: 400 11px var(--fm); fill: var(--t4); paint-order: stroke; stroke: var(--s2); stroke-width: 4px; stroke-linejoin: round; } /* a gridline's value, haloed so the race's lines pass behind it */
 .race .rc-name.rc-total.top { fill: var(--gold2); } /* the leader's total, gold as first place's points are on the board */
 
-/* Rows are not compositing layers of their own: with one per row, iOS ran
-   short of layer memory and dropped rows' text after scrolling. */
+/* Rows must not be compositing layers: iOS dropped their text */
 .pc { --head: 52px; position: relative; border-bottom: 1px solid var(--b-gold); background: linear-gradient(170deg, var(--s2), var(--s1)); }
 .pc.lead { background: linear-gradient(170deg, rgba(184, 128, 24, .10), var(--s1) 55%); }
-/* Rows don't clip, so a half can slide across other rows to its player's
-   new place when the week changes. */
-/* One line of text a row, on one baseline: the place number, names and
-   points line up by baseline (not box centres, which sat the points 2px low). */
+/* One baseline per row (box centring sat points 2px low) */
 .pc-head { display: grid; grid-template-columns: var(--rk) minmax(0, 1fr) minmax(0, 1fr); align-items: baseline; height: var(--head); padding-inline: var(--pe); }
 .pc-head, .pc-more { position: relative; z-index: 1; } /* over the place strip (.pc::after); the column rule is measured from the head */
-/* Column rules, like the row rules (1px, --b-gold), on request: the place
-   column's edge (its strip, .pc::after) and this one between the Show and
-   the League (the halves' line: the middle plus half the place column), down
-   each row's head and through the table's head. The opened picks run full
-   width under them. It stays put while the halves slide. */
+/* Column rule between Show and League (1px --b-gold), down each row's head */
 .pc-head::before { content: ""; position: absolute; top: 0; bottom: 0; left: calc(50% + var(--rk) / 2); width: 1px; background: var(--b-gold); pointer-events: none; }
 .sd { display: grid; align-items: baseline; align-content: center; column-gap: var(--g); height: var(--head); min-width: 0; text-align: left; -webkit-tap-highlight-color: transparent; }
-.sd { grid-template-columns: minmax(0, 1fr) minmax(var(--sc), auto); } /* points at least --sc, wider for 3 digits; right-aligned, so their right edges still line up */
+.sd { grid-template-columns: minmax(0, 1fr) minmax(var(--sc), auto); } /* points ≥ --sc, right-aligned */
 .sd.l, .sd.r { padding: 0 var(--pad); }
-/* Each half is a gap meter (on request): a wash in the board's colour, filled
-   in proportion to the player's points against the leader's (--m). */
+/* Gap meter: a wash filled to --m */
 .sd.l { background-image: linear-gradient(90deg, rgba(229, 72, 77, .04), rgba(229, 72, 77, .15) calc(var(--m) * 100%), transparent calc(var(--m) * 100%)); }
 .sd.r { background-image: linear-gradient(90deg, rgba(62, 123, 250, .04), rgba(62, 123, 250, .16) calc(var(--m) * 100%), transparent calc(var(--m) * 100%)); }
-/* While a half is open, every other cell steps back (on request): each player
-   cell a little darker with its text dimmed, and the other rows' place
-   numbers dimmed, so the opened player reads first (.board.focus, set in
-   openRow). It switches at once: fading every cell's opacity made each one a
-   compositing layer for the fade, and the row's opening stuttered. */
+/* Focus: other cells step back at once (fading made each a layer and stuttered) */
 .board.focus .sd { background-color: rgba(8, 6, 8, .32); }
 .board.focus .sd > *, .board.focus .pc:not(.open) .pc-rank { opacity: .6; }
 .board.focus .pc[data-open="show"] .sd.l, .board.focus .pc[data-open="league"] .sd.r { background-color: transparent; }
 .board.focus .pc[data-open="show"] .sd.l > *, .board.focus .pc[data-open="league"] .sd.r > * { opacity: 1; }
-/* The place column's strip: darker, with a gold hairline on its right, down
-   the row's head (the opened picks run full width under it), under its text. */
 .pc::after {
   content: ""; position: absolute; left: 0; top: 0; z-index: 0; width: calc(var(--pe) + var(--rk)); height: var(--head); pointer-events: none;
   background: rgba(10, 8, 10, .45); box-shadow: inset -1px 0 0 var(--b-gold);
 }
 .sd .pc-name { justify-self: start; }
-/* The place number: no movement arrows (removed on request) */
 .pc-rank { text-align: center; }
-/* The place is secondary to the names and points: smaller and lighter */
 .pc-rank b { font-size: 15px; font-weight: 700; color: var(--t3); }
 .pc-name { display: flex; align-items: center; min-width: 0; max-width: 100%; font-family: var(--ff-name); font-size: clamp(16px, 4.1vw, 20px); font-weight: 800; }
 .pc-name .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* The chevron after each name: the only sign a cell opens, so it stays, but
-   quiet (refined on request): a drawn chevron with round caps and joins, 9 ×
-   5.5px on a 1.5px stroke, in --t4, centred on the lowercase letters rather
-   than the line box (1px down). Opened, it becomes the line under its row
-   (on request): it flattens and drops into the gap below, where a line in
-   its board's colour (red Show, blue League) grows out from under it across
-   both columns, keeping a notch where the chevron was, so the card below
-   reads as that player's. */
+/* Chevron: the only sign a cell opens; quiet. Opened, it becomes the line under the row (::before), with a notch at --cx. */
 .chev {
   flex: none; width: 9px; height: 5.5px; margin-left: 6px; overflow: visible;
   fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
@@ -536,9 +406,6 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .pc[data-open="show"] .sd.l .chev { color: var(--show-hi); }
 .pc[data-open="league"] .sd.r .chev { color: var(--league-hi); }
 .pc[data-open="show"] .sd.l .chev, .pc[data-open="league"] .sd.r .chev { opacity: 0; transform: translateY(20px) scale(1.6, 0); }
-/* The line (::before) spans the whole row, through the place column too (on request),
-   on the seam between the row's head and its card; the notch (::after)
-   points up at where the chevron was (--cx, measured in placeLine). */
 .pc-more::before, .pc-more::after { content: ""; position: absolute; pointer-events: none; opacity: 0; transition: opacity .2s var(--ease); }
 .pc-more::before { top: -1px; left: 0; right: 0; height: 2px; transform: scaleX(0); transform-origin: var(--cx, 50%) 50%; transition: transform .32s var(--ease) .08s, opacity .12s var(--ease) .08s, background-color .3s var(--ease); }
 .pc-more::after { top: -7px; left: var(--cx, 50%); width: 12px; height: 6px; margin-left: -6px; clip-path: polygon(50% 0, 100% 100%, 0 100%); transition: opacity .2s var(--ease) .12s; }
@@ -555,11 +422,8 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .pk b { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 .pc-name, .pc-num, .pc-rank { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 
-/* Tap a half to open its card under the row */
 .pc-more { display: grid; grid-template-rows: 0fr; }
-/* A row opens at once and the rows below glide (glide / slideShut in
-   main.js): transforms only, so nothing repaints. While they move they're
-   lifted over the opened card (each its own stacking context, in order). */
+/* Rows open at once and the rows below glide (FLIP, main.js): transforms only; lifted over the card only while moving */
 .board.glide .rows > .pc { z-index: 1; transition: transform .3s var(--ease); }
 .board.glide { transition: clip-path .3s var(--ease); } /* its bottom edge, with the last row */
 .board.ease .pc.open .pc-more > div { animation: xp-in .3s var(--ease); } /* the card fades in as it's uncovered, on the board tapped on only */
@@ -567,42 +431,32 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 @media (prefers-reduced-motion: reduce) { .board.ease .pc.open .pc-more > div { animation: none; } }
 .pc.open .pc-more { grid-template-rows: 1fr; }
 .pc-more > div { overflow: hidden; min-height: 0; }
-/* A slightly darker bed behind an opened row's card. */
 .pc-more > div { background: linear-gradient(180deg, transparent, rgba(16, 13, 16, .5) 24px); }
-/* An opened half's card (on request): always five rows tall (5 × --head).
-   Not a scroll box: the card always fits (229px), and a box that scrolled
-   itself (with overscroll-behavior: contain) swallowed vertical swipes, so
-   the page couldn't be scrolled from an opened row (fixed on request). */
+/* Opened card: exactly five rows. Not a scroll box: one swallowed vertical swipes. */
 .xp { height: calc(5 * var(--head)); overflow: hidden; padding: 10px 10px 16px; }
-/* The card's border takes its board's colour too, like the line above it. */
 .pc[data-open="show"] .xp > .card { border-color: var(--show-edge); }
 .pc[data-open="league"] .xp > .card { border-color: var(--league-edge); }
 .xp .card { margin: 0 0 10px; }
 .xp .card:last-child { margin-bottom: 0; }
 .xp .bars { --plot: 140px; } /* the one card fills the five rows */
-/* A player's bars: their pick's first three letters under each bar, above the episode number, in the pick's colour. */
 .bars.tagged { --axis: 36px; }
 .bars.tagged em { position: absolute; bottom: 18px; font: 500 11px/13px var(--fm); font-style: normal; letter-spacing: .04em; text-transform: uppercase; color: var(--c); white-space: nowrap; }
-.bar.dim { opacity: .4; } /* a player's weeks after the week on show: shown, but faded (on request) */
+.bar.dim { opacity: .4; } /* other weeks, faded */
 .bars.tagged .bar small { height: auto; padding-top: 0; bottom: 2px; line-height: 13px; } /* the episode number under the letters */
-/* The card title is a switch between Points per episode and The race so far:
-   the head's own type, with the series chip's swap icon after it. */
+/* Card title switches bars ↔ race */
 .xp .card-head { gap: 8px; letter-spacing: .06em; white-space: nowrap; } /* one line down to 360px phones: "League race so far ⇄   1 behind the leader" */
 .xp-swap { display: inline-flex; align-items: center; gap: 6px; padding: 6px 0; margin: -6px 0; font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--t2); cursor: pointer; }
-.xp-swap b { font-weight: inherit; } /* the board's name in its colour, on request */
+.xp-swap b { font-weight: inherit; }
 .xp-swap b.show { color: var(--show-hi); }
 .xp-swap b.league { color: var(--league-hi); }
 .xp-swap .swap { width: 12px; height: 12px; fill: none; stroke: var(--gold2); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .xp .jr-card .jr-plot { height: 152px; } /* the race fills the five rows */
-/* The pick-rule warning at the top of an opened row: the card's plot gives
-   up the line's room, so the box stays exactly five rows and the card ends
-   where an unwarned one does. */
+/* Pick-rule line: the plot gives up its room so the box stays five rows */
 .xp-must { margin: 0 2px 5px; font: 700 11px/12px var(--ff); color: var(--warn); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .xp.warned .bars { --plot: 122px; }
 .xp.warned .jr-card .jr-plot { height: 134px; }
 .pc-more > div > .xp-must { margin: 10px 12px 0; } /* edit mode: above the pick chooser */
-/* An opened half: the race chart ("The race so far") for the opened board,
-   full width, only the opened player highlighted (journey in table.js). */
+/* Opened half's race chart (journey in table.js) */
 .jr { --c: var(--show-hi); padding: 14px 16px 10px; }
 .jr.league { --c: var(--league-hi); }
 .jr-plot { position: relative; height: 112px; margin-bottom: 22px; }
@@ -627,29 +481,18 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .pk b { display: block; font-size: clamp(11px, 3vw, 13px); font-weight: 800; margin-top: 3px; min-height: 1em; }
 .pk-blank { display: flex; align-items: center; justify-content: center; aspect-ratio: 225 / 266; border: 1px dashed var(--b-gold); border-radius: 4px; color: var(--t4); font-size: 11px; }
 
-
-/* ── Tab strips over swipers (episodes, cast) ──────────────────────── */
+/* ── Tab strips over swipers */
 .strip { display: flex; border-bottom: 1px solid var(--b-gold); background: linear-gradient(180deg, var(--s2), var(--s1)); }
-/* The sub-tab strips (Standings' episodes, Episodes, Cast) stick under the
-   top bar and compact with it, by transform only, so nothing is re-laid out
-   (on request: animating their top, height and margin was choppy). The strip
-   keeps its size and slides up by what the bar saves plus its own 12px, which
-   tucks its top under the bar, leaving a 32px band; the labels (each tab's
-   span) drop by half that so they stay centred in it, in step with the
-   scroll (bar-strip, above). */
+/* Sticky strips compact with the bar by transform only: slide up --bar-d + 12px to a 32px band; labels drop 6px */
 .page > .strip {
   position: sticky; z-index: 4; top: calc(var(--bar-h) + env(safe-area-inset-top));
   transition: transform .3s var(--ease);
 }
-/* With the bar hidden, the strip goes on up to the top (its 32px band just
-   under the safe area): a transform on top of its compacting translate. */
 .topbar.hidden ~ main .page > .strip { transform: translateY(calc(var(--bar-d) - var(--bar-h))); }
 .strip-tab > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .strip.scroll { overflow-x: auto; scrollbar-width: none; }
 .strip.scroll::-webkit-scrollbar { display: none; }
-/* A strip that scrolls fades at the edge where more tabs are hidden (on
-   request; .more-l / .more-r, set in main.js): sticky overlays in the strip's
-   colour that take no room. */
+/* Scrolling strips fade where more tabs are hidden (.more-l/.more-r) */
 .strip.scroll::before, .strip.scroll::after {
   content: ""; position: sticky; z-index: 1; flex: 0 0 32px; pointer-events: none; opacity: 0; transition: opacity .2s;
 }
@@ -664,7 +507,6 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 }
 .strip.even .strip-tab { flex: 1; min-width: 0; padding-inline: 4px; overflow: hidden; text-overflow: ellipsis; }
 .strip-tab.tbd { color: var(--t4); }
-/* The next episode to air: a small gold dot after its label, so "not yet" and "next" read apart. */
 .strip-tab.next > span::after { content: ""; display: inline-block; width: 5px; height: 5px; margin: 0 0 1px 6px; border-radius: 50%; background: var(--gold2); vertical-align: middle; box-shadow: 0 0 6px var(--gold-glow); }
 .strip-tab.on {
   color: var(--t1); border-bottom-color: var(--gold3);
@@ -678,12 +520,9 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 }
 .swiper::-webkit-scrollbar { display: none; }
 .slide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; }
-/* Slides off screen (all but the one on show and its neighbours) skip style,
-   layout and paint until they come near. They keep their last size once seen. */
+/* Off-screen slides skip rendering. Nothing inside a .slide may be position: fixed. */
 .slide { content-visibility: auto; contain-intrinsic-size: auto 390px auto 1200px; }
 
-/* The welcome card at the top of the Standings, over the weeks: shown on a
-   device's first visit until its ✕ is tapped, and from the Welcome button. */
 #welcome { padding: 12px var(--px) 0; }
 #welcome[hidden] { display: none; }
 .welcome { margin: 0; }
@@ -707,13 +546,11 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .wl-tab ul { display: grid; gap: 4px; margin: 0; padding: 0 0 0 26px; list-style: none; }
 .wl-tab li { position: relative; }
 .wl-tab li::before { content: ""; position: absolute; left: -12px; top: .62em; width: 4px; height: 4px; border-radius: 50%; background: var(--t4); }
-/* Close at the end of the card, as well as the ✕ at the top: a quiet gold pill. */
 .wl-x.wl-done { display: block; margin: 18px auto 0; padding: 9px 22px; border: 1px solid var(--b-gold); border-radius: 999px; font: 500 11px var(--fm); letter-spacing: .12em; text-transform: uppercase; color: var(--gold2); }
-/* "New here? Read the welcome": a quiet line under the How scoring works cards. */
 .st-wl { display: block; margin: 10px auto 0; padding: 6px 8px; font-size: 13px; color: var(--t3); -webkit-tap-highlight-color: transparent; }
 .st-wl span { color: var(--gold2); text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 
-/* ── Cards ─────────────────────────────────────────────────────────── */
+/* ── Cards */
 .card {
   margin: 0 0 12px; border: 1px solid var(--b-gold); border-radius: 12px; overflow: hidden;
   background: linear-gradient(135deg, var(--s3), var(--s2));
@@ -725,7 +562,6 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 }
 .card.note p { padding: 0 14px 12px; font-size: 15px; line-height: 1.6; color: var(--t2); text-wrap: pretty; }
 
-/* The race so far: running totals as smooth lines */
 .race svg { display: block; width: 100%; max-width: 520px; margin: 0 auto; padding: 4px 12px 0; overflow: visible; }
 .rc-grid { stroke: var(--b-dim); stroke-width: 1; }
 .rc-axis { font-family: var(--fm); font-size: 11px; fill: var(--t4); }
@@ -734,12 +570,11 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .race path { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .race .rc-tap { stroke: transparent; stroke-width: 16; cursor: pointer; } /* a wide, invisible target along each line */
 .rc-name { cursor: pointer; }
-/* Tap a line: it comes forward (moved last in main.js) and the rest fade */
 .race g[data-who] { transition: opacity .2s; }
 .race.focus g[data-who]:not(.on) { opacity: .15; }
 .race .rc-lead { stroke-width: 1; opacity: .6; }
 .rc-pt { stroke: var(--s2); stroke-width: 2; } /* a ring of the card's colour where lines cross */
-.rc-name { font-family: var(--fm); font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; } /* like the task table's column heads */
+.rc-name { font-family: var(--fm); font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
 /* A halo in the card's colour, so gridlines and lines pass behind a label */
 .rc-name { paint-order: stroke; stroke: var(--s2); stroke-width: 4px; stroke-linejoin: round; }
 .rc-name.rc-total { font-family: var(--ff); font-weight: 800; letter-spacing: 0; fill: var(--t2); } /* right-aligned in a column */
@@ -748,13 +583,12 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .rc-cap { padding: 4px 12px 12px; font-size: 13px; color: var(--t3); }
 .rc-cap:empty, .hs-cap:empty { display: none; } /* no instructions; a caption only once something is tapped */
 
-/* Framed portraits */
 .fp { display: block; width: 100%; height: auto; aspect-ratio: 225 / 266; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
 .cn { font-weight: 700; }
 
-/* ── Episodes ──────────────────────────────────────────────────────── */
+/* ── Episodes */
 .ep-title { font-family: var(--ff-head); font-weight: 400; font-size: clamp(20px, 5.6vw, 27px); line-height: 1.08; text-transform: uppercase; letter-spacing: .01em; margin-bottom: 6px; text-wrap: balance; }
-.ep-body { padding: 12px var(--px) 0; } /* 12px to the first card, like every tab; the last card's 12px margin + the body's 24px below, like every tab */
+.ep-body { padding: 12px var(--px) 0; } /* 12px to the first card; the last card's 12px + body's 24px below */
 .pod {
   display: flex; align-items: flex-end; gap: 6px; padding: 12px 8px 10px; margin-bottom: 12px;
   border: 1px solid var(--b-gold); border-radius: 12px;
@@ -762,14 +596,10 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 }
 .pod-col { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .pod-col .fp { position: relative; z-index: 1; }
-/* The gold-lit winner has no dark drop shadow: over the gold light it read
-   as a dark, olive-green halo round the frame. */
+/* No drop shadow on the winner: it read as an olive halo */
 .pod-col.win .fp { filter: none; }
-/* Winner's gold light and last place's stink gas: canvases drawn by
-   podium-fx.js. Back layer sits behind the portraits; the light layer
-   screens over them (bounce light, dust, glints); the gas layer on top. */
+/* Podium canvases (podium-fx.js): back behind portraits, light screened over, gas on top */
 .pod.has-fx, .fx-stage.has-fx { position: relative; isolation: isolate; }
-/* The Cast header as a stage: its text sits above the back canvas */
 .fx-stage.has-fx > :not(.fx) { position: relative; z-index: 1; }
 .pod-col { z-index: 1; }
 .fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: inherit; }
@@ -777,20 +607,15 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .fx-light { z-index: 3; mix-blend-mode: screen; }
 .fx-gas { z-index: 4; }
 .pod-col.last .fp { filter: saturate(.8) brightness(.93) drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
-.pod-col.last .pod-pts { color: var(--t3); } /* muted: olive is only ever the stink fog's (on request) */
+.pod-col.last .pod-pts { color: var(--t3); } /* muted: olive is only the stink's */
 .pod-name { font-family: var(--ff-name); font-size: 12px; font-weight: 800; margin-top: 3px; }
 .pod-pts { font-size: clamp(18px, 5vw, 22px); font-weight: 800; line-height: 1; }
 .pod-col.win .pod-pts { color: var(--gold3); text-shadow: 0 0 8px var(--gold-glow); }
 .pod-picks { font-family: var(--fm); font-size: 11px; color: var(--t3); white-space: nowrap; }
 .pod-col.win .pod-picks { color: var(--gold2); }
 
-/* Episodes still to come */
-
-
 .tt-wrap { overflow-x: auto; }
-/* Task table, kept dense: the task column takes the rest; five narrow equal
-   score columns (single digits), tight rows, the last column with extra right padding so the numbers sit as far from the card's
-   right edge as the task names do from its left (12px, like a card head). */
+/* Task table, dense: task column takes the rest; five equal score columns */
 .tt { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .tt th:not(:first-child) { width: 36px; }
 .tt th:last-child { width: 40px; }
@@ -800,7 +625,6 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .tt td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--b-dim); font-size: 16px; font-weight: 700; }
 .tt td:first-child { text-align: left; padding-left: 12px; font-size: 13px; line-height: 1.3; font-weight: 400; color: var(--t2); }
 .tn { display: flex; align-items: center; gap: 6px; }
-/* Task-type icons: one monoline set, gold, same size everywhere */
 .ico { flex-shrink: 0; width: 15px; height: 15px; fill: none; stroke: var(--gold2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .tname { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; cursor: pointer; }
 .tname.full { display: block; }
@@ -810,42 +634,32 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .tt .tot td:first-child { font-family: var(--fm); font-size: 11px; font-weight: 500; color: var(--t3); letter-spacing: .1em; text-transform: uppercase; }
 .tt .tot .best { color: var(--gold3); text-shadow: 0 0 8px var(--gold-glow); }
 
-/* ── Cast ──────────────────────────────────────────────────────────── */
-.cd-head { margin-bottom: 12px; } /* Cast header: the episode head's pattern (kicker, Bungee title, mono line) */
+/* ── Cast */
+.cd-head { margin-bottom: 12px; }
 .cd-head .ep-sub b { font-weight: 800; }
 .cd-head .kicker { color: var(--t2); text-shadow: 0 0 10px rgba(0, 0, 0, .9), 0 1px 3px rgba(0, 0, 0, .8); } /* legible over the winner's rays */
 .cd-img { width: 104px; margin: 0 auto 10px; }
 #cast-body .card { margin-inline: var(--px); }
 .legend { letter-spacing: 0; text-transform: none; color: var(--t4); }
 
-/* Points per episode, one scale for all five contestants. Every bar is --f
-   of the plot height (its score over the series' best episode), so heights
-   compare exactly; the number rides above the bar (gold for a win), the episode
-   number sits below the plot. */
-.bars { --plot: 96px; --axis: 22px; position: relative; display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; height: calc(22px + var(--plot) + var(--axis)); padding: 0 10px; } /* 22px above the plot for the tallest bar's number (the crown's room went with it) */
+/* Points per episode: each bar --f of the plot; number above, episode below */
+.bars { --plot: 96px; --axis: 22px; position: relative; display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; height: calc(22px + var(--plot) + var(--axis)); padding: 0 10px; }
 .bar { position: relative; display: flex; justify-content: center; min-width: 0; }
 .bar i { position: absolute; z-index: 1; bottom: var(--axis); width: 100%; max-width: 26px; height: max(2px, var(--plot) * var(--f)); border-radius: 4px 4px 0 0; background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 55%, #000)); }
 .bar b { position: absolute; z-index: 3; bottom: calc(var(--axis) + var(--plot) * var(--f) + 4px); font-size: 14px; font-weight: 800; line-height: 1; text-shadow: 0 0 2px var(--s2), 0 0 3px var(--s2), 0 0 4px var(--s2); } /* knocks the median line out behind the number */
 .bar small { position: absolute; bottom: 0; height: var(--axis); padding-top: 5px; font-family: var(--fm); font-size: 11px; line-height: 1.2; color: var(--t4); }
 .bar.won b { color: var(--gold3); }
 .bar.tbd i { height: 3px; background: var(--b-gold); }
-/* The series median: a dashed line across the plot, over the bars and under the numbers */
 .bar-med { position: absolute; z-index: 2; left: 6px; right: 6px; bottom: calc(var(--axis) + var(--plot) * var(--f)); border-top: 1px dashed rgba(240, 232, 220, .55); pointer-events: none; }
 .med-key { display: inline-block; width: 14px; margin-right: 5px; vertical-align: middle; border-top: 1px dashed rgba(240, 232, 220, .7); }
-/* All-time records: a badge per stat where the contestant is in the top 10 */
 .records .rec { display: grid; grid-template-columns: 1fr auto; column-gap: 10px; padding: 8px 12px; border-top: 1px solid var(--b-dim); }
 .rec-label { font-family: var(--ff-name); font-size: 16px; font-weight: 800; color: var(--gold3); }
 .rec-rank { font-size: 15px; font-weight: 800; color: var(--t2); text-align: right; }
 .rec-rank.top { color: var(--gold3); text-shadow: 0 0 8px var(--gold-glow); }
 .rec-text { grid-column: 1 / -1; font-size: 13px; color: var(--t2); margin-top: 1px; }
 
-/* Fact file: label over value, two columns */
-/* Profile: the bio, then personal facts in two columns under a hairline */
 .profile dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin: 0 14px; padding: 12px 0 14px; border-top: 1px solid var(--b-dim); }
-/* With a group photo, their face sits behind the Profile, offset right:
-   head --face across, eyes at (--fx, --fy). The bio narrows to the left of the
-   face; the facts sit below on the darker lower part. The photo and its shade
-   rasterise as one layer (no filter or will-change on the image). */
+/* Face behind the Profile: head --face across, eyes at (--fx, --fy); photo and shade one layer (no filter or will-change) */
 .profile.has-face { position: relative; isolation: isolate; }
 .pf-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; container-type: inline-size; --face: clamp(86px, 28cqw, 126px); --fx: 76cqw; --fy: 104px; }
 .pf-bg img {
@@ -861,16 +675,12 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
     linear-gradient(rgba(0, 0, 0, .15), rgba(0, 0, 0, .15));
 }
 .has-face > p { max-width: 58%; min-height: 196px; color: var(--t1); text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
-/* The bio sits level with the face, centred on the photo's height, not jammed under the card head */
 .has-face > .pf-bio { display: flex; align-items: center; padding-top: 4px; padding-bottom: 16px; }
 .has-face dl { text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
 .profile dt { font-family: var(--fm); font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--t3); }
 .profile dd { font-size: 15px; color: var(--t1); margin-top: 2px; }
 
-/* Task heat strip: one row per task type, one column per episode. A
-   square's strength is its score: the contestant's colour mixed into the
-   card at 24% for a 1, then 43, 62, 81 and 100% for a 5 (even steps); 0 is
-   an empty outline. Tasks sharing a slot split it. */
+/* Heat strip: colour mixed in at 24/43/62/81/100% for 1–5; 0 an outline; tasks sharing a slot split it */
 .hs-grid { display: grid; grid-template-columns: 62px repeat(10, minmax(0, 1fr)) 28px; gap: 3px 2px; align-items: center; padding: 2px 12px 4px; }
 .hs-ep { font-family: var(--fm); font-size: 11px; color: var(--t4); text-align: center; }
 .hs-ep.tbd { opacity: .5; }
@@ -879,14 +689,14 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .hs-slot { display: flex; gap: 2px; height: 24px; padding: 0; border-radius: 4px; }
 button.hs-slot.on { box-shadow: 0 0 0 1.5px var(--t1); position: relative; z-index: 1; }
 .hs-slot.tbd { border-radius: 3px; background: rgba(255, 255, 255, .025); }
-/* The fill step (--f) is the score, 0–5; in fantasy mode it's turned round (below) */
+/* --f is the score; turned round in fantasy */
 .hs-cell, .hs-key { --f: clamp(0, var(--v), 5); }
 .hs-cell {
   flex: 1; min-width: 0; border-radius: 3px;
   background: color-mix(in srgb, var(--c) calc(var(--f) * 19% + 5%), var(--s2));
 }
 .hs-cell[style*="--v:0"] { background: none; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); } /* 0: an outline in their colour */
-/* DQ: the 0 outline with a cross through it, both in the outline's colour */
+/* DQ: the 0 outline with a cross */
 .hs-cell.dq, .hs-key.dq {
   --x: color-mix(in srgb, var(--c) 55%, transparent);
   --cross:
@@ -895,7 +705,6 @@ button.hs-slot.on { box-shadow: 0 0 0 1.5px var(--t1); position: relative; z-ind
   background: var(--cross);
   box-shadow: inset 0 0 0 1.5px var(--x);
 }
-/* n/a: no task of that type that episode, a short dash instead of a square */
 .hs-slot.na { align-items: center; justify-content: center; }
 .hs-slot.na::after { content: ""; width: 6px; height: 1.5px; border-radius: 1px; background: var(--t4); opacity: .6; }
 .hs-avg { font-size: 13px; font-weight: 700; color: var(--t2); text-align: right; }
@@ -906,16 +715,12 @@ button.hs-slot.on { box-shadow: 0 0 0 1.5px var(--t1); position: relative; z-ind
 .hs-key.dq { margin: 0 3px 0 10px; }
 .hs-key:first-of-type { margin-left: 4px; }
 .hs-key:last-of-type { margin-right: 4px; }
-/* Fantasy mode, low scores win: the steps run the other way (on request), 0 the
-   strongest fill and 5 the empty outline, and a DQ (0 points) a full square
-   with the cross cut through it in the card's colour. The key follows. */
+/* Fantasy: 0 the strongest, 5 the outline; DQ a full square with the cross cut through */
 html.fz .hs-cell, html.fz .hs-key { --f: clamp(0, 5 - var(--v), 5); }
 html.fz .hs-cell[style*="--v:0"], html.fz .hs-key[style*="--v:0"] { background: color-mix(in srgb, var(--c) calc(var(--f) * 19% + 5%), var(--s2)); box-shadow: none; }
 html.fz .hs-cell[style*="--v:5"], html.fz .hs-key[style*="--v:5"] { background: none; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); }
 html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cross), var(--c); box-shadow: none; }
 
-/* Performance radar: hairline σ rings and axes with ticks, a dashed
-   all-series average ring, one filled shape with small vertex points */
 .radar svg { display: block; width: 100%; max-width: 360px; margin: 0 auto; padding-bottom: 8px; overflow: visible; shape-rendering: geometricPrecision; }
 .rd-face { fill: rgba(255, 255, 255, .025); }
 .rd-ring, .rd-axis, .rd-tick { fill: none; stroke: rgba(255, 255, 255, .14); stroke-width: .75; vector-effect: non-scaling-stroke; }
@@ -927,19 +732,16 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .rd-sigma { font-family: var(--fm); font-size: 12px; font-weight: 400; fill: var(--t3); }
 .rd-ico path { fill: none; stroke: var(--gold2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
-/* Narrow phones: a little more room for the one-line countdown */
 @media (max-width: 380px) {
   .hdr { gap: 6px; padding-inline: 12px; }
 }
 
-/* ── Wider screens ─────────────────────────────────────────────────── */
-/* ── Footer: a row of rubber ducks as the closing rule ─────────────────── */
+/* ── Wider screens */
+/* ── Footer: ducks */
 .foot { padding: 8px var(--px) 0; text-align: center; }
 .ducks { display: flex; align-items: center; justify-content: center; }
-/* Each duck's span is its tap target (edit mode opens when all seven are lit);
-   its side padding makes the same 7px gaps as before. */
+/* Each duck's span is its tap target */
 .dk { display: flex; padding: 10px 3.5px; cursor: default; -webkit-tap-highlight-color: transparent; }
-/* Hairlines run out from the ducks to the page edges and fade */
 .ducks::before, .ducks::after { content: ""; flex: 1; height: 1px; max-width: 120px; }
 .ducks::before { background: linear-gradient(90deg, transparent, var(--b-gold)); margin-right: 7.5px; }
 .ducks::after { background: linear-gradient(90deg, var(--b-gold), transparent); margin-left: 7.5px; }
@@ -949,7 +751,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .dk.lit .duck { transform: scale(1.18); }
 @media (prefers-reduced-motion: reduce) { .dk .duck { transition: none; } .dk.lit .duck { transform: none; } }
 
-/* ── Edit mode (edit.js): the bar, the key dialog, picks and scores ─────── */
+/* ── Edit mode */
 .editing { padding-bottom: calc(24px + 64px + env(safe-area-inset-bottom)); }
 .ed-bar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
@@ -989,7 +791,7 @@ body:not(.editing) .ed-bar { display: none; } /* Done hides it; it's reused if e
 .ed-dialog b { color: var(--t1); font-weight: 600; }
 .ed-dialog .ed-msg { min-height: 1.4em; margin: 8px 0 12px; }
 
-/* Inputs are 16px so iOS doesn't zoom in on them */
+/* 16px inputs: iOS won't zoom */
 .ed-dialog input, .ed-tt input, .ed-tt select {
   width: 100%; min-width: 0; font: 400 16px var(--ff); color: var(--t1);
   background: var(--s2); border: 1px solid var(--b-dim); border-radius: 6px; padding: 7px 8px;
@@ -997,8 +799,6 @@ body:not(.editing) .ed-bar { display: none; } /* Done hides it; it's reused if e
 .ed-tt input:focus, .ed-tt select:focus, .ed-dialog input:focus, .ed-title:focus { outline: none; border-color: var(--gold2); }
 .ed-tt .bad { border-color: #ff8a7a; box-shadow: 0 0 0 1px #ff8a7a; }
 
-/* Episodes, edited in place: the title is an input set like the heading,
-   with a dashed underline; the task table's names and scores are inputs. */
 .ed-title {
   display: block; width: 100%; padding: 2px 0 3px; color: var(--t1); text-align: center;
   background: none; border: 0; border-bottom: 1px dashed var(--b-gold); border-radius: 0;
@@ -1016,7 +816,6 @@ body:not(.editing) .ed-bar { display: none; } /* Done hides it; it's reused if e
 .ed-tt .ed-tb select { width: auto; padding: 6px 4px; }
 .ed-tt .ed-hint { padding: 0 12px 12px; }
 
-/* Picks: an opened row offers the five contestants and None */
 .pk-edit { padding: 2px 12px 14px; }
 .pk-edit-h { font-family: var(--fm); font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); margin: 2px 2px 6px; }
 .pk-choose { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
@@ -1040,14 +839,7 @@ body:not(.editing) .ed-bar { display: none; } /* Done hides it; it's reused if e
   *, *::before, *::after { transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
-/* ── Fantasy Fantasky Master (flip.js) ─────────────────────────────────────
-   Upside down, the whole app is a dream where low scores win (on request:
-   "magical fantasy Lisa Frank garden rainbows unicorns"): the same pages,
-   in hot pink, sunshine yellow, turquoise and violet on a deep purple night,
-   the surfaces a little see-through so the rainbow fall (#fz-fall) shows
-   behind everything, and the brand "Fantasy Fantasky Master" with "Fantasy"
-   in rainbow. Gold (the winners' emphasis) is sunshine yellow. An Easter
-   egg: nothing mentions it. */
+/* ── Fantasy Fantasky Master (flip.js): an Easter egg, never mentioned. Same tokens redefined as a Lisa Frank dream; sunshine yellow replaces gold. */
 html.fz {
   --bg: #170828; --s1: rgba(36, 10, 62, .84); --s2: rgba(48, 16, 80, .84); --s3: rgba(60, 22, 98, .88);
   --t1: #fff4fd; --t2: #f6cdf3; --t3: #dcaef2; --t4: #ab8ad8;
@@ -1070,12 +862,7 @@ html.fz .topbar::before { background: linear-gradient(180deg, rgba(70, 14, 110, 
 html.fz .hdr::before { background: linear-gradient(90deg, rgba(255, 63, 164, .38), rgba(176, 75, 255, .36), rgba(23, 212, 240, .32)); }
 html.fz .hero, html.fz .ep-head { background: var(--grain), radial-gradient(90% 100% at 50% 0%, rgba(255, 90, 200, .26), transparent 80%); }
 html.fz .hero::after, html.fz .ep-head::after { background: var(--rainbow); opacity: .7; }
-/* The brand, one line (on request): "Fantasy" in rainbow Pacifico, a bubbly
-   script (on request: "something girly"), then FANTASKY MASTER and the
-   series chip. The countdown drops "Ep 7 airs in" to make room. Pacifico's
-   descenders reach far below its line, and a background clipped to the text
-   only paints inside the box, so the box is padded well past them (and the
-   padding taken back with margins, so the bar's layout doesn't change). */
+/* Brand on one line: "Fantasy" in rainbow Pacifico; padded past its descenders (background-clip: text paints only inside the box), padding taken back by margins */
 .fz-word { display: none; }
 html.fz .brand { display: grid; grid-template-columns: auto auto auto; align-items: center; column-gap: .4em; text-shadow: 0 0 10px rgba(255, 110, 210, .35); }
 html.fz .fz-word {
@@ -1084,12 +871,8 @@ html.fz .fz-word {
   background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent;
   text-shadow: none; filter: drop-shadow(0 0 4px rgba(255, 120, 220, .45));
 }
-/* Raised .2em (on request, "optically align"): its baseline then meets
-   FANTASKY MASTER's, and its lowercase body sits centred on those capitals
-   (measured; before, both were 4px low). */
-/* A glint sweeps across it now and then (on request: a shimmer, in place of
-   a wobble): a second copy of the word over it, clipped to the text, with a
-   white band passing through. */
+/* Raised .2em: baseline meets FANTASKY MASTER's */
+/* Glint: a copy of the word with a white band through it, run by .glint (flip.js) */
 html.fz .fz-word::after {
   content: "Fantasy"; position: absolute; inset: 0; padding: inherit;
   background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .95) 50%, transparent 60%) 150% 0 / 300% 100% no-repeat;
@@ -1099,35 +882,26 @@ html.fz .fz-name { font-size: .82em; }
 html.fz .series { min-height: 24px; padding: 0 5px; font-size: .82em; }
 html.fz #cd-what { display: none; }
 
-/* Comically over the top (on request), but every word still reads: the
-   rainbow shimmers, "Fantasy" wiggles now and then, titles sparkle, cards
-   glow pink with a sunshine ring, and first place is a rainbow. */
-/* The tab panel's rainbow slides by transform (a layer twice its width), not
-   by repainting its background each frame */
+/* Over the top but readable; rainbows are still (shimmering repainted every frame) */
+/* Tab panel rainbow slides by transform, not a repainted background */
 html.fz .tab-ind::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 200%; background: var(--rainbow) 0 0 / 50% 100% repeat-x; }
 html.fz .tab-ind { overflow: hidden; background: none; box-shadow: 0 0 10px rgba(255, 90, 210, .4), inset 0 0 0 1px rgba(255, 255, 255, .3), inset 0 1px 1px rgba(255, 255, 255, .6); }
 html.fz .tab[aria-selected="true"] { color: #2a0845; }
 html.fz .tab[aria-selected="true"] span { font-weight: 500; }
 html.fz .kicker { color: var(--show-hi); }
-/* The title's words carry the rainbow and the glow (.ep-t); the sparkles sit
-   outside them, so their twinkle doesn't re-render a filter every frame (it
-   had been most of the dream's work, with the glint) */
+/* Words carry the rainbow and glow (.ep-t); sparkles outside, so they don't re-render a filter */
 html.fz .ep-title .ep-t {
   background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent;
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
   filter: drop-shadow(0 1px 0 rgba(42, 8, 69, .9)) drop-shadow(0 0 6px rgba(255, 90, 210, .3));
 }
-/* The sparkles flank the whole title, centred on it, and each line of the
-   words is centred on its own: inline, one led the first line and one ended
-   the last, so a title on two lines sat off centre (on request) */
+/* Sparkles flank the whole title; each line centred (.ep-w sized by fitTitles) */
 html.fz .ep-title { display: flex; align-items: center; justify-content: center; }
-html.fz .ep-title .ep-w { min-width: 0; } /* a block round the words, which stay inline, so each line gets its own rainbow */
+html.fz .ep-title .ep-w { min-width: 0; }
 html.fz .ep-title::before, html.fz .ep-title::after { content: "✨"; flex: none; margin: 0 .3em; font-size: .62em; }
 html.fz .ep-title::after { animation-delay: -1.1s; }
 html.fz .st-how { color: var(--gold2); text-shadow: 0 0 8px rgba(255, 225, 77, .3); }
-/* The Profile in the dream (on request: "should fit the vibe"): the photo
-   tinted pink to violet to turquoise, the shade deep purple rather than grey,
-   the labels hot pink and the hairline pink. */
+/* Profile in the dream: tinted photo, purple shade, pink labels */
 html.fz .pf-bg::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(135deg, rgba(255, 63, 164, .55), rgba(176, 75, 255, .45) 50%, rgba(23, 212, 240, .5)); mix-blend-mode: soft-light; }
 html.fz .pf-bg::after {
   z-index: 2;
@@ -1139,7 +913,7 @@ html.fz .pf-bg::after {
 html.fz .profile dt { color: var(--show-hi); }
 html.fz .profile dl { border-top-color: rgba(255, 140, 225, .25); }
 html.fz .has-face > p, html.fz .has-face dl { text-shadow: 0 1px 3px rgba(30, 0, 50, .85); }
-html.fz .st-wl { display: none; } /* no "Read the welcome" in the dream (on request) */
+html.fz .st-wl { display: none; }
 html.fz .st-how::before { content: "🦄"; font-size: 13px; letter-spacing: 0; }
 html.fz .card { border-color: rgba(255, 140, 225, .38); box-shadow: 0 0 14px rgba(255, 79, 195, .16), 0 6px 18px rgba(0, 0, 0, .3); }
 html.fz .card.board::before { background: var(--grain), radial-gradient(55% 110% at 22% 0%, rgba(255, 63, 164, .42), transparent 80%); }
@@ -1155,39 +929,29 @@ html.fz .st-leaders b::after { content: "👑"; margin-left: .2em; font-size: .8
 @media (prefers-reduced-motion: no-preference) {
   html.fz .fz-word.glint::after { animation: fz-glint .9s ease-in-out; }
   html.fz .tab-ind::before { animation: fz-slide 6s linear infinite; }
-  /* Only the slide on show twinkles (.here, from mark in main.js): the others aren't drawn, so their
-     sparkles couldn't run on the compositor and were stepped on the main thread every frame */
+  /* Only the slide on show twinkles (.here): hidden slides' sparkles ran on the main thread */
   html.fz .here .ep-title::before, html.fz .here .ep-title::after { animation: fz-twinkle 2.2s ease-in-out infinite; }
 }
 @keyframes fz-slide { to { transform: translateX(-50%); } }
 @keyframes fz-glint { from { background-position: 150% 0; } to { background-position: -50% 0; } }
 @keyframes fz-twinkle { 0%, 100% { opacity: 1; scale: 1; rotate: 0deg; } 50% { opacity: .55; scale: .7; rotate: 25deg; } }
-/* Turned over (180°, or a quarter turn in a landscape page): the body is a
-   fixed box, turned, and main scrolls inside it (scroller() in main.js);
-   the bar stays at its top. The ducks' footer is left out. */
+/* Turned: body is a fixed rotated box, main scrolls; ducks hidden (dolphins at the end) */
 html.fz-turn, html.fz-side { overflow: hidden; height: 100%; }
 html.fz-turn body, html.fz-side body { position: fixed; inset: 0; overflow: hidden; min-height: 0; transform: rotate(180deg); }
 html.fz-side body { inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; max-width: none; transform: translate(-50%, -50%) rotate(var(--rot)); }
 html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
-/* (The ducks give way to the dolphins upside down: .fz-foot at the end.) */
-/* Turned, the page scrolls itself (main.js: in a quarter-turned page the browser picks the wrong scroller, and upside down it flings the wrong way) */
+/* Turned, the page scrolls itself (main.js) */
 html.fz-turn *, html.fz-side * { touch-action: none; }
-/* No scroll bars when turned either (on request): main scrolls there, and its bar showed down the side */
 html.fz-turn *, html.fz-side * { scrollbar-width: none; }
 html.fz-turn ::-webkit-scrollbar, html.fz-side ::-webkit-scrollbar { display: none; }
-/* No quote upside down (on request) */
 @media not all and (hover: hover) and (pointer: fine) { html.fz .st-quote { display: none; } } /* a desktop keeps it, to switch back */
-/* Inside main, a sticky strip's offset counts from below main's padding (the bar's spacer), so it sticks at 0 */
+/* Inside main a sticky strip counts from below the spacer, so 0 */
 html.fz-turn .page > .strip, html.fz-side .page > .strip { top: 0; }
-/* The bar and the strips stay solid, so nothing reads through them as the page scrolls under */
 html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .94), rgba(38, 8, 68, .96)); -webkit-backdrop-filter: none; backdrop-filter: none; }
-/* No frosted glass upside down: the bar is all but solid, and a blur over the
-   fall would be worked out afresh every frame (the costliest thing on the page) */
+/* No backdrop blur upside down: a blur over the moving fall is redone every frame */
 html.fz body::before { background: #2a0a46; -webkit-backdrop-filter: none; backdrop-filter: none; }
 html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
-/* Sideways, the page is landscape but the turned body is as wide as the
-   screen is tall: sizes that follow the screen's width follow its height
-   instead, and a phone keeps its phone layout. */
+/* Sideways: the body is as wide as the screen is tall, so vw sizes become vh here. Add any new vw size. */
 html.fz-side .brand { font-size: clamp(12px, 3.5vh, 21px); }
 html.fz-side .how-name { font-size: clamp(20px, 6.2vh, 27px); }
 html.fz-side .pc-name { font-size: clamp(16px, 4.1vh, 20px); }
@@ -1205,28 +969,15 @@ html.fz-side .tilt-probe { max-width: calc(100vh - 16px); }
   :where(html.fz-side) .bars { --plot: 96px; }
 }
 
-/* Fantasy mode's footer (on request: "dolphins breaching and jumping"), in
-   place of the ducks: three rainbow dolphins leap in turn over a rolling
-   sea, splashing in and out, under a faint rainbow. Inside main, so it
-   scrolls with the page when it's turned. Each dolphin is three nested
-   boxes, moved across (i), up and down (b) and turned to follow the arc
-   (svg), by transforms only; it spends the rest of its cycle under the sea.
-   One still leap under reduced motion. */
+/* Dolphins' footer (fantasy): three nested boxes per dolphin (across, up/down, turn), transforms only; animates only on screen (.run) */
 .fz-foot { display: none; }
 html.fz #foot { display: none; }
-/* The rainbow may rise behind the table above, so the footer clips only
-   sideways (overflow-x: clip, which makes no scroll box and no stacking
-   context); the dolphins and the sea are clipped to it in .fz-waves. */
+/* Clips only sideways (overflow-x: clip: no scroll box, no stacking context), so the rainbow can rise behind the table */
 html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top: 8px; overflow-x: clip; pointer-events: none; }
-/* The water's base meets the screen's bottom edge (on request): no space under the footer */
 html.fz body { padding-bottom: 0; }
 .fz-waves { position: absolute; inset: 0; overflow: hidden; }
-/* Layers of their own while a swipe moves them, so moving them repaints nothing */
 .lifting #foot, .lifting #dq, .lifting .fz-bow, .lifting .fz-waves { will-change: translate; }
-/* Mid-swipe the footer follows the swiper's scroll (fit in main.js): each
-   swiper's scroll is a timeline the footer can see (timeline-scope on body),
-   and main.js gives the parts the pair of places (--la, --lb) and the stretch
-   of scroll between them (animation-range). On the compositor. */
+/* Mid-swipe lift: scroll-driven, on each swiper's named timeline (timeline-scope on body); main.js sets --la/--lb and the range */
 @property --la { syntax: "<length>"; inherits: false; initial-value: 0px; }
 @property --lb { syntax: "<length>"; inherits: false; initial-value: 0px; }
 @keyframes lift { from { translate: 0 var(--la); } to { translate: 0 var(--lb); } }
@@ -1237,18 +988,8 @@ body { timeline-scope: --st, --ep, --cast; }
 @supports (animation-timeline: scroll()) {
   #foot, #dq, .fz-bow, .fz-waves { animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; }
 }
-/* Following a swipe (lift in main.js), the rainbow and the waves move, not
-   the footer itself: a translate there would make it a stacking context and
-   bring the rainbow out from behind the page. */
-/* A double rainbow (on request): two bows with the same order, red on top
-   down to violet (on request), the outer one fainter, with the sky a little
-   brighter within the inner one. Every band blends softly into the next,
-   and the whole fades into the haze towards the sea, so it sits far back
-   behind the dolphins. It's screened onto what's behind it, so it only ever
-   lightens it, never darkens (on request). It spans the horizon, its feet
-   beyond the page's edges, and rises behind the table above (on request):
-   z-index -1 puts it behind the page, over only the fall and the sky.
-   It's an element of its own (.fz-bow), so a swipe can move it (lift). */
+/* The bow and waves move, not .fz-foot: a translate there would make a stacking context and pull the rainbow in front of the page */
+/* Double rainbow, both bows red on top; screened (only lightens); z-index -1, behind the page; its own element so a swipe can move it */
 html.fz .fz-bow {
   position: absolute; z-index: -1; left: -25%; bottom: 4px; width: 150%; aspect-ratio: 2; opacity: .85; mix-blend-mode: screen;
   background: radial-gradient(circle farthest-side at 50% 100%,
@@ -1257,20 +998,17 @@ html.fz .fz-bow {
     rgba(170, 110, 255, 0) 84%, rgba(170, 110, 255, .18) 86%, rgba(110, 100, 255, .18) 88%, rgba(80, 150, 255, .2) 90%, rgba(90, 230, 150, .22) 92%, rgba(255, 230, 90, .24) 94%, rgba(255, 160, 70, .22) 96%, rgba(255, 70, 110, .2) 98%, transparent 100%);
   -webkit-mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%);
 }
-/* Haze over the sea, where the rainbow's feet melt away */
 html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; bottom: 36px; height: 34px; background: radial-gradient(60% 100% at 50% 100%, rgba(255, 200, 250, .16), transparent 75%); }
-/* The sea (on request: no hard division): a soft crest over bluish water, a
-   fainter wave behind it, deepening into purple and clear at the bottom */
+/* Sea: soft crest over bluish water, a fainter wave behind, deep purple base */
 .fz-sea { position: absolute; left: 0; bottom: 0; width: 140%; height: 50px; filter: drop-shadow(0 -2px 6px rgba(79, 216, 255, .35)); }
 .dl { --d: 3.4s; --w: 0s; position: absolute; bottom: 0; height: 100%; width: 30%; }
 .dl:nth-of-type(1) { left: 6%; }
 .dl:nth-of-type(2) { left: 37%; --d: 3.9s; --w: -1.3s; scale: -1 1; }
 .dl:nth-of-type(3) { left: 66%; --d: 3.6s; --w: -2.5s; }
-/* Each dolphin is cut off at the waterline, so under the clear water it's gone */
+/* Cut at the waterline (the water is see-through) */
 .dl i { position: absolute; inset: 0; transform: translateX(50%); clip-path: inset(-100px -100px 39px -100px); }
 .dl b { position: absolute; left: -32px; bottom: 0; width: 64px; height: 27px; transform: translateY(-80px); }
 .dl svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 4px rgba(255, 110, 210, .45)); }
-/* Splashes where it leaves the water and where it dives back in */
 .dl::before, .dl::after {
   content: ""; position: absolute; bottom: 36px; width: 28px; height: 22px; margin-left: -14px; opacity: 0;
   background: radial-gradient(circle at 20% 80%, #fff 1.6px, transparent 2.2px), radial-gradient(circle at 45% 35%, #bff6ff 1.8px, transparent 2.4px),

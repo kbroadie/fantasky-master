@@ -1,13 +1,4 @@
-// Reads an episode's scores from the Taskmaster Wiki (taskmaster.fandom.com),
-// through its public MediaWiki API, which allows reads from any page
-// (origin=*). Used by edit mode to fill in the scores grid for checking.
-//
-// The series page lists its episodes ("Episode 5: … {{:You're nice.}}"), and
-// each episode page has a scores table (class "tmtable"): a row per task with
-// its link ("[[Task page|4]]", "T" for the tiebreak), the description (which
-// starts '''Prize:''', '''Team:''' or '''Live:''' for those tasks) and one cell
-// per contestant. A task split into parts ("do either the buggy, bounce or
-// beans task") has a parent row spanning a sub-row per part.
+// Taskmaster Wiki reader (MediaWiki API, origin=*). Series page lists episodes; each episode page has a "tmtable": a row per task ("[[Task|4]]", T = tiebreak), description (Prize:/Team:/Live:), a cell per contestant; split tasks have a parent row spanning part rows.
 
 const API = "https://taskmaster.fandom.com/api.php";
 
@@ -20,20 +11,17 @@ async function wikitext(page) {
   return j.parse.wikitext;
 }
 
-/** The episode's page title, from the series page's list. */
 export function episodePage(seriesText, ep) {
   const m = seriesText.match(new RegExp(`Episode ${ep}:[^\\n]*\\n\\{\\{:([^}]+)\\}\\}`));
   return m ? m[1].trim() : null;
 }
 
-/** An episode's title, from the series page's list (listed before it airs). */
 export async function fetchTitle(seriesKey, ep) {
   const page = episodePage(await wikitext(`Series ${seriesKey}`), ep);
   if (!page) throw new Error(`The wiki doesn't have a title for episode ${ep} yet`);
   return titleCase(page);
 }
 
-/** Every episode title the series page lists so far, by episode number (one request). */
 export async function fetchTitles(seriesKey) {
   const text = await wikitext(`Series ${seriesKey}`), out = {};
   for (let ep = 1; ep <= 10; ep++) { const page = episodePage(text, ep); if (page) out[ep] = titleCase(page); }
@@ -95,9 +83,7 @@ export function parseEpisode(text) {
       continue;
     }
     if (!task) continue;
-    // A row under a task: its cells fill the columns not still covered by a
-    // rowspan from above. A bonus row ("Bonus: most unexpected thing…") is
-    // added on; any other is a part of a split task.
+    // Sub-rows fill columns not covered by a rowspan; a Bonus row is added, any other is a split-task part
     const bonus0 = cover[0] === 0, vals = Array(N).fill(null), free = cover.map((c, j) => (c > 0 ? -1 : j)).filter((j) => j >= 0);
     free.forEach((j, k) => { if (j > 0 && cells[k] != null) vals[j - 1] = score(cells[k]); });
     cover = cover.map((c) => Math.max(0, c - 1));
@@ -106,8 +92,7 @@ export function parseEpisode(text) {
     if (!bonus) task.parts.push(vals);
     else task.scores = task.scores.map((v, i) => (typeof vals[i] === "number" ? (typeof v === "number" ? v : 0) + vals[i] : v));
   }
-  // A split task: each contestant scores in the part they did (the parent row
-  // is usually 0s, or the total), so take the larger of the two.
+  // Split task: the larger of the parent row and the parts' sum
   for (const t of tasks) {
     if (t.parts.length) t.scores = t.scores.map((v, i) => {
       const got = t.parts.map((p) => p[i]).filter((x) => typeof x === "number");
@@ -142,9 +127,7 @@ export async function fetchEpisode(seriesKey, ep, cast) {
     off = cast.filter((c, i) => totals[col[i]] != null && out.reduce((a, t) => a + (typeof t.scores[i] === "number" ? t.scores[i] : 0), 0) !== totals[col[i]]);
     if (off.length) warnings.push(`The tasks don't add up to the wiki's total for ${off.map((c) => c.key).join(", ")}; check them`);
   }
-  // Looks finished: every score in, a total for everyone that the tasks add
-  // up to, and the closing live task (the scheduled sync waits for this, as
-  // the wiki's table fills in while the episode streams).
+  // Finished: every score, totals that add up, and the live task (the sync waits for this)
   const complete = !blank && !!totals && cast.every((c, i) => totals[col[i]] != null) && !off.length && out.some((t) => t.t === "L");
   return { page, title: titleCase(page), tasks: out, tiebreak: tiebreak == null ? "" : cast[col.indexOf(tiebreak)]?.key || "", warnings, complete };
 }

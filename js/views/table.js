@@ -1,54 +1,39 @@
-// Standings: a strip of weeks (Ep 1–10) over a swiper of weeks, like Episodes:
-// each slide an "Episode 4 Standings" headline and the leaders, then both
-// boards side by side as they stood after that week: each row is a place, the
-// Show's player on the left and the League's on the right. A week not yet
-// scored is "Episode 5 Picks": the boards as they stand now. Tapping a player
-// opens their card under the row.
+// Standings: week strip over a swiper of weeks; each slide a hero and the two boards (Show | League per place row).
 import { esc, listing, tier, ord, fmtDay, fmtWhen, smooth, niceStep, state } from "../ui.js";
 import { pickChooser } from "../edit.js";
 import { barsCard, median } from "./cast.js";
 import { raceSvg } from "./episodes.js";
 import { pickStatus } from "../league.js";
 
-/** The week on show: state.wk, or the latest scored week. */
 export const stWeek = (d) => Math.min(Math.max(1, state.wk || d.weeksScored), d.episodes.length);
 
-/**
- * Each player as the table stood after week w: totals and ranks (from
- * league.js's per-week history).
- */
+// Totals and ranks after week w
 export function atWeek(d, w) {
-  // Weeks not yet scored: the table as it stands now.
   if (w > d.weeksScored) return d.weeksScored ? atWeek(d, d.weeksScored) : fantasyRanks(d.players);
   return fantasyRanks(d.players.map((p) => {
     const h = p.history[w - 1];
     return { ...p, show: h.show, league: h.league, showRank: h.showRank, leagueRank: h.leagueRank };
   }));
 }
-/** Fantasy mode (flip.js): low scores win, so the ranks run from the lowest (ties share, "1-2-2-4"). */
+// Fantasy: ranks from the lowest (ties share)
 function fantasyRanks(rows) {
   if (!state.fantasy) return rows;
   const rank = (p, k) => 1 + rows.filter((q) => q[k] < p[k]).length;
   return rows.map((p) => ({ ...p, showRank: rank(p, "show"), leagueRank: rank(p, "league") }));
 }
 
-/** Both boards at week w, each best first (then by rank and name): highest first, or in fantasy mode lowest. */
 export function boards(d, w) {
   const rows = atWeek(d, w), dir = state.fantasy ? -1 : 1;
   const by = (k) => [...rows].sort((a, b) => dir * (b[k] - a[k]) || a[`${k}Rank`] - b[`${k}Rank`] || a.name.localeCompare(b.name));
   return { show: by("show"), league: by("league") };
 }
 
-/** Everyone on the best score of a board (ties share the lead): the top, or in fantasy mode the bottom. */
 function leaders(rows, key) {
   const vals = rows.map((p) => p[key]), best = state.fantasy ? Math.min(...vals) : Math.max(...vals);
   return rows.filter((p) => p[key] === best).map((p) => p.name);
 }
 
-/** "How scoring works", under the leaders line, opens both of these. */
-// The league's words, unchanged, in their order: the title, the rule, the
-// range. The crown and trophy are drawn in the same gold line style as the
-// task icons (16px grid), not emoji.
+// How scoring works: the league's exact words (don't change). Icons in the task icons' line style.
 const HOW_ICONS = {
   crown: "M3.5 11 2.5 5l3 3L8 3l2.5 5 3-3-1 6z M3.5 13.5h9",
   trophy: "M5 2.5h6v4a3 3 0 0 1-6 0z M5 3.75H3.25a1.9 1.9 0 0 0 2.1 3.1 M11 3.75h1.75a1.9 1.9 0 0 1-2.1 3.1 M8 9.5V12 M5.5 13.5h5 M6.5 12h3",
@@ -57,7 +42,6 @@ const TERMS = [
   { icon: "crown", name: "Show", rule: ["The player with the ", "most points", " at the end of the series wins, regardless of episode placements."], range: "0–25", unit: "pts per episode" },
   { icon: "trophy", name: "League", rule: ["The player with the ", "best episode placements", " throughout the series wins, regardless of points."], range: "1–5", unit: "pts per episode" },
 ];
-// In fantasy mode the dream turns the key phrases round (flip.js).
 const FANTASY_TERMS = [["most points", "fewest points"], ["best episode placements", "worst episode placements"]];
 const terms = () => (state.fantasy ? TERMS.map((t, i) => ({ ...t, rule: [t.rule[0], FANTASY_TERMS[i][1], t.rule[2]] })) : TERMS);
 const howCard = (t) => `<div class="card how-card ${t.name.toLowerCase()}">
@@ -69,7 +53,6 @@ const howCard = (t) => `<div class="card how-card ${t.name.toLowerCase()}">
     <p class="how-range"><b>${esc(t.range)}</b><span>${esc(t.unit)}</span></p>
   </div>`;
 
-/** "Riley leads The Show   Jamie leads The League" ("wins" once the series is over). */
 function leaderLine(d, rows, w) {
   const show = leaders(rows, "show"), league = leaders(rows, "league"), final = d.complete && w === d.episodes.length;
   const verb = (names) => (final ? (names.length > 1 ? "win" : "wins") : (names.length > 1 ? "lead" : "leads"));
@@ -79,28 +62,15 @@ function leaderLine(d, rows, w) {
   return `<span>${who(show)} ${verb(show)} ${S}</span><span>${who(league)} ${verb(league)} ${L}</span>`;
 }
 
-/**
- * The hero: "Episode 4 Standings" and who leads each board; for a week not yet
- * scored, just "Episode 5" and when it airs.
- */
 export function standingsHero(d, w = stWeek(d)) {
   const how = `<button type="button" class="st-how" aria-expanded="${state.how}" aria-controls="st-explain-${w}">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button>
     <div class="st-explain" id="st-explain-${w}"><div><div class="how-grid">${terms().map(howCard).join("")}</div><button type="button" class="st-wl" aria-controls="welcome">New here? <span>Read the welcome</span></button></div></div>`;
-  // The kicker, like the episode head's: the series and that week's episode.
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${esc(fmtDay.format(d.episodes[w - 1].air))}</div>`;
   if (w > d.weeksScored) return `${kicker}<h2 class="ep-title"><span class="ep-w"><span class="ep-t">Episode ${w}</span></span></h2><div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</div>${how}`;
   return `${kicker}<h2 class="ep-title"><span class="ep-w"><span class="ep-t">Episode ${w} Standings</span></span></h2><p class="st-leaders">${leaderLine(d, atWeek(d, w), w)}</p>${how}`;
 }
 
-/**
- * The welcome card (on request: the host's welcome message, in the app): how
- * the league works and what's where. It sits at the top of the Standings, over
- * the weeks (#welcome), on a device's first visit (in place of How scoring
- * works opening by itself) until it's closed (its ✕, or Close at the end);
- * a quiet line under the How scoring works cards brings it back (on request,
- * somewhere subtler than the button it first had beside How scoring works). Static text, the host's words lightly
- * adapted for the page.
- */
+// Welcome card: the host's words, lightly adapted; keep their jokes.
 const TAB_ICONS = {
   Standings: '<rect x="2" y="14" width="7" height="11" rx="1" opacity=".7"/><rect x="10.5" y="8" width="7" height="17" rx="1"/><rect x="19" y="18" width="7" height="7" rx="1" opacity=".5"/><path d="M12 6l2-3 2 3 2-2-.5 4h-7L10 4Z"/>',
   Episodes: '<rect x="4" y="10" width="20" height="14" rx="2" opacity=".35"/><rect x="4" y="5.5" width="20" height="5" rx="1.5"/><path d="M12 14.5v7l6-3.5Z"/>',
@@ -152,15 +122,10 @@ export function welcomeCard() {
     </section>`;
 }
 
-/** Ep 1–10, like the episode strip; weeks not yet scored are faint. */
 export const weekTabs = (d) => d.episodes.map(({ ep }) =>
   `<button class="strip-tab${ep > d.weeksScored ? " tbd" : ""}${ep === d.weeksScored + 1 ? " next" : ""}" data-slide="${ep - 1}"><span>Ep ${ep}</span></button>`).join("");
 
-/**
- * One slide per week (in #st-body): that week's hero, then both boards. A week not
- * yet scored has no boards (on request: they only repeated the last scored week),
- * except in edit mode, where its opened halves take that week's picks.
- */
+// Unscored weeks have no boards except in edit mode (picks entered ahead)
 export function standingsSlides(d) {
   return d.episodes.map(({ ep: w }) => `
     <section class="slide st-slide" data-week="${w}">
@@ -169,12 +134,7 @@ export function standingsSlides(d) {
     </section>`).join("");
 }
 
-/**
- * Under the board, a contestant's quote, small and upside down, picked at
- * random for each visit (on request). It's the secret tap: on an iPhone or
- * iPad, tapping it asks for the tilt (askTilt in flip.js, from main.js), so
- * whoever is curious stumbles on the upside-down mode. Unmarked.
- */
+// The secret tap (fantasy Easter egg, unmarked): asks for the tilt on iOS.
 const QUOTES = [
   ["I changed it because I didn't like the truth.", "Paul Chowdhry, S3"],
   ["I stand by the point, even if the facts don’t.", "Hugh Dennis, S4"],
@@ -183,16 +143,9 @@ const QUOTES = [
   ["That’s just how I see the world.", "Lucy Beaumont, S16"],
 ];
 const [said, by] = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-/** The quote; on a desktop one copy (with class dq) sits under every tab instead (main.js). */
 export const QUOTE = `<button class="st-quote" type="button"><q>${esc(said)}</q> <cite>— ${esc(by)}</cite></button>`;
 
-/**
- * The board: its head, then either the rows or, while a head is pressed
- * (state.stView), that board's race chart above them, pushing them down
- * (boardChart): a card inset like an opened row's (the player race card's
- * frame, head and gridlines). The chart is drawn at its measured width, so
- * main.js fills it in (syncBoards).
- */
+// Board: head, optional race chart (state.stView; drawn at measured width by syncBoards), rows
 function board(d, w) {
   const k = chartable(d, w) ? state.stView : null;
   return `<div class="card board"${k ? ` data-chart="${k}"` : ""}>
@@ -204,24 +157,14 @@ function board(d, w) {
         <div class="rows">${standingsRows(d, w)}</div>
       </div>`;
 }
-/** Only a scored week has a race to draw (an unscored one has a board only in edit mode). */
 export const chartable = (d, w) => w <= d.weeksScored;
-/** A head: the board's crown or trophy and name; a button that swaps the rows for its race chart, and back. */
 export function boardHead(d, w, b, k) {
   const icon = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="${HOW_ICONS[b === "show" ? "crown" : "trophy"]}"/></svg>`;
   if (!chartable(d, w)) return `<span class="st-side ${b}">${icon}${BOARD[b]}</span>`;
   return `<button type="button" class="st-side ${b}${k === b ? " on" : ""}" data-board="${b}" aria-pressed="${k === b}" aria-label="${BOARD[b]}: ${k === b ? "show the standings" : "show the race so far"}">${icon}${BOARD[b]}</button>`;
 }
 
-/**
- * Each player's colour in the race charts (on request: "more colorful"): the
- * same in both boards and every week, so a player can be followed from one to
- * the other. The hues are spaced evenly round the colour wheel (24° apart for
- * 15 players), dealt out in alphabetical order by a stride of about 0.38 of
- * the way round (so names next to each other land far apart), and hues next
- * to each other on the wheel alternate light and dark. OKLCH keeps every hue
- * equally vivid on the dark card.
- */
+// Per-player colours: OKLCH hues 24° apart, dealt alphabetically by a ~0.38 stride, alternating light and dark; same on both boards
 const playerColor = (d) => {
   const order = d.players.map((q) => q.name).sort((a, b) => a.localeCompare(b)), n = order.length;
   const gcd = (a, b) => (b ? gcd(b, a % b) : a);
@@ -233,46 +176,24 @@ const playerColor = (d) => {
   };
 };
 
-/**
- * A board's race (on request: the Episodes tab's "The race so far", for every
- * player), shown in place of the rows while its head is pressed: each
- * player's gap to that board's leader after every scored week, with a dot at
- * the week on show. Each end label sits level with its line (exact: no
- * hairlines; tied players share a row, and the chart is as tall as that
- * takes): the shortest prefix that tells every player apart, then the gap.
- * Each player has their own colour (playerColor), as each contestant has on
- * Episodes; tap a line to follow it.
- */
+// Board race: gap to the leader per week up to w; end labels level with lines (exact), shortest unique prefixes
 export function boardChart(d, w, k, width) {
   const names = d.players.map((q) => q.name), by = Object.fromEntries(d.players.map((q) => [q.name, q]));
   let n = 3;
   while (n < 8 && new Set(names.map((m) => m.slice(0, n).toUpperCase())).size < names.length) n++;
-  // The lines end at the week on show (on request).
   const opts = (b) => ({ names, cur: w, end: w, last: d.episodes.length, total: (m, e) => by[m].history[e - 1][b],
     color: playerColor(d), label: (m) => m.slice(0, n), unit: `${BOARD[b]} points`, exact: true, width });
-  // The Show's and League's charts are the same height each week (the taller's).
+  // Both boards' charts the same height (the taller's)
   const minPlot = Math.max(...["show", "league"].map((b) => raceSvg({ ...opts(b), measure: true })));
   const svg = raceSvg({ ...opts(k), minPlot });
-  // The legend reads like the player race card's: "4 behind the leader" for
-  // the player being followed (main.js), "points behind the leader" until then.
   return `<div class="card-head"><span><b class="${k}">${BOARD[k]}</b> race so far</span><span class="legend st-behind">points behind the leader</span></div>${svg}<p class="rc-cap"></p>`;
 }
 
-/**
- * One row per place: the place number in a fixed column at the left (it never
- * moves or changes), then the Show's player at that place and
- * the League's, each as name then points. Each half is a button that opens that player's
- * card (rowMore), keyed by player (data-p).
- *
- * Each half is also a gap meter (on request): a wash in the board's colour
- * behind it, filled in proportion to the player's points against the
- * board's leader (--m).
- */
+// Place rows: fixed place column, then Show and League halves (buttons, data-p); --m is the gap meter
 export function standingsRows(d, w = stWeek(d)) {
   const { show, league } = boards(d, w);
   const top = { show: Math.max(0, ...show.map((p) => p.show)), league: Math.max(0, ...league.map((p) => p.league)) };
   const low = { show: Math.min(...show.map((p) => p.show)), league: Math.min(...league.map((p) => p.league)) };
-  // The gap meter: the share of the leader's points, or in fantasy mode how far below the top (the leader, at the bottom, full).
   const meter = (p, k) => (state.fantasy ? (top[k] > low[k] ? (top[k] - p[k]) / (top[k] - low[k]) : 1) : top[k] ? p[k] / top[k] : 0);
   const half = (p, side) => {
     const k = side === "show" ? "show" : "league", rank = p[`${k}Rank`];
@@ -291,14 +212,7 @@ export function standingsRows(d, w = stWeek(d)) {
   }).join("");
 }
 
-/**
- * The pick-every-contestant rule (league.js pickStatus), as it stood after
- * the week on show: "Must pick" once every poll left is needed to fit in the
- * contestants a player hasn't picked, "Can't fit all" once they can't all
- * fit, "Never picked" once the series is over. Only scored weeks count, so
- * picks made ahead can still change. Shown in red at the top of an opened
- * row (on request; it was first under the name in the row itself).
- */
+// Pick rule (pickStatus) after week w, scored weeks only; red line atop an opened row
 const MUST = { must: "Must pick", cannot: "Can't fit all", never: "Never picked" };
 function mustLine(d, p, w) {
   const known = Math.min(w, d.weeksScored);
@@ -306,7 +220,6 @@ function mustLine(d, p, w) {
   return st ? `<p class="xp-must">${MUST[st.kind]}: ${esc(listing(st.needed))}</p>` : "";
 }
 
-/** What an opened half shows: the player's points or race card (their pick chooser in edit mode), under any pick-rule warning. */
 export function rowMore(d, name, side, w = stWeek(d)) {
   const p = atWeek(d, w).find((x) => x.name === name);
   if (!p) return "";
@@ -316,18 +229,7 @@ export function rowMore(d, name, side, w = stWeek(d)) {
   return `<div class="xp${must ? " warned" : ""}">${must}${state.xpView === "race" ? raceCard(d, p, w, k) : pointsCard(d, p, w, k)}</div>`;
 }
 
-/**
- * An opened half: the Cast tab's Points per episode card, for the player's
- * picks on the opened board ("Show points per episode" or "League points per
- * episode"). Each bar is the points their pick earned that episode on that
- * board (Show: the pick's score, on the Cast tab's scale; League: 5 to 1 by
- * the pick's place, out of 5), in the pick's colour, a gold number for a pick
- * that won, the pick's first three letters under it above the episode
- * number, and the median of every player's weekly points on that board.
- * Every week is shown, and every week but the one on show is faded (dim):
- * scored ones with their bars, later ones with just the picks already made.
- * The median is of every scored week.
- */
+// Opened half's bars: Cast's Points per episode for the player's picks on that board; other weeks dimmed
 function pointsCard(d, p, w, k) {
   const upTo = Math.min(w, d.weeksScored);
   const max = k === "show" ? Math.max(1, ...d.contestants.flatMap((c) => c.eps.slice(0, d.weeksScored))) : 5;
@@ -337,34 +239,18 @@ function pointsCard(d, p, w, k) {
     if (!x) return null;
     const dim = ep !== w, color = x.pick ? d.cast[x.pick].color : "var(--t4)", tag = x.pick ? x.pick.slice(0, 3) : null;
     if (!x.scored) return { tbd: true, dim, color: x.pick && color, tag };
-    // A pick that won is gold; in fantasy mode, a pick that came last.
     return { v: x.pick ? x[k] : 0, won: state.fantasy ? !!x.pick && lastIn(d, ep, x.pick) : !!x.won, dim, color, tag: tag || "–" };
   };
   return barsCard(d, at, max, median(all), `var(--${k}-hi)`, swapTitle(k, "points per episode", "race"));
 }
 
 const BOARD = { show: "Show", league: "League" };
-/** Did contestant c come last in episode ep (the lowest score, ties included)? Fantasy mode's winners. */
 export const lastIn = (d, ep, c) => d.EPS[c][ep] === Math.min(...d.names.map((n) => d.EPS[n][ep]));
-/** The swap icon, as on the series chip. */
 const SWAP = `<svg class="swap" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 4h8M7 1.5 9.5 4 7 6.5M10.5 8h-8M5 5.5 2.5 8 5 10.5"/></svg>`;
-/**
- * An opened half's card title is also its switch (on request): tapping it
- * flips the card between Points per episode and The race so far, with the
- * series chip's swap icon to say so. The choice holds for every row opened
- * after it (state.xpView), so players can be compared in the same view.
- * The board's name is in its colour (Show red, League blue).
- */
+// Card title flips bars ↔ race (state.xpView)
 const swapTitle = (k, rest, to) => `<button class="xp-swap" type="button" data-xp="${to}" aria-label="${BOARD[k]} ${rest}: show the ${to === "race" ? "race so far" : "points per episode"} instead"><span><b class="${k}">${BOARD[k]}</b> ${rest}</span>${SWAP}</button>`;
 
-/**
- * An opened half's other card: the Episodes tab's "The race so far", for
- * that board: every player's gap to the board's leader, only the opened
- * player's line highlighted (journey), and how far behind the leader they
- * are that week in the legend ("4 behind the leader").
- */
 function raceCard(d, p, w, k) {
-  // In fantasy mode the leader is the lowest, and "behind" is how many more points.
   const upTo = Math.min(w, d.weeksScored), sgn = state.fantasy ? -1 : 1, pts = (q) => sgn * q.history[upTo - 1][k];
   const behind = upTo ? Math.max(...d.players.map(pts)) - pts(p) : null;
   return `<div class="card jr-card">
@@ -373,26 +259,11 @@ function raceCard(d, p, w, k) {
     </div>`;
 }
 
-
-
-/**
- * An opened half: the race chart from the Episodes tab ("The race so far"),
- * for the players on the opened board, across the full width of the row.
- * Each player's gap to the board's leader in points after every episode: the
- * leader runs flat along the top, everyone else below, over the race chart's
- * gridlines (tidy steps from niceStep, none at 0), smoothed the same way
- * (`smooth`, monotone). Only the opened player is highlighted: their line in
- * the board's colour; every other player is a very thin, faint line. No line
- * labels. The x axis runs episode 1 to 10 edge to edge (this week in gold,
- * episodes not yet scored faint). The plot is stretched to the row (SVG with
- * preserveAspectRatio none and non-scaling strokes); the gridlines and axis
- * are HTML so they never stretch. The lines end at the week on show (on
- * request), with a dot on the opened player's line there.
- */
+// Opened half's race: every player's gap to the leader, only this player highlighted; SVG stretched, gridlines and axis in HTML
 function journey(d, p, side, w) {
-  const k = side, upTo = Math.min(w, d.weeksScored), end = upTo, last = d.episodes.length; // the lines end at the week on show
+  const k = side, upTo = Math.min(w, d.weeksScored), end = upTo, last = d.episodes.length;
   const eps = Array.from({ length: end }, (_, i) => i + 1);
-  // In fantasy mode the leader is the lowest: the race is run on the points turned negative.
+  // Fantasy: run on the totals turned negative
   const shown = (q, e) => q.history[e - 1][k], total = state.fantasy ? (q, e) => -shown(q, e) : shown;
   const best = (e) => Math.max(...d.players.map((q) => total(q, e)));
   const gap = (q, e) => total(q, e) - best(e);
@@ -404,8 +275,7 @@ function journey(d, p, side, w) {
   const others = d.players.filter((q) => q.name !== p.name);
   const svg = (cls, paths) => `<svg class="jr-lines ${cls}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>`;
   const lines = end > 1 ? svg("jr-others", others.map((q) => `<path d="${smooth(pts(q))}"/>`).join("")) + svg("jr-me", `<path d="${smooth(pts(p))}"/>`)
-      + `<i class="jr-dot me" style="--x:${f(x(upTo))}%;--y:${f(y(gap(p, upTo)))}%"></i>` // the week on show
-    // Episode 1, with no lines yet, keeps dots (as the race chart does).
+      + `<i class="jr-dot me" style="--x:${f(x(upTo))}%;--y:${f(y(gap(p, upTo)))}%"></i>`
     : end ? others.map((q) => `<i class="jr-dot" style="--x:0%;--y:${f(y(gap(q, 1)))}%"></i>`).join("") + `<i class="jr-dot me" style="--x:0%;--y:${f(y(gap(p, 1)))}%"></i>` : "";
   const g = upTo ? gap(p, upTo) : 0;
   const axis = d.episodes.map(({ ep }) => `<span class="${ep === upTo ? "now" : ep > end ? "later" : ""}" style="--x:${f(x(ep))}%">${ep}</span>`).join("");

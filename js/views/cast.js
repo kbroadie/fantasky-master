@@ -1,15 +1,11 @@
-// Cast: a name strip (in standings order) above swipeable contestant slides.
+// Cast: name strip (standings order) over contestant slides.
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
 
-/**
- * Contestants by series total, best first. In fantasy mode (flip.js) low
- * scores win, so the lowest total is first: the rank runs from the bottom.
- */
+// Fantasy: lowest total first
 export const castOrder = (d) => [...d.contestants].sort((a, b) => rankOf(d, a) - rankOf(d, b) || a.key.localeCompare(b.key));
 const rankOf = (d, c) => (state.fantasy ? 1 + d.contestants.filter((o) => o.total < c.total).length : c.rank);
-/** Did c come last in episode ep (fantasy mode's winners)? */
 const lastIn = (d, ep, c) => c.eps[ep - 1] === Math.min(...d.contestants.map((o) => o.eps[ep - 1]));
 
 export const castTabs = (d) => castOrder(d).map((c, i) => `<button class="strip-tab" data-slide="${i}"><span>${esc(c.key)}</span></button>`).join("");
@@ -17,8 +13,6 @@ export const castTabs = (d) => castOrder(d).map((c, i) => `<button class="strip-
 export { median };
 
 export function castSlides(d) {
-  // One scale for every contestant, so bars compare across slides, with the
-  // series median of every contestant's episode scores as a reference line.
   const scores = d.contestants.flatMap((c) => c.eps.slice(0, d.weeksScored));
   const max = Math.max(1, ...scores);
   return castOrder(d).map((c) => `<section class="slide">${slide(d, c, max, median(scores))}</section>`).join("");
@@ -30,23 +24,13 @@ function median(xs) {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
-/**
- * The Points per episode card: one bar per episode on one scale (max), each
- * exactly its score over the max (--f); the number sits above it and
- * the episode number below, outside the plot, so they never squeeze the bar.
- * `at(ep)` gives { v, won, color?, tag? } for a scored episode, or null for
- * one not yet scored (a bar may carry its own colour and a label under it,
- * above the episode number: a player's pick that week).
- * The series median is a dashed line, keyed in the head. A win's number is
- * gold; there are no crowns (removed on request).
- */
+// Points per episode bars, one scale (max), --f per bar; number above, episode below, outside the plot. at(ep) → {v, won, color?, tag?} or null. Shared with Standings' opened rows.
 export function barsCard(d, at, max, med, color, title = "Points per episode") { // title: text, or a head element (a player's switch)
   const f = (v) => (v / max).toFixed(4);
   let tagged = false;
   const bars = d.episodes.map((e) => {
     const x = at(e.ep);
     if (x?.tag) tagged = true;
-    // Not scored yet (or after the week on show): no bar, but a pick already made shows its letters.
     if (!x || x.tbd) return `<div class="bar tbd${x?.dim ? " dim" : ""}"${x?.color ? ` style="--c:${x.color}"` : ""}><i></i>${x?.tag ? `<em>${esc(x.tag)}</em>` : ""}<small>${e.ep}</small></div>`;
     return `<div class="bar${x.won ? " won" : ""}${x.dim ? " dim" : ""}" style="--f:${f(x.v)}${x.color ? `;--c:${x.color}` : ""}"><i></i><b>${x.v}</b>${x.tag ? `<em>${esc(x.tag)}</em>` : ""}<small>${e.ep}</small></div>`;
   }).join("");
@@ -78,12 +62,9 @@ function slide(d, c, max, med) {
     ${profile(c)}`;
 }
 
-// ── All-time records and fact file (alltime.js) ──────────────────────────────
-
 const statsRow = (c) => statsFor(state.allTime, state.key, c.full);
 
-/** Badges for stats where this contestant is in Taskmaster's all-time top 3.
- *  Finished series only: four episodes are too few to rank against a whole run. */
+// All-time top 3 badges; finished series only
 function records(d, c) {
   if (d.weeksScored < d.episodes.length) return "";
   const badges = badgesFor(state.allTime, statsRow(c));
@@ -95,9 +76,7 @@ function records(d, c) {
     </div>`;
 }
 
-/** Who they are: a short bio and personal facts. Performance lives elsewhere.
- *  With a group photo, their face sits behind the card, offset to the right,
- *  and the bio narrows to the left of it. */
+// Profile: who they are, never how they're doing; face behind the card, bio beside it
 function profile(c) {
   const facts = factsFor(statsRow(c));
   if (!c.bio && !facts.length) return "";
@@ -112,13 +91,7 @@ function profile(c) {
     </div>`;
 }
 
-// ── Task heat strip ─────────────────────────────────────────────────────────
-// Every task of the series as a square in the contestant's colour, stronger
-// for a higher score (0 is an empty outline, a DQ a red cross, and a type
-// with no task that episode just a dash): one row per task type, one
-// column per episode (tasks of the same type in an episode share the slot),
-// the type's average at the end. Tap a slot (the whole episode's column in a
-// row, a far bigger target than a square) to read its tasks in the caption.
+// Every task heat strip: rows by type, columns by episode; 0 outline, DQ cross, n/a a dash; tap a slot for its tasks.
 
 const HEAT_TYPES = ["P", "F", "T", "L"];
 
@@ -135,7 +108,6 @@ function heatStrip(d, c) {
     const all = byType[k], avg = all.reduce((a, x) => a + x.v, 0) / all.length;
     const slots = eps.map((e) => {
       const here = all.filter((x) => x.ep === e);
-      // No task of this type that episode: n/a, a dash rather than a square.
       if (!here.length) return e > d.weeksScored ? `<span class="hs-slot tbd"></span>` : `<span class="hs-slot na" title="No ${TASK_NAME[k].toLowerCase()} task"></span>`;
       const say = `Ep ${e} · ${TASK_NAME[k]} · ${here.map((x) => `${x.name}: ${x.dq ? "DQ" : x.v}`).join(" · ")}`;
       const cells = here.map((x) => `<i class="hs-cell${x.dq ? " dq" : ""}" style="--v:${x.v}"></i>`).join("");
@@ -153,19 +125,9 @@ function heatStrip(d, c) {
     </div>`;
 }
 
-// ── Performance radar ───────────────────────────────────────────────────────
-// Points per episode from Prize, Filmed and Live tasks (team tasks aren't
-// counted), as z-scores against every contestant in Taskmaster history
-// (state.stats, from the all-time stats; the league's series if those are
-// missing). The scale runs from −3σ at the centre to +3σ at the edge (the
-// other way round in fantasy mode),
-// with a hairline ring at every whole σ and ticks where they cross the axes;
-// the middle ring (dashed) is the all-series average. With ten or so
-// contestants no z-score can pass ±3, so nothing is clipped in practice.
-// Only the selected contestant is drawn; each axis label carries its z-score.
+// Radar: Prize/Filmed/Live points per episode as z-scores vs all-time contestants (no team tasks); −3σ centre to +3σ edge.
 
 const KINDS = [["P", "Prize"], ["F", "Filmed"], ["L", "Live"]];
-/** A z-score to two decimals with a proper sign: "+2.48", "−1.70", "0.00". */
 const zText = (v) => (Math.abs(v) < 0.005 ? "0.00" : `${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}`);
 const Z = 3;
 const SIGMAS = [-2, -1, 0, 1, 2];
@@ -174,9 +136,7 @@ function radar(d, c) {
   const n = KINDS.length, R = 80, cx = 170, cy = 136;
   const eps = Math.max(1, d.weeksScored), st = state.stats;
   const z = (k) => (st[k].sd ? (c.ty[k] / eps - st[k].mean) / st[k].sd : 0);
-  // In fantasy mode (flip.js) low scores are good, so the scale is turned inside
-  // out: +3σ at the centre, −3σ at the edge (on request: the values as they
-  // are, the centre positive). The rings are symmetric, so only the shape moves.
+  // Fantasy: scale inside out (+3σ centre), values unchanged
   const r = (k) => Math.min(1, Math.max(0, ((state.fantasy ? -z(k) : z(k)) + Z) / (2 * Z)));
   const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
   const at = (i, f) => [cx + Math.cos(ang(i)) * R * f, cy + Math.sin(ang(i)) * R * f];
@@ -189,10 +149,7 @@ function radar(d, c) {
     const [x, y] = at(i, f), a = ang(i) + Math.PI / 2, dx = Math.cos(a) * 3, dy = Math.sin(a) * 3;
     return `<line class="rd-tick" x1="${f1(x - dx)}" y1="${f1(y - dy)}" x2="${f1(x + dx)}" y2="${f1(y + dy)}"/>`;
   }).join("")).join("");
-  // One centred group per axis, set clear of the circle: the z-score as the
-  // headline, with the icon and name as a quiet caption underneath. DM Mono
-  // is monospaced, so the caption's width is known (11px × 0.66em per
-  // character) and the icon + word can be centred as a unit.
+  // DM Mono's width is known (0.66em a char), so icon + word centre as a unit
   const labels = KINDS.map(([k, label], i) => {
     const top = i === 0, side = Math.sign(Math.round(Math.cos(ang(i)) * 100));
     const gx = top ? cx : cx + side * (R + 34), vy = top ? cy - R - 30 : cy + R * 0.5 + 6;

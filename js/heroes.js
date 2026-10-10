@@ -1,12 +1,5 @@
-// Presentation only: each contestant's profile photo (a WebP in img/, cropped
-// to the part the Profile card can show), with where their eyes are in it
-// (fractions of the crop's width and height) and the size of their head
-// (fraction of the crop's width: the geometric mean of eye-line-to-chin and
-// cheek-to-cheek, measured on the original). The Cast tab puts the face behind each Profile, scaling the
-// photo so every head comes out the same size. (Pupil distance was too noisy a yardstick: glasses and head turns
-// made some heads visibly bigger than others.) League data lives in the CSV.
+// Profile faces: each photo is cropped to what the Profile card can show; eye and head are fractions of the crop (head: geometric mean of eye-to-chin and cheek-to-cheek), so every head renders the same size.
 
-/** A contestant's face: in their own hero photo or the series' group photo; null if neither. */
 export function faceFor(series, key) {
   const g = GROUP[series], face = g?.faces[key];
   return face ? { src: face.src || g.src, ratio: face.ratio || g.ratio, ex: face.eye[0], ey: face.eye[1], head: face.head } : null;
@@ -25,9 +18,7 @@ const GROUP = {
     },
   },
   22: {
-    // Each face is cropped from the cast's group photo (5246 × 3936). The whole
-    // photo, scaled up so the head is --face across, made a ~3,200px-wide image
-    // of 20.6 megapixels, which iPhone Safari wouldn't draw.
+    // Cropped from the group photo: drawn whole it was ~3,200px wide and iPhone Safari wouldn't draw it
     faces: {
       Chloe: { src: "img/s22/chloe.webp", ratio: 981 / 870, eye: [0.7269, 0.2588], head: 0.1380 },
       Richard: { src: "img/s22/richard.webp", ratio: 970 / 1034, eye: [0.7255, 0.2134], head: 0.1368 },
