@@ -1149,6 +1149,12 @@ html.fz #foot.run .dk { animation: fz-bob 5s infinite; }
 @keyframes vt-tilt-in { 0%, 50% { transform: translateY(100%); } 100% { transform: none; } }
 @keyframes vt-vertigo-out { 55% { opacity: 1; } 100% { opacity: 0; transform: scale(1.7); filter: blur(3px); } }
 @keyframes vt-vertigo-in { 0%, 40% { opacity: 0; transform: scale(.6); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+/* Slam pictures the bar open, not compacted by the scroll, so it comes down whole (flip.js) */
+html.vt-open .topbar::before, html.vt-open .hdr::before, html.vt-open .hdr::after,
+html.vt-open :is(.brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab svg, .tab span, .page > .strip, .page > .strip .strip-tab > span) { animation: none !important; }
+html.vt-open :is(.topbar, .page > .strip) { --p: 0 !important; }
+html.vt-glass:not(.fz) .topbar::before { background: #070507; }
+html.vt-glass.fz .topbar::before { background: linear-gradient(180deg, #3a0c60, #260844); }
 /* Slam brings the bar back in its last picture, not after it (flip.js) */
 html[data-vt="slam"] :is(.topbar, .page > .strip) { transition: none; }
 /* Slam's rows flip over as its shockwave reaches them (the rest of Slam is written by flip.js, from where things are) */

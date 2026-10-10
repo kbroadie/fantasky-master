@@ -42,7 +42,7 @@ function set(show, anchor, tap) {
   vt.finished.finally(() => {
     delete html.dataset.vt; html.classList.remove("vt-in");
     if (how === "turn") nameMovers(true);
-    if (how === "slam") slamNames("clear");
+    if (how === "slam") { slamNames("clear"); html.classList.remove("vt-open"); }
     if (subject) $(subject)?.style.removeProperty("view-transition-name");
   });
 }
@@ -82,11 +82,16 @@ function slamScroll() {
   const r = slamRows()[0]?.getBoundingClientRect();
   if (r && r.bottom > innerHeight - 24) scrollBy(0, r.bottom - innerHeight + 24);
 }
+// The bar is pictured open (styles.css, .vt-open), though hidden above the screen, so it slides down whole in its old
+// style as the page scrolls up (compact, its lower part was see-through), and with its glass near solid (.vt-glass:
+// a picture has no blur behind it, so the rows showed through); the colour behind is the old view's too
 function slamBefore() {
+  document.documentElement.classList.add("vt-open", "vt-glass");
   slamNames("old");
-  return { from: slamRows().at(-1).getBoundingClientRect(), y: scrollY };
+  return { from: slamRows().at(-1).getBoundingClientRect(), y: scrollY, bg: getComputedStyle(document.documentElement).getPropertyValue("--bg") };
 }
-function slamAfter({ from: o, y }) {
+function slamAfter({ from: o, y, bg }) {
+  document.documentElement.classList.remove("vt-glass"); // the new picture is the real bar, which the page ends on
   slamNames("new");
   const rows = slamRows(), n = rows[0].getBoundingClientRect(), dy = y - scrollY, move = travel(dy);
   const T = SLAM.lift + move + SLAM.drop, cx = n.left + n.width / 2, cy = n.top + n.height / 2;
@@ -98,7 +103,7 @@ function slamAfter({ from: o, y }) {
   const ps = (t) => `${((t / (T + 0.12)) * 100).toFixed(2)}%`;
   const L = SLAM.lift, M = L + move, ox = o.left + o.width / 2, oy = o.top + o.height / 2;
   const css = [`
-html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; transform-origin: ${ox}px ${oy}px; }
+html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; transform-origin: ${ox}px ${oy}px; background: ${bg}; }
 @keyframes vt-cam {
   0% { transform: none; animation-timing-function: ${E}; } ${pc(L)} { transform: scale(1.18); animation-timing-function: ${E}; }
   ${pc(M)}, ${pc(T)} { transform: none; } ${pc(T + 0.04)} { transform: translateY(8px); } ${pc(T + 0.09)} { transform: translateY(-5px); }
@@ -137,10 +142,10 @@ html[data-vt="slam"]::view-transition-new(vt-block-${i}) { animation: vt-wave-${
 @keyframes vt-wave-${i} { from { clip-path: circle(0 at ${x}px ${y}px); } to { clip-path: circle(${Math.ceil(far)}px at ${x}px ${y}px); } }
 @keyframes vt-hole-${i} { from { clip-path: ${hole(b, x, y, 0)}; } to { clip-path: ${hole(b, x, y, Math.ceil(far))}; } }`);
   });
-  // The bar and strip change colour as the wave reaches them
+  // The bar and strip come down with the page, and change colour as the wave reaches them
   for (const [sel, n] of [[".topbar", "vt-bar"], ["#st-tabs", "vt-strip"]]) {
     const b = $(sel).getBoundingClientRect(), d = at(Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy));
-    css.push(`html[data-vt="slam"]::view-transition-group(${n}) { z-index: 2; }
+    css.push(`html[data-vt="slam"]::view-transition-group(${n}) { z-index: 2; animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
 html[data-vt="slam"]::view-transition-old(${n}), html[data-vt="slam"]::view-transition-new(${n}) { animation-delay: ${d}s; animation-duration: .2s; }`);
   }
   stageCss.textContent += css.join("\n");
