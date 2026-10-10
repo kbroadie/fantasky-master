@@ -293,24 +293,15 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 
 /* Diagnostics (tools.js), switched on Moss's cards: a site card in the corner, the graphs drawn in its tokens */
 .fps-meter {
-  position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; width: 168px; height: 104px; pointer-events: none;
+  position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; width: 168px; height: 104px; cursor: grab; touch-action: none; /* draggable (tools.js) */
   border: 1px solid var(--b-gold); border-radius: 12px; background: linear-gradient(135deg, var(--s3), var(--s2)); box-shadow: 0 4px 14px rgba(0, 0, 0, .4);
 }
-.bench-btn { position: fixed; left: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
-.bench-t { width: 100%; margin: 12px 0 4px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
-.bench-t th { font: 500 11px var(--fm); color: var(--t3); text-transform: uppercase; text-align: right; padding: 0 0 6px 8px; }
-.bench-t th:first-child, .bench-t td:first-child { text-align: left; padding-left: 0; }
-.bench-t td { padding: 4px 0 4px 8px; text-align: right; border-top: 1px solid var(--b-dim); white-space: nowrap; }
-.bench-t td:first-child { white-space: normal; color: var(--t1); }
-.bench-t td small { display: block; font: 400 11px var(--fm); color: var(--t3); }
-.bench-t .ok td:not(:first-child) { color: var(--gold2); } .bench-t .meh td:not(:first-child) { color: var(--bronze); } .bench-t .bad td:not(:first-child) { color: var(--warn); }
-.bench-dlg { max-height: 85vh; overflow-y: auto; }
 
 /* ── Standings */
 /* Two boards side by side: fixed place column, then Show and League halves per row. Nothing sorts. */
 /* Tracks: --rk place strip, two halves padded --pad, points column --sc, --g gap; --pe (head padding) is 0. */
 /* The way into the fantasy Easter egg: a contestant's quote under every tab, small, faint and underlined; a tap switches it */
-#dq { padding: 4px var(--px) 0; }
+#dq { padding: 16px var(--px) 0; }
 .st-quote {
   display: block; margin: 2px auto 0; padding: 8px 16px; max-width: 34em; border: 0; background: none; color: var(--t4);
   font: 400 11px/1.45 var(--ff); text-align: center; text-wrap: balance;
@@ -370,8 +361,9 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .race .rc-name.rc-total.top { fill: var(--gold2); } /* the leader's total, gold as first place's points are on the board */
 
 /* Rows must not be compositing layers: iOS dropped their text */
-.pc { --head: 52px; position: relative; border-bottom: 1px solid var(--b-gold); background: linear-gradient(170deg, var(--s2), var(--s1)); }
-.pc.lead { background: linear-gradient(170deg, rgba(184, 128, 24, .10), var(--s1) 55%); }
+/* The row's gradient is the head's height, then plain --s1: sized to the whole row, an opened row stretched it and its head paled */
+.pc { --head: 52px; --rest: linear-gradient(var(--s1), var(--s1)) 0 var(--head) / 100% 100% no-repeat; position: relative; border-bottom: 1px solid var(--b-gold); background: linear-gradient(170deg, var(--s2), var(--s1)) 0 0 / 100% var(--head) no-repeat, var(--rest); }
+.pc.lead { background: linear-gradient(170deg, rgba(184, 128, 24, .10), var(--s1) 55%) 0 0 / 100% var(--head) no-repeat, var(--rest); }
 /* One baseline per row (box centring sat points 2px low) */
 .pc-head { display: grid; grid-template-columns: var(--rk) minmax(0, 1fr) minmax(0, 1fr); align-items: baseline; height: var(--head); padding-inline: var(--pe); }
 .pc-head, .pc-more { position: relative; z-index: 1; } /* over the place strip (.pc::after); the column rule is measured from the head */
@@ -889,11 +881,7 @@ html.fz .tab[aria-selected="true"] { color: #2a0845; }
 html.fz .tab[aria-selected="true"] span { font-weight: 500; }
 html.fz .kicker { color: var(--show-hi); }
 /* Words carry the rainbow and glow (.ep-t); sparkles outside, so they don't re-render a filter */
-html.fz .ep-title .ep-t {
-  background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent;
-  -webkit-box-decoration-break: clone; box-decoration-break: clone;
-  filter: drop-shadow(0 1px 0 rgba(42, 8, 69, .9)) drop-shadow(0 0 6px rgba(255, 90, 210, .3));
-}
+html.fz .ep-title .ep-t { color: var(--t1); text-shadow: 0 1px 0 rgba(42, 8, 69, .9), 0 0 6px rgba(255, 90, 210, .3); }
 /* Sparkles flank the whole title; each line centred (.ep-w sized by fitTitles) */
 html.fz .ep-title { display: flex; align-items: center; justify-content: center; }
 html.fz .ep-title .ep-w { min-width: 0; }
@@ -937,7 +925,6 @@ html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
 
 /* Dolphins' footer (fantasy): three nested boxes per dolphin (across, up/down, turn), transforms only; animates only on screen (.run) */
 .fz-foot { display: none; }
-html.fz #foot { display: none; }
 /* Clips only sideways (overflow-x: clip: no scroll box, no stacking context), so the rainbow can rise behind the table */
 html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top: 8px; overflow-x: clip; pointer-events: none; }
 .fz-waves { position: absolute; inset: 0; overflow: hidden; }
@@ -1019,10 +1006,22 @@ html.fz.scrolling :is(.dl i, .dl b, .dl svg, .fz-sea) { animation-play-state: pa
 .sw-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 1.25; color: var(--t1); }
 .sw-slide { grid-column: 1 / -1; display: grid; grid-template-columns: 7.5em minmax(0, 1fr) 3.4em; gap: 10px; }
 .sw-val { font: 500 12px var(--fm); color: var(--gold2); text-align: right; }
-.sw-range { width: 100%; height: 22px; margin: 0; accent-color: var(--gold2); }
+.sw-range { width: 100%; height: 22px; margin: 0; accent-color: var(--gold2); touch-action: pan-y; } /* a sideways drag moves the slider, not the swiper */
 .sw-reset { padding: 6px 10px; }
 /* Settings turned off on Moss's cards (switches.js) */
 html.no-fall #fz-fall, html.no-podium .fx, html.no-glint .fz-word::after, html.no-dolphins .dl { display: none; }
 html.no-sparkles .ep-title::before, html.no-sparkles .ep-title::after { content: none; }
 html.no-tabbow .tab-ind::before, html.no-dolphins .fz-sea, html.no-howlight .how-card, html.no-howlight .how-glint { animation: none !important; }
 html.no-howlight .how-glint { display: none; }
+/* In the dream the ducks float on the dolphins' sea: they drop onto it as it comes on screen (.run), then bob on the waves */
+html.fz #foot { position: relative; z-index: 1; height: 0; margin: 0; padding: 0; }
+html.fz .ducks { position: absolute; left: 0; right: 0; bottom: 26px; }
+html.fz .ducks::before, html.fz .ducks::after { display: none; }
+@media not (prefers-reduced-motion: reduce) {
+  html.fz #foot.run .dk { animation: fz-drop .8s cubic-bezier(.45, 0, .7, 1) var(--dd) both, fz-bob 1.6s ease-in-out calc(var(--dd) + .8s) infinite alternate; }
+  html.fz.scrolling #foot.run .dk { animation-play-state: paused; }
+}
+.dk:nth-child(1) { --dd: 0s; } .dk:nth-child(2) { --dd: .12s; } .dk:nth-child(3) { --dd: .24s; } .dk:nth-child(4) { --dd: .36s; }
+.dk:nth-child(5) { --dd: .48s; } .dk:nth-child(6) { --dd: .6s; } .dk:nth-child(7) { --dd: .72s; }
+@keyframes fz-drop { from { transform: translateY(-150px); } 72% { transform: translateY(5px); } 86% { transform: translateY(-3px); } to { transform: none; } }
+@keyframes fz-bob { from { translate: 0 -2px; } to { translate: 0 3px; } }
