@@ -104,26 +104,21 @@ export function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44
 
 /**
  * Runs the fall on a 2D context of a canvas w × h: start() draws it every
- * frame (or one still frame if reduced), stop() stops, hush(ms) draws at half
- * rate for a while (it moves on by the time passed, so it keeps its speed).
+ * frame (or one still frame if reduced), stop() stops.
  */
 export function runner(canvas, w, h, reduced) {
   canvas.width = w; canvas.height = h;
   const draw = streaks(canvas.getContext("2d"), w, h, 1, 1.3, Math.max(4, Math.round(7 * (w * h) / (390 * 844))), [26, 44], true);
   const raf = globalThis.requestAnimationFrame ? (f) => requestAnimationFrame(f) : (f) => setTimeout(() => f(performance.now()), 16);
   const unraf = globalThis.cancelAnimationFrame ? (id) => cancelAnimationFrame(id) : (id) => clearTimeout(id);
-  let id = 0, last = 0, odd = false, hushed = 0;
+  let id = 0, last = 0;
   const step = (now) => {
-    odd = !odd;
-    if (now >= hushed || odd || !last) {
-      draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
-      last = now;
-    }
+    draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
+    last = now;
     id = raf(step);
   };
   return {
     start() { if (reduced) draw(0); else if (!id) id = raf(step); },
     stop() { unraf(id); id = 0; last = 0; },
-    hush(ms) { hushed = performance.now() + ms; },
   };
 }

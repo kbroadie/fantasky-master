@@ -10,7 +10,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, askTilt, turned, toggleFantasy, DESKTOP, hush } from "./flip.js";
+import { initFlip, askTilt, turned, toggleFantasy, DESKTOP } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -630,68 +630,28 @@ $("#st-body").addEventListener("click", raceTap);
 // Long task names are clamped to two lines; tap one to read it in full.
 $("#ep-body").addEventListener("click", (e) => e.target.closest(".tname")?.classList.toggle("full"));
 
-// The top bar compacts once you scroll, and hides while you scroll down
-// (past its first screenful), coming back on any scroll up, like Safari's
-// address bar; the sticky sub-tab strip stays, sliding up to the top. It's
-// fixed over a spacer, so none of this moves the page (see .topbar in the
-// CSS). The compact thresholds differ so it can't flicker at the boundary;
-// hiding needs a deliberate 12px down, showing just 8px up, and the
-// overscroll bounce at either end is ignored.
+// The top bar compacts as you scroll its first 50px, in step with the scroll
+// (scroll-driven animations in the CSS; where there are none, --p here), and
+// hides while you scroll down (past its first screenful), coming back on any
+// scroll up, like Safari's address bar; the sticky sub-tab strip stays,
+// sliding up to the top. It's fixed over a spacer, so none of this moves the
+// page (see .topbar in the CSS). Hiding needs a deliberate 12px down, showing
+// just 8px up, and the overscroll bounce at either end is ignored.
 const bar = $(".topbar");
+const linked = CSS.supports("animation-timeline: scroll()");
 let hraf = 0, lastY = scrollY, down = 0, up = 0;
 function setHidden(on) {
   bar.classList.toggle("hidden", on);
   document.body.classList.toggle("bar-hidden", on);
 }
+/** How far the bar has compacted (0–1), where the CSS can't follow the scroll itself. */
+function barP(y) {
+  if (linked) return;
+  const p = String(Math.min(1, y / 50)); // --bar-d
+  for (const el of [bar, ...$$(".page > .strip")]) el.style.setProperty("--p", p);
+}
 // The same whichever scrolls the page: the window, or main while it's turned
 // over (on request: the bar compacts and hides upside down as it does upright).
-// While the bar compacts or opens (.3s), fantasy mode's own motion steps
-// back: the glint and the tab rainbow hold still (.moving) and the fall draws
-// at half rate, so the bar has the frames to itself.
-let mv = 0;
-function moving() {
-  if (!state.fantasy) return;
-  bar.classList.add("moving");
-  hush(360);
-  clearTimeout(mv);
-  mv = setTimeout(() => bar.classList.remove("moving"), 360);
-}
-/**
- * Compact or open the bar, by transforms only, so it stays smooth while the
- * page flies (on request: "choppy when quickly scrolling"). The masthead's
- * parts slide by CSS transitions; the tabs change size at once and glide from
- * where they were (FLIP: their pill, the panel, each icon and label start at
- * their old place and size and ease to the new, by translate and scale).
- */
-const barParts = () => [$(".tabs-bg"), $(".tab-ind"), ...$$(".tab svg"), ...$$(".tab span")];
-function barTo(compact) {
-  if (bar.classList.contains("compact") === compact) return;
-  if (reducedMotion) { bar.classList.toggle("compact", compact); return; }
-  const parts = barParts(), first = parts.map((el) => el.getBoundingClientRect());
-  for (const el of parts) for (const a of el.getAnimations()) if (a.id === "bar") a.cancel();
-  bar.classList.toggle("compact", compact);
-  // Turned, an element's top on the page is another edge on the screen
-  const t = turned(), top = (r) => (t === 180 ? -r.bottom : t === 90 ? -r.right : t === -90 ? r.left : r.top);
-  const tall = (r) => (Math.abs(t) === 90 ? r.width : r.height);
-  parts.forEach((el, i) => {
-    const a = first[i], b = el.getBoundingClientRect();
-    const dy = top(a) - top(b), sy = tall(a) / tall(b);
-    if (!b.height || (Math.abs(dy) < .5 && Math.abs(sy - 1) < .01)) return;
-    // A stretched box keeps its round corners (on request): as it's scaled by
-    // k, its corners' vertical radius is r / k, so they're r on the screen.
-    // The move and the stretch are one animation of transforms alone, so the
-    // compositor runs it while the main thread is busy (a border-radius in the
-    // same animation had put all of it on the main thread, and it stuttered
-    // while the page flew, on request); the radius is a second animation.
-    const opts = { id: "bar", duration: 300, easing: "cubic-bezier(.22, 1, .36, 1)" };
-    el.animate([{ translate: `0 ${dy}px`, scale: `1 ${sy}` }, { translate: "0 0", scale: "1 1" }], opts);
-    const r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
-    if (r && Math.abs(sy - 1) >= .01) {
-      el.animate([0, .25, .5, .75, 1].map((p) => ({ offset: p, borderRadius: `${r}px / ${r / (sy + (1 - sy) * p)}px` })), opts);
-    }
-  });
-  moving();
-}
 function barScroll() {
   if (!hraf) hraf = requestAnimationFrame(() => {
     hraf = 0;
@@ -699,8 +659,7 @@ function barScroll() {
     const max = sc === window ? document.documentElement.scrollHeight - innerHeight : sc.scrollHeight - sc.clientHeight;
     const y = Math.max(0, Math.min(top, max)), dy = y - lastY;
     lastY = y;
-    const on = bar.classList.contains("compact");
-    barTo(on ? y > 4 : y > 16);
+    barP(y);
     if (y < 120) { down = up = 0; return setHidden(false); }
     if (dy > 0) { down += dy; up = 0; if (down > 12) setHidden(true); }
     else if (dy < 0) { up -= dy; down = 0; if (up > 8) setHidden(false); }
@@ -716,7 +675,7 @@ bar.addEventListener("focusin", () => setHidden(false)); // never hide what the 
 const footSeen = new IntersectionObserver((es) => { const e = es.at(-1); e.target.classList.toggle("run", e.isIntersecting); });
 footSeen.observe($(".fz-foot"));
 /** The page was put back at the top (turned over or back): the bar open and shown. */
-function barAtTop() { lastY = 0; down = up = 0; bar.classList.remove("compact"); setHidden(false); }
+function barAtTop() { lastY = 0; down = up = 0; barP(0); setHidden(false); }
 
 // A strip that scrolls sideways (Standings' weeks, Episodes) fades at the edge
 // where more tabs are hidden (.more-l / .more-r), so it reads as scrollable.
