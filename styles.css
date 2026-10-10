@@ -1026,3 +1026,6 @@ html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; b
 @keyframes fz-splash-in { 0% { opacity: 0; transform: translateY(6px) scale(.5); } 4% { opacity: 1; } 14%, 100% { opacity: 0; transform: translateY(-10px) scale(1.2); } }
 @keyframes fz-splash-out { 0%, 42% { opacity: 0; transform: translateY(6px) scale(.5); } 47% { opacity: 1; } 58%, 100% { opacity: 0; transform: translateY(-10px) scale(1.25); } }
 @keyframes fz-sea { to { transform: translateX(-25%); } }
+/* While anything scrolls (main.js still()), the decorative animations hold still */
+html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word, .dl)::before, html.fz.scrolling :is(.ep-title, .fz-word, .dl)::after,
+html.fz.scrolling :is(.dl i, .dl b, .dl svg, .fz-sea) { animation-play-state: paused !important; }

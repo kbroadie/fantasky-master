@@ -95,7 +95,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
 - **Link preview and icons:** `tools/share-images.mjs` (`npm run share`). Re-run it each new series.
 - **Fantasy Fantasky Master, the Easter egg** (`flip.js`, `html.fz`):
   - Hold a phone upside down (or click the quote under the boards on a desktop) and the whole app becomes a Lisa Frank dream where low scores win.
-  - It has the same pages, inverted ranks and emphases, and a rainbow fall drawn in a worker (30 fps, half resolution, stopped in hidden tabs). The dolphins' footer replaces the ducks.
+  - It has the same pages, inverted ranks and emphases, and a rainbow fall drawn in a worker (30 fps, stopped in hidden tabs); its decorative animations hold still while anything scrolls. The dolphins' footer replaces the ducks.
   - Turned, the body is a fixed rotated box and `main` scrolls itself (`selfScroll`). On iOS, the secret tap on the quote asks for the tilt permission; once Safari has refused it (it never asks again), the quote switches the dream on and off, unturned, as on a desktop.
   - **Nothing on the site or in README.md mentions it.** It's documented only here, in NOTES.md and in §6.12 of the systems doc. Keep it that way.
 
@@ -117,9 +117,9 @@ FM_CURL_IMAGES=1 PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tools/screenshot
   - Nothing in the repo, the site, commit messages, PR titles or descriptions, comments or merge commits says or implies the project is made with Claude Code or any AI, CLAUDE.md's existence aside.
   - So: no `Co-Authored-By: Claude…` or `Claude-Session:` trailers, no "Generated with Claude Code" lines, and no claude.ai links.
   - PR tools may append a footer: create the PR with a placeholder body, then set the real one with `update_pull_request`, and check it.
-- **Keep the docs current with every change:**
-  - this file: short, current behaviour and rules;
-  - NOTES.md: the detail and the user's request in their words;
+- **Docs:**
+  - this file: short, current behaviour and rules, kept current;
+  - NOTES.md: the detail and the user's requests in their words, updated only after major milestones (the user's rule);
   - the systems doc, for scoring.
 - **Code comments** are short notes on why, not history. History goes in NOTES.md and git.
 - CI (`.github/workflows/checks.yml`) runs the data check on every push and PR. PRs also upload screenshots.
