@@ -983,7 +983,7 @@ html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; b
   24% { transform: translateY(-84px); animation-timing-function: cubic-bezier(.55, 0, .75, .3); }
   48%, 100% { transform: translateY(14px); }
 }
-@keyframes fz-dr { 0% { rotate: -48deg; } 48%, 100% { rotate: 52deg; } }
+@keyframes fz-dr { 0% { transform: rotate(-48deg); } 48%, 100% { transform: rotate(52deg); } } /* transform: rotate on an <svg> kept the main thread restyling every frame */
 @keyframes fz-splash-in { 0% { opacity: 0; transform: translateY(6px) scale(.5); } 4% { opacity: 1; } 14%, 100% { opacity: 0; transform: translateY(-10px) scale(1.2); } }
 @keyframes fz-splash-out { 0%, 42% { opacity: 0; transform: translateY(6px) scale(.5); } 47% { opacity: 1; } 58%, 100% { opacity: 0; transform: translateY(-10px) scale(1.25); } }
 @keyframes fz-sea { to { transform: translateX(-25%); } }
@@ -1012,6 +1012,7 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 }
 .sw-val.on { color: var(--gold2); text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 .sw-steps { grid-column: 1 / -1; display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 12px; }
+.sw-auto { margin-left: 4px; font: 500 11px var(--fm); letter-spacing: .08em; text-transform: uppercase; color: var(--gold2); }
 .sw-sub { padding: 0 12px 6px; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--t3); }
 .sw-count { padding: 0 12px 12px; margin-top: -2px; font-size: 13px; color: var(--t3); }
 .sw-one { display: block; padding: 0 12px 8px; }

@@ -5,8 +5,8 @@ import { derive, currentSeriesKey } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, QUOTE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
-import { castOrder, castTabs, castSlides, castSlide, fill, changedSay } from "./views/cast.js";
-import { get, set, item, shown, resetAll, changed } from "./switches.js";
+import { castOrder, castTabs, castSlides, castSlide, fill, changedSay, resettable } from "./views/cast.js";
+import { get, set, item, shown, resetAll, changed, pin } from "./switches.js";
 import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
@@ -69,12 +69,17 @@ function renderSlides(d) {
 }
 
 // Fantasy titles: sparkles flank .ep-w, which is sized to its widest line so they hug the words.
+// Only the titles near the screen are measured, in the slides on show and either side of them: measuring one in a slide
+// off screen lays out that whole slide (content-visibility), and all of them took ~280ms at a 4× throttled CPU each
+// time the dream began. The rest are fitted as they come near (mark), and all again when the width changes
 function fitTitles() {
-  const ts = state.fantasy ? $$(".ep-title .ep-w") : [];
+  if (!state.fantasy) return;
+  const near = [ST, EP, CAST].filter((sw) => $(sw.body).offsetParent).flatMap((sw) => { const k = $(sw.body).children, i = sw.get(); return [k[i - 1], k[i], k[i + 1]]; });
+  const ts = near.filter(Boolean).flatMap((s) => [...s.querySelectorAll(".ep-title .ep-w")]).filter((t) => t.dataset.fit !== String(pageW));
   if (!ts.length) return;
   for (const t of ts) t.style.width = "";
   const ws = ts.map((t) => (t.firstElementChild.getClientRects().length > 1 ? t.firstElementChild.offsetWidth + 1 : 0));
-  ts.forEach((t, i) => { if (ws[i]) t.style.width = `${ws[i]}px`; });
+  ts.forEach((t, i) => { if (ws[i]) t.style.width = `${ws[i]}px`; t.dataset.fit = pageW; });
 }
 // Titles refit when main's width changes
 let pageW = 0;
@@ -202,6 +207,7 @@ function mark(sw, i, smooth = true) {
   [...$(sw.body).children].forEach((s, j) => s.classList.toggle("here", j === i)); // only the slide on show twinkles
   if (t) tabs.scrollTo({ left: t.offsetLeft - (tabs.clientWidth - t.offsetWidth) / 2, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
   edges();
+  fitTitles(); // the titles that have come near
 }
 function jump(sw, i) {
   const body = $(sw.body);
@@ -475,13 +481,15 @@ $("#cast-body").addEventListener("click", heatTap);
 const counted = (slide) => {
   const n = changed();
   slide.querySelector(".sw-count").textContent = changedSay(n);
-  slide.querySelector(".sw-reset").disabled = !n;
+  slide.querySelector(".sw-reset").disabled = !resettable();
 };
 $("#cast-body").addEventListener("click", (e) => {
   const slide = e.target.closest(".slide");
   const opt = e.target.closest(".sw-seg [data-v]");
   if (opt) {
     const it = item(opt.dataset.sw);
+    pin(it.key); // chosen here: auto-tune leaves it alone
+    opt.closest(".sw-row")?.querySelector(".sw-auto")?.remove();
     set(it.key, it.type === "steps" ? +opt.dataset.v : opt.dataset.v);
     for (const b of opt.parentElement.children) b.setAttribute("aria-checked", b === opt);
     return counted(slide);

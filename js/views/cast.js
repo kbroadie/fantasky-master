@@ -2,7 +2,7 @@
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
-import { cardsShown, changed, get, shown } from "../switches.js";
+import { cardsShown, changed, autoUsed, get, val, tuned, shown } from "../switches.js";
 
 // Fantasy: lowest total first
 export const castOrder = (d) => [...d.contestants].sort((a, b) => rankOf(d, a) - rankOf(d, b) || a.key.localeCompare(b.key));
@@ -26,13 +26,13 @@ const isMoss = (c) => c.full === "Richard Ayoade";
 const toggle = (it, name) => `<button type="button" class="sw-toggle" role="switch" aria-checked="${get(it.key)}" aria-label="${esc(name)}" data-sw="${it.key}"></button>`;
 // A small fixed set: segmented buttons, one tap each (a grid when there are many)
 const segs = (it, name, grid = false) => `<div class="sw-seg${grid ? " grid" : ""}" role="radiogroup" aria-label="${esc(name)}">${it.options.map(([v, label]) =>
-  `<button type="button" role="radio" aria-checked="${get(it.key) === v}" data-sw="${it.key}" data-v="${v}">${esc(label)}</button>`).join("")}</div>`;
+  `<button type="button" role="radio" aria-checked="${val(it.key) === v}" data-sw="${it.key}" data-v="${v}">${esc(label)}</button>`).join("")}</div>`;
 // A strength: a slider (--v, how far along, for its gold fill) and its value, gold once changed; a tap on it resets it
 const range = (it, name) => `<input type="range" class="sw-range" data-sw="${it.key}" aria-label="${esc(name)}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}" style="--v:${fill(it)}">`;
 export const fill = (it, v = get(it.key)) => `${(((v - it.min) / (it.max - it.min)) * 100).toFixed(1)}%`;
 const value = (it, name) => `<button type="button" class="sw-val${get(it.key) !== it.def ? " on" : ""}" data-reset="${it.key}" aria-label="${esc(name)}: reset">${shown(it, get(it.key))}</button>`;
 const control = (it) => (it.type === "steps"
-  ? `<div class="sw-row sw-steps"><span>${esc(it.label)}</span>${segs(it, it.label)}</div>`
+  ? `<div class="sw-row sw-steps"><span>${esc(it.label)}${tuned(it.key) ? ' <b class="sw-auto">Auto</b>' : ""}</span>${segs(it, it.label)}</div>`
   : `<div class="sw-row sw-slide"><span>${esc(it.label)}</span>${range(it, it.label)}${value(it, it.label)}</div>`);
 // Tiles: a lone switch or slider is a small tile, an effect with settings spans the row. Only the cards for the view on show
 const tiled = (c) => c.items.length === 1 && c.items[0].type !== "choice";
@@ -56,15 +56,16 @@ const switchCard = (c) => {
       ${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
     </div>`;
 };
-// How many settings differ from the design; Reset does nothing without any
-export const changedSay = (n = changed()) => (n ? `${n} changed` : "As designed");
+// How many settings differ from the design, or that auto-tune has chosen some; Reset does nothing without either
+export const changedSay = (n = changed()) => (n ? `${n} changed` : autoUsed() ? "Auto-tuned" : "As designed");
+export const resettable = () => changed() > 0 || autoUsed();
 const switchCards = () => {
   // Defaults spans the row when it would be left alone in one
   const cards = cardsShown(!!state.fantasy), n = changed();
   return `
     <div class="sw-grid">
       ${cards.map(switchCard).join("")}
-      <div class="card sw-card${cards.filter(tiled).length % 2 ? "" : " wide"}"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset"${n ? "" : " disabled"}>Reset</button></div>
+      <div class="card sw-card${cards.filter(tiled).length % 2 ? "" : " wide"}"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset"${resettable() ? "" : " disabled"}>Reset</button></div>
         <div class="sw-count">${changedSay(n)}</div></div>
     </div>`;
 };

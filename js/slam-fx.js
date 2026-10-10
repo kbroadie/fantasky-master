@@ -50,7 +50,13 @@ export function slamFx({ from: o, to: n, loose, lift, impact, end, fantasy }) {
   // The shine: two bands of light sweep across the landed row
   const shine = [impact + 0.1, impact + 0.28];
 
+  // Nothing showing and nothing left on the canvas: nothing to draw, so the canvas isn't sent again
+  let shown = true;
+  const showing = (t) => bits.some((b) => t >= b.t0 && t <= b.t0 + b.life) || shine.some((t0) => t >= t0 && t <= t0 + 0.5);
   const draw = (t) => {
+    const now = showing(t);
+    if (!now && !shown) return;
+    shown = now;
     g.clearRect(0, 0, W, H);
     g.globalCompositeOperation = "source-over";
     for (const b of bits) {

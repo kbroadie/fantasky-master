@@ -2,7 +2,8 @@
 // and off: fantasy mode (state.fantasy, html.fz), low scores win, with the fall behind everything.
 import { $, state, reducedMotion } from "./ui.js";
 import { runner } from "./fall.js";
-import { get, onSwitch } from "./switches.js";
+import { get, val, onSwitch } from "./switches.js";
+import { fallFrames, watchPage } from "./tune.js";
 import { slamFx } from "./slam-fx.js";
 
 let on = false;
@@ -103,7 +104,8 @@ function slamAfter({ from: o, y, bg }) {
   const R = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy));
   const at = (d) => (T + (d / R) * SLAM.wave).toFixed(3); // when the shockwave reaches a point d from the impact
   const E = "cubic-bezier(.33, 0, .67, 1)", end = T + SLAM.wave + 2 * SLAM.flip, pc = (t) => `${((t / end) * 100).toFixed(2)}%`;
-  // The row's motion ends by settling into the place the browser gives it (no last keyframe: the group's own transform),
+  // Its shadow is a drop-shadow filter, which runs with the transform on the compositor (a box-shadow repainted every
+  // frame). The row's motion ends by settling into the place the browser gives it (no last keyframe: the group's own transform),
   // not at a place measured here, which was a fraction of a pixel off, so it twitched as the page took over
   const ps = (t) => `${((t / (T + 0.12)) * 100).toFixed(2)}%`;
   // Shaking loose: small jolts, growing, before it lifts
@@ -123,9 +125,9 @@ html[data-vt="slam"]::view-transition-group(vt-slam) { z-index: 3; animation: vt
   0% { transform: translate(${o.left}px, ${o.top}px); animation-timing-function: linear; }
   ${shake.join("\n  ")}
   ${ps(SLAM.loose)} { transform: translate(${o.left}px, ${o.top}px); animation-timing-function: ${E}; }
-  ${ps(L)} { transform: translate(${o.left}px, ${o.top - 8}px) scale(1.06); box-shadow: 0 14px 34px rgba(0, 0, 0, .55); animation-timing-function: ${E}; }
-  ${ps(M)} { transform: translate(${n.left}px, ${n.top - 64}px) scale(1.12); box-shadow: 0 24px 44px rgba(0, 0, 0, .5); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
-  ${ps(T)} { transform: translate(${n.left}px, ${n.top}px) scale(1.02, .9); box-shadow: 0 0 0 rgba(0, 0, 0, 0); animation-timing-function: ${E}; } }
+  ${ps(L)} { transform: translate(${o.left}px, ${o.top - 8}px) scale(1.06); filter: drop-shadow(0 14px 16px rgba(0, 0, 0, .55)); animation-timing-function: ${E}; }
+  ${ps(M)} { transform: translate(${n.left}px, ${n.top - 64}px) scale(1.12); filter: drop-shadow(0 24px 20px rgba(0, 0, 0, .5)); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  ${ps(T)} { transform: translate(${n.left}px, ${n.top}px) scale(1.02, .9); filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0)); animation-timing-function: ${E}; } }
 html[data-vt="slam"]::view-transition-old(vt-slam) { animation: vt-slam-out ${end}s linear both; }
 html[data-vt="slam"]::view-transition-new(vt-slam) { animation: vt-slam-in ${end}s linear both; }
 @keyframes vt-slam-out { ${pc(T - 0.02)} { opacity: 1; } ${pc(T + 0.06)}, 100% { opacity: 0; } }
@@ -221,16 +223,18 @@ function fall() {
   stopFall();
   const c = $("#fz-fall"), w = c.clientWidth, h = c.clientHeight;
   if (!w || !h || !get("fall")) return;
-  const opts = { res: Math.min(2, devicePixelRatio || 1) * get("fallRes"), fps: get("fallFps"), density: get("fallDensity"), figures: get("fallFigures"), bright: get("fallBright"), speed: get("fallSpeed") };
+  const opts = { res: Math.min(2, devicePixelRatio || 1) * val("fallRes"), fps: val("fallFps"), density: get("fallDensity"), figures: get("fallFigures"), bright: get("fallBright"), speed: get("fallSpeed") };
   if (!worker && !run && moduleWorkers && "transferControlToOffscreen" in c) {
     try {
       worker = new Worker(new URL("./fall-worker.js", import.meta.url), { type: "module" });
       const off = c.transferControlToOffscreen();
       worker.postMessage({ type: "init", canvas: off }, [off]);
+      worker.onmessage = ({ data }) => { if (data.type === "frames") fallFrames(data); }; // how it kept up, for auto-tune
     } catch { worker = null; }
   }
   if (worker) worker.postMessage({ type: "start", w, h, reduced: reducedMotion, opts });
-  else { run = runner(c, w, h, reducedMotion, opts); run.start(); }
+  else { run = runner(c, w, h, reducedMotion, opts, fallFrames); run.start(); }
+  if (!reducedMotion) watchPage();
 }
 // A Moss card's slider moves: start the fall again with it, once a frame at most
 let refall = 0;

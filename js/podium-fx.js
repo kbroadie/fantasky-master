@@ -1,9 +1,10 @@
 // Episode podium effects: winner's gold light (rays, glow, pool, bounce, shadows, dust, glints) and last place's stink gas (heavy, sinks to the card's bottom and spreads like dry ice, collides with all four sides). One canvas at podRes resolution (full by default), between the portraits and the text: what's behind them is drawn first and their shapes cut out of it, then what's in front. Scrolling sloshes gas and stirs dust; only on-screen podiums run; reduced motion gets one still frame.
 
-import { get, onSwitch } from "./switches.js";
+import { get, val, onSwitch } from "./switches.js";
+import { podiumFrames } from "./tune.js";
 
 // The Moss cards' settings: on or off, resolution, light and gas strength
-const res = () => Math.min(2, window.devicePixelRatio || 1) * get("podRes");
+const res = () => Math.min(2, window.devicePixelRatio || 1) * val("podRes"); // auto-tune's, unless chosen on the cards
 let DPR = res(), ON = get("podium"), LIGHT = get("podLight"), GAS = get("podGas");
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const TAU = Math.PI * 2;
@@ -378,9 +379,12 @@ const io = new IntersectionObserver((entries) => {
   wake();
 }, { rootMargin: "80px" });
 
+// How it keeps up, each second, for auto-tune (tune.js): frames, and their ms. The first second is a warm-up
+let from = 0, frames = 0, spent = 0;
 function frame(now) {
   raf = 0;
   if (document.hidden || !visible.size || !ON) return;
+  const t0 = performance.now();
   const dt = Math.min(0.05, (now - (then || now)) / 1000);
   then = now;
   const dy = clamp(scrollDY, -90, 90);
@@ -391,11 +395,16 @@ function frame(now) {
     s.step(dt);
     s.draw();
   }
+  if (!from) from = now + 1000;
+  else if (now >= from) {
+    frames++; spent += performance.now() - t0;
+    if (now - from >= 1000) { podiumFrames({ fps: (frames * 1000) / (now - from), cost: spent / frames }); from = now; frames = 0; spent = 0; }
+  }
   raf = requestAnimationFrame(frame);
 }
 function wake() {
   if (REDUCED || raf || document.hidden || !visible.size || !ON) return;
-  then = 0;
+  then = 0; from = 0; frames = 0; spent = 0;
   raf = requestAnimationFrame(frame);
 }
 
