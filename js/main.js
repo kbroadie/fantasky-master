@@ -131,9 +131,11 @@ function topIn(el) {
 const selfScroll = () => turned() !== 0;
 const sideScroller = (el) => [".swiper", ".strip.scroll", ".tt-wrap"].map((q) => el.closest?.(q)).find((s) => s && s.scrollWidth > s.clientWidth + 1);
 // Tuned to feel native: 6px start, sideways lean, light flicks change slide, eatClick stops tap-through.
-let drag = null, coast = 0, settleRaf = 0, settling = null, eatClick = false;
+let drag = null, coast = 0, coastV = 0, settleRaf = 0, settling = null, eatClick = false;
 document.addEventListener("touchstart", (e) => {
-  const moving = !!(coast || settleRaf);
+  // Only visibly moving: a coast's slow tail (seconds of under a pixel a frame) swallowed taps on rows
+  const moving = (coast && Math.abs(coastV) > 0.25) || (settleRaf && settling && Math.abs(settling.el.scrollLeft - settling.to) > 10);
+  eatClick = false;
   cancelAnimationFrame(coast); cancelAnimationFrame(settleRaf);
   coast = settleRaf = 0;
   if (!selfScroll() || e.touches.length > 1) { drag = null; return; }
@@ -201,6 +203,7 @@ function dragEnd(e) {
     const before = get();
     put(before + speed * dt);
     speed *= 0.975 ** (dt / 16);
+    coastV = speed;
     if (Math.abs(speed) > 0.02 && get() !== before) coast = requestAnimationFrame(frame);
     else coast = 0;
   };
