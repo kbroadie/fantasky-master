@@ -77,7 +77,7 @@ class Scene {
   }
 
   layout() {
-    // Measured by offsets within the card, so it holds when the page is turned
+    // Measured by offsets within the card
     this.w = this.pod.clientWidth;
     this.h = this.pod.clientHeight;
     if (!this.w) return;

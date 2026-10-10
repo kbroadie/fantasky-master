@@ -130,11 +130,11 @@ export function standingsSlides(d) {
   return d.episodes.map(({ ep: w }) => `
     <section class="slide st-slide" data-week="${w}">
       <div class="hero st-hero${state.how ? " explain" : ""}">${standingsHero(d, w)}</div>
-      ${w > d.weeksScored && !state.edit ? "" : board(d, w) + QUOTE}
+      ${w > d.weeksScored && !state.edit ? "" : board(d, w)}
     </section>`).join("");
 }
 
-// The secret tap (fantasy Easter egg, unmarked): asks for the tilt on iOS.
+// The way into the fantasy Easter egg: a contestant's quote under every tab (main.js), unmarked but for its underline
 const QUOTES = [
   ["I changed it because I didn't like the truth.", "Paul Chowdhry, S3"],
   ["I stand by the point, even if the facts don’t.", "Hugh Dennis, S4"],

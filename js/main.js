@@ -8,7 +8,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, quoteTap, turned, flipped, toggleFantasy, DESKTOP } from "./flip.js";
+import { initFlip, toggleFantasy, warm } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -71,11 +71,10 @@ function fitTitles() {
   const ts = state.fantasy ? $$(".ep-title .ep-w") : [];
   if (!ts.length) return;
   for (const t of ts) t.style.width = "";
-  // offsetWidth, not screen rects: right however the page is turned
   const ws = ts.map((t) => (t.firstElementChild.getClientRects().length > 1 ? t.firstElementChild.offsetWidth + 1 : 0));
   ts.forEach((t, i) => { if (ws[i]) t.style.width = `${ws[i]}px`; });
 }
-// Turning sideways and back changes the width with no window resize
+// Titles refit when main's width changes
 let pageW = 0;
 new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== pageW) { pageW = w; fitTitles(); } }).observe($("main"));
 
@@ -93,7 +92,6 @@ function refresh(text) {
 
 function show(page) {
   state.page = page;
-  document.body.dataset.page = page;
   const i = PAGES.indexOf(page);
   $(".tabs").style.setProperty("--i", i);
   $$(".tab").forEach((t, j) => t.setAttribute("aria-selected", j === i));
@@ -111,130 +109,14 @@ const CAST = { body: "#cast-body", tabs: "#cast-tabs", get: () => state.cast, se
 
 const idxOf = (body) => Math.round(body.scrollLeft / body.clientWidth);
 
-// Turned (fantasy): body is a fixed rotated box, main scrolls, screen measures are turned back.
-
-// Flipped: main is turned but the window scrolls, so the reader's top is the document's bottom
-const scroller = () => (turned() && !flipped() ? $("main") : window);
-const maxY = () => document.documentElement.scrollHeight - innerHeight;
-const readY = () => { const sc = scroller(); return sc !== window ? sc.scrollTop : flipped() ? maxY() - scrollY : scrollY; };
 function toTop(smooth = false) {
-  const sc = scroller(), behavior = smooth && !reducedMotion ? "smooth" : "auto";
-  if (readY() > 0) sc.scrollTo({ top: flipped() ? maxY() : 0, behavior });
-}
-// Flipped: content changing height moves the reader's top, so the place is kept from there
-let flipY = 0;
-addEventListener("scroll", () => { if (flipped()) flipY = readY(); }, { passive: true });
-new ResizeObserver(() => { if (flipped()) scrollTo(0, maxY() - flipY); }).observe($("main"));
-// Flipped: sticky can't stick inside the turned main, so the strips ride in the (turned) bar
-function placeStrips() {
-  let moved = false;
-  for (const [s, page] of [["#st-tabs", "#p-standings"], ["#ep-tabs", "#p-episodes"], ["#cast-tabs", "#p-cast"]].map(([a, b]) => [$(a), $(b)])) {
-    if (flipped() && s.parentElement !== bar) { s.style.removeProperty("--p"); bar.append(s); moved = true; }
-    else if (!flipped() && s.parentElement === bar) { page.prepend(s); moved = true; }
-  }
-  if (moved && state.d) for (const sw of [ST, EP, CAST]) mark(sw, sw.get(), false); // a move loses the strip's scroll
-}
-function turnedOver() {
-  placeStrips();
-  if (flipped()) { flipY = 0; scrollTo(0, maxY()); }
-  barAtTop();
-}
-function local(dx, dy) {
-  const t = turned();
-  return t === 180 ? [-dx, -dy] : t === 90 ? [dy, -dx] : t === -90 ? [-dy, dx] : [dx, dy];
+  if (scrollY > 0) scrollTo({ top: 0, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
 }
 function topIn(el) {
   let y = 0;
   for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
   return y;
 }
-
-// Turned, the page scrolls itself (touch-action: none): sideways Chrome picks the wrong scroller, upside down it flings the wrong way.
-const selfScroll = () => turned() !== 0;
-const sideScroller = (el) => [".swiper", ".strip.scroll", ".tt-wrap"].map((q) => el.closest?.(q)).find((s) => s && s.scrollWidth > s.clientWidth + 1);
-// Tuned to feel native: 6px start, sideways lean, light flicks change slide, eatClick stops tap-through.
-let drag = null, coast = 0, coastV = 0, settleRaf = 0, settling = null, eatClick = false;
-document.addEventListener("touchstart", (e) => {
-  // Only visibly moving: a coast's slow tail (seconds of under a pixel a frame) swallowed taps on rows
-  const moving = (coast && Math.abs(coastV) > 0.25) || (settleRaf && settling && Math.abs(settling.el.scrollLeft - settling.to) > 10);
-  eatClick = false;
-  cancelAnimationFrame(coast); cancelAnimationFrame(settleRaf);
-  coast = settleRaf = 0;
-  if (!selfScroll() || e.touches.length > 1) { drag = null; return; }
-  const t = e.touches[0];
-  drag = { x0: t.clientX, y0: t.clientY, x: t.clientX, y: t.clientY, axis: null, el: null, target: e.target, moves: [], moving };
-}, { passive: true });
-document.addEventListener("touchmove", (e) => {
-  if (!drag) return;
-  const t = e.touches[0];
-  if (!drag.axis) {
-    const [tx, ty] = local(t.clientX - drag.x0, t.clientY - drag.y0);
-    if (Math.hypot(tx, ty) < 6) return;
-    const across = sideScroller(drag.target);
-    drag.axis = across && Math.abs(tx) > Math.abs(ty) * 0.85 ? "x" : "y";
-    if (drag.axis === "y" && flipped()) { drag = null; return; } // the phone scrolls the page itself
-    drag.el = drag.axis === "y" ? $("main") : across;
-    if (drag.el?.classList.contains("swiper")) {
-      drag.from = settling?.el === drag.el ? Math.round(settling.to / drag.el.clientWidth) : idxOf(drag.el);
-      if (settling?.el === drag.el) settling = null;
-      drag.el.style.scrollSnapType = "none";
-    }
-  }
-  const [dx, dy] = local(t.clientX - drag.x, t.clientY - drag.y), d = drag.axis === "x" ? dx : dy;
-  drag.x = t.clientX; drag.y = t.clientY;
-  if (!drag.el) return;
-  if (drag.axis === "x") drag.el.scrollLeft -= d; else drag.el.scrollTop -= d;
-  drag.moves.push([e.timeStamp, d]);
-}, { passive: true });
-function settle(el, to, speed = 0) {
-  const from = el.scrollLeft, dist = Math.abs(to - from), t0 = performance.now();
-  const ms = reducedMotion || dist < 1 ? 0 : Math.max(140, Math.min(320, (3 * dist) / Math.max(Math.abs(speed), 0.9)));
-  settling = { el, to };
-  const frame = (now) => {
-    const k = ms ? Math.min(1, (now - t0) / ms) : 1;
-    el.scrollLeft = from + (to - from) * (1 - (1 - k) ** 3);
-    if (k < 1) settleRaf = requestAnimationFrame(frame);
-    else { settleRaf = 0; settling = null; el.style.scrollSnapType = ""; }
-  };
-  settleRaf = requestAnimationFrame(frame);
-}
-function dragEnd(e) {
-  const g = drag;
-  drag = null;
-  if (!g) return;
-  if (!g.el) {
-    if (g.moving && !g.axis) eatClick = true;
-    if (settling) settle(settling.el, settling.to);
-    return;
-  }
-  if (settling && settling.el !== g.el) settle(settling.el, settling.to);
-  // Speed over the last 100ms, timed from the move before them, so one late move counts
-  const k = g.moves.findIndex(([at]) => e.timeStamp - at < 100), span = k < 0 ? [] : g.moves.slice(Math.max(0, k - 1));
-  const raw = span.length > 1 ? -span.slice(1).reduce((a, [, d]) => a + d, 0) / Math.max(16, e.timeStamp - span[0][0]) : 0;
-  const v = Math.max(-8, Math.min(8, raw));
-  const el = g.el, x = g.axis === "x", get = () => (x ? el.scrollLeft : el.scrollTop), put = (n) => { if (x) el.scrollLeft = n; else el.scrollTop = n; };
-  if (el.classList.contains("swiper")) {
-    const w = el.clientWidth, moved = el.scrollLeft / w - g.from, n = el.children.length;
-    const step = Math.abs(v) > 0.2 ? Math.sign(v) : moved > 0.5 ? 1 : moved < -0.5 ? -1 : 0;
-    settle(el, Math.max(0, Math.min(n - 1, g.from + step)) * w, v);
-    return;
-  }
-  let speed = reducedMotion ? 0 : v, last = performance.now();
-  const frame = (now) => {
-    const dt = now - last;
-    last = now;
-    const before = get();
-    put(before + speed * dt);
-    speed *= 0.998 ** dt; // iOS's own deceleration
-    coastV = speed;
-    if (Math.abs(speed) > 0.02 && get() !== before) coast = requestAnimationFrame(frame);
-    else coast = 0;
-  };
-  if (speed) coast = requestAnimationFrame(frame);
-}
-document.addEventListener("click", (e) => { if (eatClick) { eatClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
-document.addEventListener("touchend", dragEnd, { passive: true });
-document.addEventListener("touchcancel", dragEnd, { passive: true });
 function redraw() {
   const key = $("#cast-tabs .on")?.textContent;
   const waves = $(".fz-waves");
@@ -273,23 +155,21 @@ function fit(body) {
   const w = body.clientWidth, kids = body.children;
   if (!w || !kids.length) return;
   const f = body.scrollLeft / w, i = Math.min(Math.floor(f), kids.length - 1), t = f - i;
-  if (!(t < 0.01 || t > 0.99 || i + 1 >= kids.length || flipped())) { // flipped: no footer lift yet
+  if (!(t < 0.01 || t > 0.99 || i + 1 >= kids.length)) {
     if (pair?.body !== body || pair.i !== i) {
       const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
-      const view = scroller() !== window ? $("main").clientHeight : innerHeight, top = topIn(body);
+      const view = innerHeight, top = topIn(body);
       const room = view - top - pad - feetH();
       const ha = Math.max(kids[i].offsetHeight, room), hb = Math.max(kids[i + 1].offsetHeight, room), hi = Math.max(ha, hb);
-      // Held just below the screen (upside down, with the rainbow above it)
+      // Held just below the screen (in the dream, with the rainbow above it)
       const foot = $(".fz-foot"), rise = foot?.offsetWidth ? Math.max(0, (foot.offsetWidth * 1.5) / 2 - foot.offsetHeight + 4) : 0;
       // Scrolled past where a short slide's page can go, its footer is where the settled page will show it
-      const sc = scroller(), y = readY();
-      const rest = (sc === window ? document.documentElement.scrollHeight : sc.scrollHeight) - body.offsetHeight;
+      const y = scrollY, rest = document.documentElement.scrollHeight - body.offsetHeight;
       const below = y + view + rise;
       const at = (h) => Math.min(top + h + Math.max(0, y - Math.max(0, rest + h - view)), below);
       const a = Math.round(at(ha) - (top + hi)), b = Math.round(at(hb) - (top + hi));
       const same = pair && pair.a === a && pair.b === b && pair.tl === `--${body.id.slice(0, -5)}` && pair.r0 === i * w;
-      // Turned: Chrome's compositor doesn't follow the swiper timeline, so move per frame
-      pair = { body, i, a, b, tl: `--${body.id.slice(0, -5)}`, r0: i * w, r1: (i + 1) * w, sda: SDA && !turned() };
+      pair = { body, i, a, b, tl: `--${body.id.slice(0, -5)}`, r0: i * w, r1: (i + 1) * w, sda: SDA };
       if (body.style.height !== `${hi}px`) body.style.height = `${hi}px`;
       if (!same || !pair.sda) lift(pair, t);
     } else if (!pair.sda) lift(pair, t);
@@ -297,7 +177,7 @@ function fit(body) {
   }
   const s = kids[Math.round(f)] || kids[i];
   const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
-  const view = scroller() !== window ? $("main").clientHeight : innerHeight;
+  const view = innerHeight;
   const room = view - topIn(body) - pad - feetH();
   const h = `${Math.max(s.offsetHeight, room)}px`;
   if (body.style.height !== h) body.style.height = h;
@@ -334,7 +214,7 @@ function edgeNav(el, can, onEdge) {
   el.addEventListener("touchcancel", () => { x0 = null; }, { passive: true });
   el.addEventListener("touchend", (e) => {
     if (x0 == null) return;
-    const [dx, dy] = local(e.changedTouches[0].clientX - x0, e.changedTouches[0].clientY - y0);
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
     x0 = null;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     if (prev && dx > 0) onEdge(-1);
@@ -405,6 +285,7 @@ $("#series").addEventListener("click", () => {
 });
 
 $("#dq").addEventListener("click", (e) => { if (e.target.closest(".st-quote")) toggleFantasy(); });
+$("#dq").addEventListener("pointerdown", warm, { once: true });
 $("#p-standings").addEventListener("click", (e) => {
   if (e.target.closest(".wl-x")) {
     $("#welcome").hidden = true;
@@ -439,8 +320,6 @@ $("#p-standings").addEventListener("click", (e) => {
     syncBoards(false, board);
     return;
   }
-  // Phones: asks for the tilt (iOS). Desktop: toggles fantasy mode.
-  if (e.target.closest(".st-quote")) { if (DESKTOP.matches || document.documentElement.classList.contains("quote-up")) toggleFantasy(); else quoteTap(); return; }
   const swap = e.target.closest(".xp-swap");
   if (swap) {
     state.xpView = swap.dataset.xp;
@@ -528,9 +407,8 @@ function openRow(row, side) {
 function placeLine(row) {
   const chev = row.querySelector(`.sd[data-side="${row.dataset.open}"] .chev`);
   if (!chev) return;
-  const c = chev.getBoundingClientRect(), r = row.getBoundingClientRect(), cx = c.left + c.width / 2, cy = c.top + c.height / 2, t = turned();
-  const x = t === 180 ? r.right - cx : t === 90 ? cy - r.top : t === -90 ? r.bottom - cy : cx - r.left;
-  row.style.setProperty("--cx", `${x.toFixed(1)}px`);
+  const c = chev.getBoundingClientRect(), r = row.getBoundingClientRect();
+  row.style.setProperty("--cx", `${(c.left + c.width / 2 - r.left).toFixed(1)}px`);
 }
 function syncOpen(slide) {
   const o = state.open?.wk === +slide.dataset.week ? state.open : null;
@@ -624,8 +502,8 @@ function setHidden(on) {
 }
 let barPNow = "";
 function barP(y) {
-  // --p where CSS doesn't follow the scroll (no SDA, or turned); written only on change
-  const p = linked && !turned() ? "0" : String(Math.min(1, y / 50));
+  // --p where CSS doesn't follow the scroll (no scroll-driven animations); written only on change
+  const p = linked ? "0" : String(Math.min(1, y / 50));
   if (p === barPNow) return;
   barPNow = p;
   for (const el of [bar, ...$$(".page > .strip")]) el.style.setProperty("--p", p);
@@ -633,9 +511,8 @@ function barP(y) {
 function barScroll() {
   if (!hraf) hraf = requestAnimationFrame(() => {
     hraf = 0;
-    const sc = scroller(), top = readY();
-    const max = sc === window ? maxY() : sc.scrollHeight - sc.clientHeight;
-    const y = Math.max(0, Math.min(top, max)), dy = y - lastY;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    const y = Math.max(0, Math.min(scrollY, max)), dy = y - lastY;
     lastY = y;
     barP(y);
     if (y < 120) { down = up = 0; return setHidden(false); }
@@ -644,7 +521,6 @@ function barScroll() {
   });
 }
 addEventListener("scroll", barScroll, { passive: true });
-$("main").addEventListener("scroll", barScroll, { passive: true });
 bar.addEventListener("focusin", () => setHidden(false));
 // Dolphins animate only on screen; the latest entry decides (batched entries come oldest first).
 // Watches the waves, not the footer: mid-swipe only they rise into view (lift)
@@ -673,7 +549,7 @@ function still() {
 let lraf = 0;
 function cardLight() {
   lraf = 0;
-  if (reducedMotion || state.page !== "standings" || turned()) return;
+  if (reducedMotion || state.page !== "standings") return;
   const cards = $(ST.body).children[ST.get()]?.querySelectorAll(".st-hero.explain .how-card") || [];
   if (!cards.length) return;
   const mid = innerHeight / 2;
@@ -718,7 +594,7 @@ try {
   try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
   $("#welcome").innerHTML = welcomeCard();
   $("#welcome").hidden = !welcome;
-  initFlip({ redraw: () => { redraw(); turnedOver(); }, scrolled: turnedOver });
+  initFlip({ redraw, scrolled: barAtTop });
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);

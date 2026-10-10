@@ -145,7 +145,6 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 
 /* ── The bar compacts with the scroll */
 /* Over the first --bar-d (50px) every part moves with the scroll: scroll-driven animations on the compositor, else (and turned) --p from main.js with the fallback rules below. Squeezed boxes keep round corners (vertical radius r / k, a second animation). Open/compact sizes: pill 58 → 40, panel 46 → 28, labels up 20. */
-html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* the swipers' (the footer follows a swipe) */
 @keyframes bar-glass { to { transform: translateY(calc(-1 * var(--bar-d))); } }
 @keyframes bar-hdr { to { transform: translateY(var(--hdr-dy)); } }
 @keyframes bar-shade { to { opacity: 1; transform: translateY(var(--hdr-dy)); } }
@@ -182,11 +181,8 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
   .tab span { animation-name: bar-label; }
   .page > .strip { animation-name: bar-strip; }
   .page > .strip .strip-tab > span { animation-name: bar-strip-label; }
-  /* Turned: --p drives it (a timeline-less animation would hold its end) */
-  :is(html.fz-turn, html.fz-side, html.fz-flip) :is(.brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab svg, .tab span, .page > .strip, .page > .strip .strip-tab > span),
-  :is(html.fz-turn, html.fz-side, html.fz-flip) .topbar::before, :is(html.fz-turn, html.fz-side, html.fz-flip) .hdr::before, :is(html.fz-turn, html.fz-side, html.fz-flip) .hdr::after { animation-name: none; }
 }
-/* From --p where there are no scroll-driven animations, or turned (after the base rules; an animation overrides) */
+/* From --p where there are no scroll-driven animations (after the base rules; an animation overrides) */
 .topbar::before { transform: translateY(calc(-1 * var(--bar-d) * var(--p, 0))); }
 .hdr::before { transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
 .hdr::after { opacity: var(--p, 0); transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
@@ -296,7 +292,6 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
   .how-glint { display: none; }
 }
 
-.tilt-probe { position: fixed; left: 8px; bottom: 8px; z-index: 100; margin: 0; padding: 8px 10px; max-width: calc(100vw - 16px); white-space: pre-wrap; font: 400 11px/1.45 var(--fm); color: #9f9; background: rgba(0, 0, 0, .82); border-radius: 8px; pointer-events: none; }
 .fps-meter { position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; display: grid; gap: 4px; width: 160px; pointer-events: none; }
 .fps-meter canvas { width: 160px; height: 84px; }
 .fps-bench { pointer-events: auto; padding: 6px 0; font: 500 11px var(--fm); letter-spacing: .06em; text-transform: uppercase; color: #8f8; background: rgba(0, 0, 0, .82); border-radius: 6px; }
@@ -308,35 +303,20 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
 .bench-t td small { display: block; font: 400 11px var(--fm); color: var(--t3); }
 .bench-t .ok td:not(:first-child) { color: #8f8; } .bench-t .meh td:not(:first-child) { color: #ffd27a; } .bench-t .bad td:not(:first-child) { color: #ff8a7a; }
 .bench-dlg { max-height: 85vh; overflow-y: auto; }
-html:is(.fz-turn, .fz-flip) .bench-dlg { rotate: 180deg; }
-html.fz-side .bench-dlg { rotate: var(--rot); }
 
 /* ── Standings */
 /* Two boards side by side: fixed place column, then Show and League halves per row. Nothing sorts. */
 /* Tracks: --rk place strip, two halves padded --pad, points column --sc, --g gap; --pe (head padding) is 0. */
-/* The secret tap (fantasy Easter egg): small, faint, upside down */
+/* The way into the fantasy Easter egg: a contestant's quote under every tab, small, faint and underlined; a tap switches it */
+#dq { padding: 4px var(--px) 0; }
 .st-quote {
   display: block; margin: 2px auto 0; padding: 8px 16px; max-width: 34em; border: 0; background: none; color: var(--t4);
-  font: 400 11px/1.45 var(--ff); text-align: center; text-wrap: balance; transform: rotate(180deg);
-  cursor: default; -webkit-tap-highlight-color: transparent;
+  font: 400 11px/1.45 var(--ff); text-align: center; text-wrap: balance;
+  cursor: pointer; transition: color .2s; -webkit-tap-highlight-color: transparent;
 }
+.st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 .st-quote cite { font-style: normal; white-space: nowrap; }
-.tilt-ask .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
-/* Desktop: right side up, underlined; a click toggles fantasy mode */
-/* By id: .dq is also the Every task DQ cells */
-#dq { display: none; }
-@media (hover: hover) and (pointer: fine) {
-  #dq { display: block; padding: 4px var(--px) 0; }
-  .st-slide .st-quote { display: none; }
-  .st-quote { transform: none; cursor: pointer; transition: color .2s; }
-  .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
-  .st-quote:hover { color: var(--t2); }
-}
-/* The upright switch: the same on a phone */
-html.quote-up #dq { display: block; padding: 4px var(--px) 0; }
-html.quote-up .st-slide .st-quote { display: none; }
-html.quote-up .st-quote { transform: none; cursor: pointer; }
-html.quote-up .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .st-quote:hover { color: var(--t2); } }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 .card.board { position: relative; margin: 12px var(--px); }
 .card.board::before, .card.board::after { content: ""; position: absolute; inset: 0 0 auto; height: 90px; z-index: 0; pointer-events: none; }
@@ -951,39 +931,10 @@ html.fz .st-leaders b::after { content: "👑"; margin-left: .2em; font-size: .8
 @keyframes fz-slide { to { transform: translateX(-50%); } }
 @keyframes fz-glint { from { background-position: 150% 0; } to { background-position: -50% 0; } }
 @keyframes fz-twinkle { 0%, 100% { opacity: 1; scale: 1; rotate: 0deg; } 50% { opacity: .55; scale: .7; rotate: 25deg; } }
-/* Turned: body is a fixed rotated box, main scrolls; ducks hidden (dolphins at the end) */
-html.fz-turn, html.fz-side { overflow: hidden; height: 100%; }
-html.fz-turn body, html.fz-side body { position: fixed; inset: 0; overflow: hidden; min-height: 0; transform: rotate(180deg); }
-html.fz-side body { inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; max-width: none; transform: translate(-50%, -50%) rotate(var(--rot)); }
-html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
-/* Turned, the page scrolls itself (main.js) */
-html.fz-turn *, html.fz-side * { touch-action: none; }
-html.fz-turn *, html.fz-side * { scrollbar-width: none; }
-html.fz-turn ::-webkit-scrollbar, html.fz-side ::-webkit-scrollbar { display: none; }
-@media not all and (hover: hover) and (pointer: fine) { html.fz:not(.tilt-off, .quote-up) .st-quote { display: none; } } /* a desktop, or a phone Safari refused the tilt, keeps it to switch back */
-/* Inside main a sticky strip counts from below the spacer, so 0 */
-html.fz-turn .page > .strip, html.fz-side .page > .strip { top: 0; }
 html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .94), rgba(38, 8, 68, .96)); -webkit-backdrop-filter: none; backdrop-filter: none; }
-/* No backdrop blur upside down: a blur over the moving fall is redone every frame */
+/* No backdrop blur in the dream: a blur over the moving fall is redone every frame */
 html.fz body::before { background: #2a0a46; -webkit-backdrop-filter: none; backdrop-filter: none; }
 html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
-/* Sideways: the body is as wide as the screen is tall, so vw sizes become vh here. Add any new vw size. */
-html.fz-side .brand { font-size: clamp(12px, 3.5vh, 21px); }
-html.fz-side .how-name { font-size: clamp(20px, 6.2vh, 27px); }
-html.fz-side .pc-name { font-size: clamp(16px, 4.1vh, 20px); }
-html.fz-side .pc-num { font-size: clamp(18px, 4.9vh, 21px); }
-html.fz-side .pk b { font-size: clamp(11px, 3vh, 13px); }
-html.fz-side .strip-tab { padding-inline: clamp(13px, 3.4vh, 18px); }
-html.fz-side .ep-title { font-size: clamp(20px, 5.6vh, 27px); }
-html.fz-side .pod-pts { font-size: clamp(18px, 5vh, 22px); }
-html.fz-side .tilt-probe { max-width: calc(100vh - 16px); }
-@media (min-width: 600px) and (max-height: 599px) {
-  html.fz-side { --px: 16px; }
-  html.fz-side .board { --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
-  html.fz-side .tt th:not(:first-child) { width: 36px; }
-  html.fz-side .tt th:last-child { width: 40px; }
-  :where(html.fz-side) .bars { --plot: 96px; }
-}
 
 /* Dolphins' footer (fantasy): three nested boxes per dolphin (across, up/down, turn), transforms only; animates only on screen (.run) */
 .fz-foot { display: none; }
@@ -1053,13 +1004,3 @@ html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; b
 /* While anything scrolls (main.js still()), the decorative animations hold still */
 html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word, .dl)::before, html.fz.scrolling :is(.ep-title, .fz-word, .dl)::after,
 html.fz.scrolling :is(.dl i, .dl b, .dl svg, .fz-sea) { animation-play-state: paused !important; }
-/* Flipped layout (the flip switch): upside down, main, the bar and the fall are each turned rather than the page,
-   so the window still scrolls and the phone does it (momentum, taps). Sideways swipes stay the page's own (main.js) */
-html.fz-flip main { rotate: 180deg; padding-top: calc(var(--bar-h) + var(--strip-h) + env(safe-area-inset-bottom)); }
-html.fz-flip .topbar { top: auto; bottom: 0; rotate: 180deg; }
-html.fz-flip #fz-fall { rotate: 180deg; }
-html.fz-flip * { touch-action: pan-y; }
-/* The strips ride in the bar (sticky can't stick inside a turned box): under the header and tabs, over the glass */
-html.fz-flip .topbar > .strip { position: relative; z-index: -1; pointer-events: auto; transition: transform .3s var(--ease); translate: 0 calc(var(--strip-dy) * var(--p, 0)); }
-html.fz-flip .topbar > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2 * var(--p, 0)); }
-body:not([data-page="standings"]) .topbar > #st-tabs, body:not([data-page="episodes"]) .topbar > #ep-tabs, body:not([data-page="cast"]) .topbar > #cast-tabs { display: none; }
