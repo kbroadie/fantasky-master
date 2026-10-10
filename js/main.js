@@ -10,7 +10,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, askTilt, turned, toggleFantasy, DESKTOP } from "./flip.js";
+import { initFlip, askTilt, turned, toggleFantasy, DESKTOP, hush } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -783,7 +783,19 @@ function edges() {
     s.classList.toggle("more-r", s.scrollLeft + s.clientWidth < s.scrollWidth - 2);
   }
 }
-document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("strip")) edges(); }, { capture: true, passive: true });
+document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("strip")) edges(); quiet(); }, { capture: true, passive: true });
+// While anything scrolls in fantasy mode (the page, a swiper, a strip), the
+// fall draws at half rate, so the scroll has the frames (on request: rainbow
+// view scrolling was slow on an iPhone). Told at most every 100ms, for 300ms
+// on from then; it's back to every frame once the scroll stops.
+let quietAt = 0;
+function quiet() {
+  if (!state.fantasy) return;
+  const now = performance.now();
+  if (now - quietAt < 100) return;
+  quietAt = now;
+  hush(300);
+}
 
 // The scoring cards' light: its pool of colour shifts as the card moves up
 // the screen (--lx), updated once a frame while scrolling.
