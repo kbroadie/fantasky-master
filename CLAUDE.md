@@ -59,7 +59,8 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
   - Nothing inside a `.slide` may be `position: fixed` (`content-visibility: auto`).
   - Never set a custom property on an element containing many SVG `<use>` copies (ducks, dolphins): it restyles them all.
   - Cache element lookups in per-frame code.
-  - On SVG elements, animate `transform`, not `translate` (Chrome won't composite it).
+  - On SVG elements, animate `transform`, not the separate `translate`, `rotate` or `scale` (Chrome won't composite them: the dolphins' `rotate` kept Fantasy Land's main thread restyling every frame, ~2.1s per 3.3s at a 4× throttled CPU).
+  - Measure only what's near the screen: reading a size inside an off-screen slide lays out that whole slide (`content-visibility`); `fitTitles` measures the slides on show and either side.
 - **Phones first:** the user mostly uses phones. Check the 390px screenshots first.
 
 ## The app, briefly
