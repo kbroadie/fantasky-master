@@ -319,6 +319,11 @@ html.fz-turn body, html.fz-side body { timeline-scope: --st, --ep, --cast; } /* 
   .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
   .st-quote:hover { color: var(--t2); }
 }
+/* The upright switch: the same on a phone */
+html.quote-up #dq { display: block; padding: 4px var(--px) 0; }
+html.quote-up .st-slide .st-quote { display: none; }
+html.quote-up .st-quote { transform: none; cursor: pointer; }
+html.quote-up .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 .card.board { position: relative; margin: 12px var(--px); }
 .card.board::before, .card.board::after { content: ""; position: absolute; inset: 0 0 auto; height: 90px; z-index: 0; pointer-events: none; }
@@ -942,7 +947,7 @@ html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y:
 html.fz-turn *, html.fz-side * { touch-action: none; }
 html.fz-turn *, html.fz-side * { scrollbar-width: none; }
 html.fz-turn ::-webkit-scrollbar, html.fz-side ::-webkit-scrollbar { display: none; }
-@media not all and (hover: hover) and (pointer: fine) { html.fz:not(.tilt-off) .st-quote { display: none; } } /* a desktop, or a phone Safari refused the tilt, keeps it to switch back */
+@media not all and (hover: hover) and (pointer: fine) { html.fz:not(.tilt-off, .quote-up) .st-quote { display: none; } } /* a desktop, or a phone Safari refused the tilt, keeps it to switch back */
 /* Inside main a sticky strip counts from below the spacer, so 0 */
 html.fz-turn .page > .strip, html.fz-side .page > .strip { top: 0; }
 html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .94), rgba(38, 8, 68, .96)); -webkit-backdrop-filter: none; backdrop-filter: none; }

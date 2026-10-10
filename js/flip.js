@@ -19,6 +19,8 @@ export const DESKTOP = matchMedia("(hover: hover) and (pointer: fine)");
 export function toggleFantasy() { set(!on, 0); }
 
 export const turned = () => (on ? turn : 0);
+// The upright switch: the quote is right side up under every tab, as on a desktop, and switches the dream
+function quoteUp() { document.documentElement.classList.toggle("quote-up", isOn("upright")); }
 // The flip switch: upside down, main, the bar and the fall are each turned, and the window still scrolls
 export const flipped = () => on && turn === 180 && document.documentElement.classList.contains("fz-flip");
 
@@ -43,6 +45,7 @@ function set(show, rot = 0) {
 }
 
 function want(show, rot) {
+  if (isOn("upright")) return; // the quote switches it, unturned
   if (pending && pending.show === show && pending.rot === rot) return;
   clearTimeout(timer);
   pending = { show, rot };
@@ -108,6 +111,7 @@ function turnFor(ux, uy) {
 
 // Without the sensor, a page turned to 180 is the sign
 function onTurn() {
+  if (isOn("upright")) return;
   if (up) { settle(); if (on) set(true, turnFor(...up)); judge(); return; }
   if (angle() === 180) set(true, 0);
   else if (on) set(false);
@@ -215,7 +219,8 @@ const probe = { o: 0, m: 0, pose: "–", el: null, at: 0,
 export function initFlip(h) {
   hooks = { ...hooks, ...h };
   diagnostic(new URLSearchParams(location.search).has("tilt") || isOn("tilt"));
-  addEventListener("fm-switch", ({ detail: d }) => { if (d.key === "tilt") diagnostic(d.on); });
+  addEventListener("fm-switch", ({ detail: d }) => { if (d.key === "tilt") diagnostic(d.on); if (d.key === "upright") quoteUp(); });
+  quoteUp();
   let before = false;
   try { before = localStorage.getItem(KEY) === "1"; } catch {}
   listen();
