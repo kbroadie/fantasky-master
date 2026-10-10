@@ -157,7 +157,8 @@ function heatStrip(d, c) {
 // Points per episode from Prize, Filmed and Live tasks (team tasks aren't
 // counted), as z-scores against every contestant in Taskmaster history
 // (state.stats, from the all-time stats; the league's series if those are
-// missing). The scale runs from −3σ at the centre to +3σ at the edge,
+// missing). The scale runs from −3σ at the centre to +3σ at the edge (the
+// other way round in fantasy mode),
 // with a hairline ring at every whole σ and ticks where they cross the axes;
 // the middle ring (dashed) is the all-series average. With ten or so
 // contestants no z-score can pass ±3, so nothing is clipped in practice.
@@ -172,9 +173,11 @@ const SIGMAS = [-2, -1, 0, 1, 2];
 function radar(d, c) {
   const n = KINDS.length, R = 80, cx = 170, cy = 136;
   const eps = Math.max(1, d.weeksScored), st = state.stats;
-  // In fantasy mode (flip.js) low scores are good, so the shape is turned inside out.
-  const z = (k) => (st[k].sd ? (state.fantasy ? -1 : 1) * (c.ty[k] / eps - st[k].mean) / st[k].sd : 0);
-  const r = (k) => Math.min(1, Math.max(0, (z(k) + Z) / (2 * Z)));
+  const z = (k) => (st[k].sd ? (c.ty[k] / eps - st[k].mean) / st[k].sd : 0);
+  // In fantasy mode (flip.js) low scores are good, so the scale is turned inside
+  // out: +3σ at the centre, −3σ at the edge (on request: the values as they
+  // are, the centre positive). The rings are symmetric, so only the shape moves.
+  const r = (k) => Math.min(1, Math.max(0, ((state.fantasy ? -z(k) : z(k)) + Z) / (2 * Z)));
   const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
   const at = (i, f) => [cx + Math.cos(ang(i)) * R * f, cy + Math.sin(ang(i)) * R * f];
   const f1 = (v) => v.toFixed(1);
