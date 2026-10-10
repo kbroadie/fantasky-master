@@ -197,8 +197,10 @@ const DEPTHS = [
 // Fantasy mode's fall is a rainbow (on request: "magical fantasy Lisa Frank garden rainbows unicorns"):
 // streaks in every colour, and unicorns, rainbows, butterflies, flowers and
 // hearts tumbling with the stick figures.
-const RAINBOW = ["255,92,205", "255,160,60", "255,232,90", "120,240,150", "90,210,255", "175,130,255"];
-const DREAMS = ["🦄", "🌈", "🦋", "🌸", "💖", "⭐", "🦄", "🌷"];
+// No yellows, oranges or greens: faint over the purple night they went olive,
+// and olive is only ever the stink fog's (on request).
+const RAINBOW = ["255,92,205", "255,170,215", "90,210,255", "120,235,230", "175,130,255", "235,190,255"];
+const DREAMS = ["🦄", "🌈", "💕", "🌸", "💖", "💜", "🦄", "💗"];
 // Drawn once each and then stamped, as images: setting a font and drawing
 // emoji or a fresh gradient every frame was most of the fall's cost, and it
 // runs alongside the page's own scrolling.

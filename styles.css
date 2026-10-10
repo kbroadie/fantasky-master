@@ -59,8 +59,12 @@ strong { color: var(--t1); font-weight: 700; }
    (main's padding-top), so compacting it never re-lays out the page (that
    made the animation choppy, on request) and the page never moves: moving it
    let scroll anchoring flip the bar open and shut in a loop. Compacting
-   shrinks the masthead to one thin line and the tabs to their labels; only
-   the bar's own few boxes are laid out as it does. */
+   shrinks the masthead to one thin line and the tabs to their labels, by
+   transforms only (on request: "choppy when quickly scrolling the page"; it
+   had animated heights, which need the main thread every frame, and that's
+   busy while the page flies): the masthead keeps its height and slides its
+   background, brand and countdown; the tabs change size once and glide from
+   where they were (barTo in main.js). */
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; margin: 0 auto; max-width: inherit; z-index: 5;
   display: flow-root; /* the tabs' margin mustn't collapse into the bar's */
@@ -91,24 +95,30 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   display: flex; align-items: center; gap: 8px;
   height: calc(var(--hdr-h) + env(safe-area-inset-top));
   padding: env(safe-area-inset-top) var(--px) 0;
-  background: rgba(70, 8, 8, .5); border-bottom: 1px solid var(--b-gold);
-  position: relative; transition: height .3s var(--ease);
+  position: relative; z-index: 0;
 }
-.compact .hdr { height: calc(var(--hdr-hc) + env(safe-area-inset-top)); }
+/* Its background and rule, at the open height, slide up to the compact one */
+.hdr::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: rgba(70, 8, 8, .5); border-bottom: 1px solid var(--b-gold);
+  transition: transform .3s var(--ease);
+}
+.compact .hdr::before { transform: translateY(calc(var(--hdr-hc) - var(--hdr-h))); }
 /* Its shadow, once compact, is a fade that eases in by opacity (a box-shadow
    transition re-blurred the shadow every frame of the bar's animation) */
 .hdr::after {
   content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 16px; pointer-events: none;
-  background: linear-gradient(rgba(0, 0, 0, .32), rgba(0, 0, 0, .1) 45%, transparent); opacity: 0; transition: opacity .3s var(--ease);
+  background: linear-gradient(rgba(0, 0, 0, .32), rgba(0, 0, 0, .1) 45%, transparent); opacity: 0;
+  transition: opacity .3s var(--ease), transform .3s var(--ease);
 }
-.compact .hdr::after { opacity: 1; }
+.compact .hdr::after { opacity: 1; transform: translateY(calc(var(--hdr-hc) - var(--hdr-h))); }
 .brand {
   display: flex; align-items: center; gap: .3em;
   font-family: var(--ff-head); font-weight: 400; font-size: clamp(12px, 3.5vw, 21px); letter-spacing: 0; white-space: nowrap;
   text-shadow: 0 0 18px var(--red-glow), 0 1px 0 rgba(0, 0, 0, .7);
   transform-origin: left center; transition: transform .3s var(--ease);
 }
-.compact .brand { transform: scale(.78); }
+.compact .brand { transform: translateY(calc((var(--hdr-hc) - var(--hdr-h)) / 2)) scale(.78); }
 .brand .g, .series { color: var(--gold3); text-shadow: 0 0 14px var(--gold-glow); }
 /* The series number is a button: a gold chip with a swap icon */
 .series {
@@ -122,7 +132,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 
 /* Countdown: one line of text, "Ep 5 airs in 5d 18h", numbers in gold
    Inter. The air date itself is on the episode page. */
-.cd { margin-left: auto; min-width: 0; }
+.cd { margin-left: auto; min-width: 0; transition: transform .3s var(--ease); }
+.compact .cd { transform: translateY(calc((var(--hdr-hc) - var(--hdr-h)) / 2)); }
 .cd-pill {
   display: inline-flex; align-items: baseline; gap: 4px;
   font-size: 14px; line-height: 1.15; color: var(--gold3); white-space: nowrap;
@@ -140,17 +151,21 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 
 /* Tabs: one gold panel slides behind the active tab */
 .tabs {
-  position: relative; display: flex; height: var(--tabs-h); margin: var(--tabs-m) 10px; padding: 5px; border-radius: 18px;
+  position: relative; display: flex; height: var(--tabs-h); margin: var(--tabs-m) 10px; padding: 5px; border: 1px solid transparent;
+}
+/* The masthead keeps its height, so compact the tabs come up over its lower part */
+.compact .tabs { height: var(--tabs-hc); margin-block: calc(var(--tabs-mc) - var(--hdr-h) + var(--hdr-hc)) var(--tabs-mc); }
+/* The pill behind the tabs, a box of its own so it can glide (barTo) */
+.tabs-bg {
+  position: absolute; inset: -1px; border-radius: 18px; pointer-events: none; transform-origin: 50% 0;
   background: rgba(11, 9, 11, .55); border: 1px solid var(--b-gold);
-  transition: height .3s var(--ease), margin .3s var(--ease);
   box-shadow: 0 8px 22px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .05);
 }
-.compact .tabs { height: var(--tabs-hc); margin-block: var(--tabs-mc); }
 .tab-ind {
   position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc((100% - 10px) / 3); border-radius: 13px;
   background: linear-gradient(160deg, var(--gold3), var(--gold));
   box-shadow: 0 0 12px var(--gold-glow), inset 0 1px 1px rgba(255, 255, 255, .45), inset 0 -2px 3px rgba(70, 40, 0, .4);
-  transform: translateX(calc(var(--i, 0) * 100%)); transition: transform .32s var(--ease);
+  transform: translateX(calc(var(--i, 0) * 100%)); transition: transform .32s var(--ease); transform-origin: 50% 0;
 }
 .tab {
   flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
@@ -158,8 +173,9 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 }
 .tab[aria-selected="true"] { color: #2a0404; }
 .tab:active { transform: scale(.93); }
-.tab svg { width: 24px; height: 22px; fill: currentColor; transition: height .3s var(--ease), opacity .3s var(--ease); }
-.compact .tab svg { height: 0; opacity: 0; }
+.tab svg { width: 24px; height: 22px; flex-shrink: 0; fill: currentColor; transition: opacity .25s var(--ease); }
+/* Compact, the icon takes no room (the label comes up over it) and fades */
+.compact .tab svg { margin-bottom: -22px; opacity: 0; }
 .tab span { font-family: var(--fm); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
 
 /* ── Pages ─────────────────────────────────────────────────────────── */
@@ -682,7 +698,7 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .fx-light { z-index: 3; mix-blend-mode: screen; }
 .fx-gas { z-index: 4; }
 .pod-col.last .fp { filter: saturate(.8) brightness(.93) drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
-.pod-col.last .pod-pts { color: #a3a86e; } /* the fog's own muted olive */
+.pod-col.last .pod-pts { color: var(--t3); } /* muted: olive is only ever the stink fog's (on request) */
 .pod-name { font-family: var(--ff-name); font-size: 12px; font-weight: 800; margin-top: 3px; }
 .pod-pts { font-size: clamp(18px, 5vw, 22px); font-weight: 800; line-height: 1; }
 .pod-col.win .pod-pts { color: var(--gold3); text-shadow: 0 0 8px var(--gold-glow); }
@@ -962,7 +978,7 @@ html.fz body {
 #fz-fall { display: none; }
 html.fz #fz-fall { display: block; position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
 html.fz .topbar::before { background: linear-gradient(180deg, rgba(70, 14, 110, .45), rgba(40, 8, 72, .72)); }
-html.fz .hdr { background: linear-gradient(90deg, rgba(255, 63, 164, .38), rgba(176, 75, 255, .36), rgba(23, 212, 240, .32)); }
+html.fz .hdr::before { background: linear-gradient(90deg, rgba(255, 63, 164, .38), rgba(176, 75, 255, .36), rgba(23, 212, 240, .32)); }
 html.fz .hero, html.fz .ep-head { background: var(--grain), radial-gradient(90% 100% at 50% 0%, rgba(255, 90, 200, .26), transparent 80%); }
 html.fz .hero::after, html.fz .ep-head::after { background: var(--rainbow); opacity: .7; }
 /* The brand, one line (on request): "Fantasy" in rainbow Pacifico, a bubbly
@@ -1011,6 +1027,20 @@ html.fz .ep-title {
 html.fz .ep-title::before, html.fz .ep-title::after { content: "✨"; display: inline-block; margin: 0 .3em; font-size: .62em; vertical-align: .25em; color: #fff; -webkit-text-fill-color: initial; }
 html.fz .ep-title::after { animation-delay: -1.1s; }
 html.fz .st-how { color: var(--gold2); text-shadow: 0 0 8px rgba(255, 225, 77, .3); }
+/* The Profile in the dream (on request: "should fit the vibe"): the photo
+   tinted pink to violet to turquoise, the shade deep purple rather than grey,
+   the labels hot pink and the hairline pink. */
+html.fz .pf-bg::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(135deg, rgba(255, 63, 164, .55), rgba(176, 75, 255, .45) 50%, rgba(23, 212, 240, .5)); mix-blend-mode: soft-light; }
+html.fz .pf-bg::after {
+  z-index: 2;
+  background:
+    linear-gradient(180deg, rgba(38, 10, 66, .35) 0, transparent 40px, transparent 170px, rgba(38, 10, 66, .9) 270px, rgba(38, 10, 66, .94) 100%),
+    linear-gradient(90deg, rgba(38, 10, 66, .96) 0, rgba(38, 10, 66, .88) 42%, rgba(60, 14, 96, .3) 62%, rgba(90, 20, 120, .12) 80%, rgba(38, 10, 66, .5) 100%),
+    radial-gradient(70% 60% at 76% 40%, rgba(255, 90, 210, .16), transparent 70%);
+}
+html.fz .profile dt { color: var(--show-hi); }
+html.fz .profile dl { border-top-color: rgba(255, 140, 225, .25); }
+html.fz .has-face > p, html.fz .has-face dl { text-shadow: 0 1px 3px rgba(30, 0, 50, .85); }
 html.fz .st-wl { display: none; } /* no "Read the welcome" in the dream (on request) */
 html.fz .st-how::before { content: "🦄"; font-size: 13px; letter-spacing: 0; }
 html.fz .card { border-color: rgba(255, 140, 225, .38); box-shadow: 0 0 14px rgba(255, 79, 195, .16), 0 6px 18px rgba(0, 0, 0, .3); }
@@ -1043,8 +1073,8 @@ html.fz-turn body, html.fz-side body { position: fixed; inset: 0; overflow: hidd
 html.fz-side body { inset: auto; top: 50%; left: 50%; width: 100vh; height: 100vw; max-width: none; transform: translate(-50%, -50%) rotate(var(--rot)); }
 html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
 /* (The ducks give way to the dolphins upside down: .fz-foot at the end.) */
-/* Sideways the page scrolls itself (main.js: the browser picks the wrong scroller in a quarter-turned page) */
-html.fz-side * { touch-action: none; }
+/* Turned, the page scrolls itself (main.js: in a quarter-turned page the browser picks the wrong scroller, and upside down it flings the wrong way) */
+html.fz-turn *, html.fz-side * { touch-action: none; }
 /* No quote upside down (on request) */
 @media not all and (hover: hover) and (pointer: fine) { html.fz .st-quote { display: none; } } /* a desktop keeps it, to switch back */
 /* Inside main, a sticky strip's offset counts from below main's padding (the bar's spacer), so it sticks at 0 */
