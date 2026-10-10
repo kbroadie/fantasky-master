@@ -29,21 +29,29 @@ function set(show, anchor) {
   // The browser pictures the page before and after and animates between the two (styles.css, html[data-vt])
   html.dataset.vt = how;
   html.classList.toggle("vt-in", show);
-  if (how === "ripple") ripple(at, show);
-  if (how === "turn") nameMovers();
-  const vt = document.startViewTransition(() => { swap(); if (how === "turn") nameMovers(); });
-  vt.finished.finally(() => { delete html.dataset.vt; html.classList.remove("vt-in"); if (how === "turn") nameMovers(true); });
+  stage(at, show);
+  const subject = how === "vertigo" ? (anchor === "#dq" ? "#dq .st-quote" : anchor) : null;
+  const name = () => { if (how === "turn") nameMovers(); if (subject) $(subject)?.style.setProperty("view-transition-name", "vt-subject"); };
+  name();
+  if (how === "ripple") for (const a of document.querySelectorAll("#vt-wave animate")) a.beginElement();
+  const vt = document.startViewTransition(() => { swap(); name(); });
+  vt.finished.finally(() => {
+    delete html.dataset.vt; html.classList.remove("vt-in");
+    if (how === "turn") nameMovers(true);
+    if (subject) $(subject)?.style.removeProperty("view-transition-name");
+  });
 }
 
-// Ripple: Fantasy Land grows from what was tapped in a circle, and shrinks back into it. Its keyframes are written
-// here, as a custom property on the root would restyle every duck and dolphin
-let rippleCss = null;
-function ripple(r, show) {
+// What depends on the tap: Iris's circle, and the centre Zoom and Vertigo move about. Written here, as a custom
+// property on the root would restyle every duck and dolphin
+let stageCss = null;
+function stage(r, show) {
   const x = r ? r.left + r.width / 2 : innerWidth / 2, y = r ? r.top + r.height / 2 : innerHeight / 2;
   const R = Math.ceil(Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)));
-  rippleCss ??= document.head.appendChild(document.createElement("style"));
+  stageCss ??= document.head.appendChild(document.createElement("style"));
   const small = `circle(0 at ${x}px ${y}px)`, big = `circle(${R}px at ${x}px ${y}px)`;
-  rippleCss.textContent = `@keyframes vt-ripple { from { clip-path: ${show ? small : big}; } to { clip-path: ${show ? big : small}; } }`;
+  stageCss.textContent = `@keyframes vt-iris { from { clip-path: ${show ? small : big}; } to { clip-path: ${show ? big : small}; } }
+:is(html[data-vt="zoom"], html[data-vt="vertigo"])::view-transition-old(root), :is(html[data-vt="zoom"], html[data-vt="vertigo"])::view-transition-new(root) { transform-origin: ${x}px ${y}px; }`;
 }
 // Turn: each player's half on the week on show, and each Cast tab, glides from its old place to its new one
 // (the order inverts). Only what's on screen under the bar and strip: a moving picture is drawn over everything, the bar
@@ -52,10 +60,12 @@ function nameMovers(clear = false) {
   const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const top = Math.max(0, ...[...document.querySelectorAll(".topbar, .strip")].map((e) => e.getBoundingClientRect())
     .filter((r) => r.height && r.bottom < innerHeight / 2).map((r) => r.bottom));
-  for (const el of document.querySelectorAll("#st-body .slide.here .sd, #cast-tabs .strip-tab")) {
-    const r = el.getBoundingClientRect(), seen = el.dataset.p ? r.top >= top && r.bottom <= innerHeight : r.height > 0;
-    el.style.viewTransitionName = clear || !seen ? "" : el.dataset.p ? `vt-${el.dataset.side}-${slug(el.dataset.p)}` : `vt-cast-${slug(el.textContent)}`;
-  }
+  // Every rect read before any name is written, so the reads don't each recalculate style
+  const els = [...document.querySelectorAll("#st-body .slide.here .sd, #cast-tabs .strip-tab")];
+  const seen = els.map((el) => { const r = el.getBoundingClientRect(); return el.dataset.p ? r.top >= top && r.bottom <= innerHeight : r.height > 0; });
+  els.forEach((el, i) => {
+    el.style.viewTransitionName = clear || !seen[i] ? "" : el.dataset.p ? `vt-${el.dataset.side}-${slug(el.dataset.p)}` : `vt-cast-${slug(el.textContent)}`;
+  });
 }
 
 // Pacifico ("Fantasy") is fetched once a finger is on the quote, before the tap lands

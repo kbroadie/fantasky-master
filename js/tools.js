@@ -50,9 +50,6 @@ function frameRate(show) {
   meter.raf = requestAnimationFrame(tick);
 }
 
-frameRate(get("fps"));
-onSwitch(["fps"], (d) => frameRate(d.value));
-
 // Drag the graphs anywhere; the place is kept on this device
 const POS = "fm-fps-pos";
 function drag(el) {
@@ -69,3 +66,7 @@ function drag(el) {
   el.addEventListener("pointerup", drop);
   el.addEventListener("pointercancel", drop);
 }
+
+// Last: drag() needs POS
+frameRate(get("fps"));
+onSwitch(["fps"], (d) => frameRate(d.value));
