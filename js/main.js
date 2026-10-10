@@ -8,7 +8,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, askTilt, turned, toggleFantasy, DESKTOP, hush } from "./flip.js";
+import { initFlip, askTilt, turned, toggleFantasy, DESKTOP } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -637,16 +637,7 @@ function edges() {
     s.classList.toggle("more-r", s.scrollLeft + s.clientWidth < s.scrollWidth - 2);
   }
 }
-document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("strip")) edges(); quiet(); }, { capture: true, passive: true });
-// Fantasy: the fall draws at half rate while anything scrolls (hush 300ms, sent at most every 100ms).
-let quietAt = 0;
-function quiet() {
-  if (!state.fantasy) return;
-  const now = performance.now();
-  if (now - quietAt < 100) return;
-  quietAt = now;
-  hush(300);
-}
+document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("strip")) edges(); }, { capture: true, passive: true });
 
 let lraf = 0;
 function cardLight() {

@@ -150,7 +150,8 @@ function glints() {
   glinter = setInterval(() => { if (!document.hidden) word.classList.add("glint"); }, 4000);
 }
 function stopFall() { worker?.postMessage({ type: "stop" }); run?.stop(); }
-export function hush(ms) { worker?.postMessage({ type: "hush", ms }); run?.hush(ms); }
+// Not in a hidden tab: a worker without requestAnimationFrame draws on a timer that never pauses
+document.addEventListener("visibilitychange", () => { if (document.hidden) stopFall(); else if (on) fall(); });
 
 // iOS only, before any reading: ask for the tilt (must be in a tap)
 let asking = false;
