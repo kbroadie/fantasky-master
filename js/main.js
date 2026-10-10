@@ -253,6 +253,8 @@ function redraw() {
  * bottom of the screen, so you can swipe anywhere below a short slide.
  */
 const feet = () => [$("#dq"), $(".fz-foot"), $("#foot")];
+/** The footers' height with their top margins (the dolphins' 8px), so a short page ends exactly at the screen's bottom edge. */
+const feetH = () => feet().reduce((h, el) => h + (el?.offsetHeight ? el.offsetHeight + (parseFloat(getComputedStyle(el).marginTop) || 0) : 0), 0);
 /**
  * Size a swiper to its slide, leaving room for the footer, so a short slide
  * ends with the footer at the bottom of the screen. Mid-swipe the footer
@@ -294,7 +296,7 @@ function fit(body) {
     if (pair?.body !== body || pair.i !== i) {
       const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
       const view = turned() ? $("main").clientHeight : innerHeight, top = topIn(body);
-      const room = view - top - pad - feet().reduce((h, el) => h + (el?.offsetHeight || 0), 0); // the ducks, or upside down the dolphins, and a desktop's quote
+      const room = view - top - pad - feetH(); // the ducks, or upside down the dolphins, and a desktop's quote
       const ha = Math.max(kids[i].offsetHeight, room), hb = Math.max(kids[i + 1].offsetHeight, room), hi = Math.max(ha, hb);
       // Held just below the screen (with the rainbow, upside down, that rises above it)
       const foot = $(".fz-foot"), rise = foot?.offsetWidth ? Math.max(0, (foot.offsetWidth * 1.5) / 2 - foot.offsetHeight + 4) : 0;
@@ -314,7 +316,7 @@ function fit(body) {
   const s = kids[Math.round(f)] || kids[i];
   const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
   const view = turned() ? $("main").clientHeight : innerHeight;
-  const room = view - topIn(body) - pad - feet().reduce((h, el) => h + (el?.offsetHeight || 0), 0);
+  const room = view - topIn(body) - pad - feetH();
   const h = `${Math.max(s.offsetHeight, room)}px`;
   if (body.style.height !== h) body.style.height = h;
   if (pair || document.body.classList.contains("lifting")) { pair = null; lift(null); }

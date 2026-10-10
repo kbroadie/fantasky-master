@@ -43,6 +43,9 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html { -webkit-text-size-adjust: 100%; }
+/* No scroll bar for the page (on request), upright as upside down */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
 body {
   font-family: var(--ff); color: var(--t1); background: var(--bg);
   background-image: radial-gradient(ellipse at 50% 0%, rgba(80, 8, 8, .28) 0%, transparent 65%);
@@ -1144,7 +1147,7 @@ html.fz-turn main, html.fz-side main { position: absolute; inset: 0; overflow-y:
 /* (The ducks give way to the dolphins upside down: .fz-foot at the end.) */
 /* Turned, the page scrolls itself (main.js: in a quarter-turned page the browser picks the wrong scroller, and upside down it flings the wrong way) */
 html.fz-turn *, html.fz-side * { touch-action: none; }
-/* No scroll bars when turned (on request): main scrolls there, and its bar showed down the side */
+/* No scroll bars when turned either (on request): main scrolls there, and its bar showed down the side */
 html.fz-turn *, html.fz-side * { scrollbar-width: none; }
 html.fz-turn ::-webkit-scrollbar, html.fz-side ::-webkit-scrollbar { display: none; }
 /* No quote upside down (on request) */
@@ -1190,6 +1193,8 @@ html.fz #foot { display: none; }
    sideways (overflow-x: clip, which makes no scroll box and no stacking
    context); the dolphins and the sea are clipped to it in .fz-waves. */
 html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top: 8px; overflow-x: clip; pointer-events: none; }
+/* The water's base meets the screen's bottom edge (on request): no space under the footer */
+html.fz body { padding-bottom: 0; }
 .fz-waves { position: absolute; inset: 0; overflow: hidden; }
 /* Layers of their own while a swipe moves them, so moving them repaints nothing */
 .lifting #foot, .lifting #dq, .lifting .fz-bow, .lifting .fz-waves { will-change: translate; }
