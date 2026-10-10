@@ -6,6 +6,7 @@ export const CARDS = [
   { title: "Background effects", view: "fz",
     items: [
       { key: "fall", type: "toggle", def: true, main: true, cls: "no-fall" },
+      { key: "fallRes", type: "range", label: "Resolution", def: 1, min: 0.25, max: 1, step: 0.25, unit: "×" },
       { key: "fallFps", type: "range", label: "Frame rate", def: 60, min: 10, max: 60, step: 5, unit: " fps" },
       { key: "fallDensity", type: "range", label: "Streaks", def: 1, min: 0, max: 3, step: 0.25, unit: "×" },
       { key: "fallFigures", type: "range", label: "Figures", def: 7, min: 0, max: 20, step: 1, unit: "" },
@@ -17,7 +18,7 @@ export const CARDS = [
   { title: "Podium effects",
     items: [
       { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
-      { key: "podRes", type: "range", label: "Resolution", def: 0.5, min: 0.25, max: 1, step: 0.25, unit: "×" },
+      { key: "podRes", type: "range", label: "Resolution", def: 1, min: 0.25, max: 1, step: 0.25, unit: "×" },
       { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
       { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
     ] },

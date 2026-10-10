@@ -582,7 +582,7 @@ function edges() {
   }
 }
 document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("strip")) edges(); still(); }, { capture: true, passive: true });
-// Fantasy: the decorative animations hold still while anything scrolls, so the scroll has the frames
+// Fantasy: the decorative animations hold still while anything scrolls, so the scroll has the frames (not the footer's)
 let stillT = 0;
 function still() {
   if (!state.fantasy) return;
