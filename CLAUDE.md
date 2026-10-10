@@ -19,7 +19,7 @@ js/league.js                    pure scoring engine (derive): must match the sys
 js/csv.js, js/checks.js, js/ops.js  CSV parsing and round-trip, the data rules, edits as row ops
 js/alltime.js, js/heroes.js     all-time stats (radar, badges, facts); profile photo crops
 js/edit.js, js/wiki.js          edit mode; Taskmaster Wiki reader
-js/podium-fx.js                 canvas podium effects (gold light, stink gas)
+js/podium-fx.js                 podium effects (gold light, stink gas): one half-res canvas between portraits and text
 js/flip.js, js/fall.js, js/fall-worker.js   the Easter egg (below) and its falling background
 tools/                          check-data, sync-wiki, import-stats, screenshots, share-images
 ```

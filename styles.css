@@ -598,14 +598,10 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .pod-col .fp { position: relative; z-index: 1; }
 /* No drop shadow on the winner: it read as an olive halo */
 .pod-col.win .fp { filter: none; }
-/* Podium canvases (podium-fx.js): back behind portraits, light screened over, gas on top */
+/* Podium canvas (podium-fx.js): over the portraits (z 1), under the text (z 3); it cuts the portraits' shapes out of what's behind them */
 .pod.has-fx, .fx-stage.has-fx { position: relative; isolation: isolate; }
-.fx-stage.has-fx > :not(.fx) { position: relative; z-index: 1; }
-.pod-col { z-index: 1; }
-.fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: inherit; }
-.fx-back { z-index: 0; }
-.fx-light { z-index: 3; mix-blend-mode: screen; }
-.fx-gas { z-index: 4; }
+.fx-stage.has-fx > :not(.fx, .pod-col), .has-fx .pod-col > :not(.fp) { position: relative; z-index: 3; }
+.fx { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; border-radius: inherit; }
 .pod-col.last .fp { filter: saturate(.8) brightness(.93) drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
 .pod-col.last .pod-pts { color: var(--t3); } /* muted: olive is only the stink's */
 .pod-name { font-family: var(--ff-name); font-size: 12px; font-weight: 800; margin-top: 3px; }
