@@ -388,7 +388,7 @@ html.fz-turn main, html.fz-side main { scroll-timeline: --page block; }
 /* Underlined while the tilt still needs allowing (Safari), so it reads as a tap (askHint in flip.js) */
 .tilt-ask .st-quote q { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 /* On a desktop it's right side up and underlined, and a click switches fantasy mode on and off (main.js) */
-.dq { display: none; }
+.dq { display: none; position: relative; } /* relative, like the footers, to follow a swipe (fit) */
 @media (hover: hover) and (pointer: fine) {
   /* One quote under every tab (#dq), not one under each week's board */
   .dq { display: block; padding: 4px var(--px) 0; }
@@ -913,7 +913,7 @@ button.hs-slot.on { box-shadow: 0 0 0 1.5px var(--t1); position: relative; z-ind
 
 /* ── Wider screens ─────────────────────────────────────────────────── */
 /* ── Footer: a row of rubber ducks as the closing rule ─────────────────── */
-.foot { padding: 8px var(--px) 0; text-align: center; }
+.foot { position: relative; padding: 8px var(--px) 0; text-align: center; } /* relative, to follow a swipe (fit in main.js) */
 .ducks { display: flex; align-items: center; justify-content: center; }
 /* Each duck's span is its tap target (edit mode opens when all seven are lit);
    its side padding makes the same 7px gaps as before. */

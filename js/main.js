@@ -252,14 +252,36 @@ function redraw() {
  * The row is as tall as the slide on screen, but never stops short of the
  * bottom of the screen, so you can swipe anywhere below a short slide.
  */
+const feet = () => [$("#dq"), $(".fz-foot"), $("#foot")];
+/**
+ * Size a swiper to its slide, leaving room for the footer, so a short slide
+ * ends with the footer at the bottom of the screen. Mid-swipe the footer
+ * moves with the swipe (on request: it popped in when a swipe settled on a
+ * short week): the swiper takes the taller of the two slides on show, and the
+ * footer is moved by `top` (no transform, so the rainbow behind it stays
+ * behind the page) to between where it ends up under each, as far as the
+ * swipe has gone, rising from just below the screen when one is off it.
+ */
 function fit(body) {
-  const s = body.children[idxOf(body)];
-  if (!s) return;
+  const w = body.clientWidth, kids = body.children;
+  if (!w || !kids.length) return;
+  const f = body.scrollLeft / w, i = Math.min(Math.floor(f), kids.length - 1), t = f - i;
+  const rest = t < 0.01 || t > 0.99 || i + 1 >= kids.length;
+  const a = kids[rest ? Math.round(f) : i] || kids[i], b = rest ? a : kids[i + 1];
   const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
-  // Leave room for the footer, so a short slide ends with it at the bottom of the screen.
-  const view = turned() ? $("main").clientHeight : innerHeight;
-  const toBottom = view - topIn(body) - pad - ($("#foot")?.offsetHeight || 0) - ($(".fz-foot")?.offsetHeight || 0) - ($("#dq")?.offsetHeight || 0); // the ducks, or upside down the dolphins, and a desktop's quote
-  body.style.height = `${Math.max(s.offsetHeight, toBottom)}px`;
+  const view = turned() ? $("main").clientHeight : innerHeight, top = topIn(body);
+  const room = view - top - pad - feet().reduce((h, el) => h + (el?.offsetHeight || 0), 0); // the ducks, or upside down the dolphins, and a desktop's quote
+  const ha = Math.max(a.offsetHeight, room), hb = Math.max(b.offsetHeight, room), hi = Math.max(ha, hb);
+  let dy = 0;
+  if (!rest) {
+    // Where the footer would sit, held just below the screen (with the rainbow, upside down, that rises above it)
+    const foot = $(".fz-foot"), rise = foot?.offsetWidth ? Math.max(0, (foot.offsetWidth * 1.5) / 2 - foot.offsetHeight + 4) : 0;
+    const sc = scroller(), below = (sc === window ? scrollY : sc.scrollTop) + view + rise;
+    const at = (h) => Math.min(top + h, below);
+    dy = Math.round(at(ha) + (at(hb) - at(ha)) * t - (top + hi));
+  }
+  if (body.style.height !== `${hi}px`) body.style.height = `${hi}px`;
+  for (const el of feet()) if (el && el.style.top !== (dy ? `${dy}px` : "")) el.style.top = dy ? `${dy}px` : "";
 }
 const sizes = new ResizeObserver((entries) => {
   for (const b of new Set(entries.map((e) => e.target.parentElement))) if (b?.isConnected) fit(b);
@@ -308,6 +330,7 @@ function bindSwiper(sw, onEdge, ends) {
       raf = 0;
       const i = idxOf(body);
       if (i !== sw.get()) { sw.set(i); mark(sw, i); writeHash(); }
+      fit(body); // the footer follows the swipe
     });
     clearTimeout(settle);
     settle = setTimeout(() => fit(body), 120);
