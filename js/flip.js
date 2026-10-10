@@ -16,15 +16,17 @@ function set(show, anchor) {
   on = show;
   if (show) warm();
   const html = document.documentElement, at = $(anchor)?.getBoundingClientRect();
+  let how = get("fzMove");
+  if (how === "slam" && !slamReady()) how = "iris"; // it needs the Standings' rows on screen
   const swap = () => {
     html.classList.toggle("fz", show);
     state.fantasy = show;
     hooks.redraw();
     const y1 = $(anchor)?.getBoundingClientRect().top;
     if (at && y1 != null) scrollBy(0, y1 - at.top);
+    if (how === "slam") slamScroll();
     if (show) { fall(); glints(); } else { stopFall(); clearInterval(glinter); }
   };
-  const how = get("fzMove");
   if (how === "off" || reducedMotion || !document.startViewTransition) return swap();
   // The browser pictures the page before and after and animates between the two (styles.css, html[data-vt])
   html.dataset.vt = how;
@@ -34,12 +36,89 @@ function set(show, anchor) {
   const name = () => { if (how === "turn") nameMovers(); if (subject) $(subject)?.style.setProperty("view-transition-name", "vt-subject"); };
   name();
   if (how === "ripple") for (const a of document.querySelectorAll("#vt-wave animate")) a.beginElement();
-  const vt = document.startViewTransition(() => { swap(); name(); });
+  const before = how === "slam" ? slamBefore() : null;
+  const vt = document.startViewTransition(() => { swap(); name(); if (before) slamAfter(before); });
   vt.finished.finally(() => {
     delete html.dataset.vt; html.classList.remove("vt-in");
     if (how === "turn") nameMovers(true);
+    if (how === "slam") slamNames("clear");
     if (subject) $(subject)?.style.removeProperty("view-transition-name");
   });
+}
+
+// Slam: the camera zooms in on last place's row, which lifts out of the table; the other rows slide down a place as the
+// table scrolls down behind it; the row slams down as the new top row (last place leads the other view), and a shockwave
+// flips every other row to its new state as the new colours radiate out from the impact. The rows are named one by one:
+// old row i becomes new row i + 1, and the last old row the first new one. Timings in seconds
+const SLAM = { lift: 0.45, travel: 0.5, drop: 0.15, wave: 0.7, flip: 0.14 };
+const slamRows = () => [...document.querySelectorAll("#st-body .slide.here .rows > .pc")];
+function slamReady() {
+  const rows = slamRows(), r = rows.at(-1)?.getBoundingClientRect();
+  return state.page === "standings" && rows.length > 2 && r && r.bottom > 0 && r.top < innerHeight;
+}
+function slamNames(phase) {
+  const rows = slamRows();
+  rows.forEach((r, i) => {
+    r.style.viewTransitionName = phase === "old" ? (i === rows.length - 1 ? "vt-slam" : `vt-row-${i}`)
+      : phase === "new" ? (i === 0 ? "vt-slam" : `vt-row-${i - 1}`) : "";
+  });
+  // The bar and strip are their own pictures, above the moving rows (a moving picture is drawn over everything else)
+  for (const [sel, n] of [[".topbar", "vt-bar"], ["#st-tabs", "vt-strip"]]) $(sel).style.viewTransitionName = phase === "clear" ? "" : n;
+}
+// The table scrolls down so its top row shows under the bar and strip, where the row will land. Where the strip sticks
+// with the bar showing, as scrolling up brings the bar back
+function slamScroll() {
+  const strip = $("#st-tabs"), under = parseFloat(getComputedStyle(strip).top) + strip.offsetHeight + 8;
+  const top = slamRows()[0]?.getBoundingClientRect().top;
+  if (top != null && top < under) scrollBy(0, top - under);
+}
+function slamBefore() {
+  slamNames("old");
+  return { from: slamRows().at(-1).getBoundingClientRect(), y: scrollY };
+}
+function slamAfter({ from: o, y }) {
+  slamNames("new");
+  const rows = slamRows(), n = rows[0].getBoundingClientRect(), dy = y - scrollY;
+  const T = SLAM.lift + SLAM.travel + SLAM.drop, cx = n.left + n.width / 2, cy = n.top + n.height / 2;
+  const R = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy));
+  const at = (d) => (T + (d / R) * SLAM.wave).toFixed(3); // when the shockwave reaches a point d from the impact
+  const E = "cubic-bezier(.33, 0, .67, 1)", end = T + SLAM.wave + 2 * SLAM.flip, pc = (t) => `${((t / end) * 100).toFixed(2)}%`;
+  const L = SLAM.lift, M = L + SLAM.travel, ox = o.left + o.width / 2, oy = o.top + o.height / 2;
+  const css = [`
+html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; transform-origin: ${ox}px ${oy}px; }
+@keyframes vt-cam {
+  0% { transform: none; animation-timing-function: ${E}; } ${pc(L)} { transform: scale(1.18); animation-timing-function: ${E}; }
+  ${pc(M)}, ${pc(T)} { transform: none; } ${pc(T + 0.04)} { transform: translateY(8px); } ${pc(T + 0.09)} { transform: translateY(-5px); }
+  ${pc(T + 0.14)} { transform: translateY(3px); } ${pc(T + 0.2)} { transform: translateY(-1px); } ${pc(T + 0.26)}, 100% { transform: none; } }
+html[data-vt="slam"]::view-transition-group(vt-slam) { z-index: 3; animation: vt-slam ${end}s linear both; }
+@keyframes vt-slam {
+  0% { transform: translate(${o.left}px, ${o.top}px); animation-timing-function: ${E}; }
+  ${pc(L)} { transform: translate(${o.left}px, ${o.top - 8}px) scale(1.06); box-shadow: 0 14px 34px rgba(0, 0, 0, .55); animation-timing-function: ${E}; }
+  ${pc(M)} { transform: translate(${n.left}px, ${n.top - 64}px) scale(1.12); box-shadow: 0 24px 44px rgba(0, 0, 0, .5); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  ${pc(T)} { transform: translate(${n.left}px, ${n.top}px) scale(1.02, .9); box-shadow: 0 0 0 rgba(0, 0, 0, 0); animation-timing-function: ${E}; }
+  ${pc(T + 0.12)}, 100% { transform: translate(${n.left}px, ${n.top}px); } }
+html[data-vt="slam"]::view-transition-old(vt-slam) { animation: vt-slam-out ${end}s linear both; }
+html[data-vt="slam"]::view-transition-new(vt-slam) { animation: vt-slam-in ${end}s linear both; }
+@keyframes vt-slam-out { ${pc(T - 0.02)} { opacity: 1; } ${pc(T + 0.06)}, 100% { opacity: 0; } }
+@keyframes vt-slam-in { 0%, ${pc(T - 0.02)} { opacity: 0; } ${pc(T + 0.06)}, 100% { opacity: 1; } }
+html[data-vt="slam"]::view-transition-old(root) { animation: vt-scroll ${SLAM.travel}s ${L}s ${E} both; }
+@keyframes vt-scroll { to { transform: translateY(${dy}px); } }
+html[data-vt="slam"]::view-transition-new(root) { animation: vt-radiate ${SLAM.wave}s ${T}s ${E} both; }
+@keyframes vt-radiate { from { clip-path: circle(0 at ${cx}px ${cy}px); } to { clip-path: circle(${Math.ceil(R)}px at ${cx}px ${cy}px); } }`];
+  // Each row slides down a place with the table, then flips when the shockwave reaches it
+  rows.slice(1).forEach((r, i) => {
+    const b = r.getBoundingClientRect(), d = at(Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy));
+    css.push(`html[data-vt="slam"]::view-transition-group(vt-row-${i}) { z-index: 1; animation-delay: ${L}s; animation-duration: ${SLAM.travel}s; animation-timing-function: ${E}; animation-fill-mode: both; }
+html[data-vt="slam"]::view-transition-old(vt-row-${i}) { animation: vt-flip-out ${SLAM.flip}s ${d}s cubic-bezier(.55, 0, 1, .45) both; }
+html[data-vt="slam"]::view-transition-new(vt-row-${i}) { animation: vt-flip-in ${SLAM.flip}s ${(+d + SLAM.flip).toFixed(3)}s cubic-bezier(0, .55, .45, 1) both; }`);
+  });
+  // The bar and strip change colour as the wave reaches them
+  for (const [sel, n] of [[".topbar", "vt-bar"], ["#st-tabs", "vt-strip"]]) {
+    const b = $(sel).getBoundingClientRect(), d = at(Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy));
+    css.push(`html[data-vt="slam"]::view-transition-group(${n}) { z-index: 2; }
+html[data-vt="slam"]::view-transition-old(${n}), html[data-vt="slam"]::view-transition-new(${n}) { animation-delay: ${d}s; animation-duration: .2s; }`);
+  }
+  stageCss.textContent += css.join("\n");
 }
 
 // What depends on the tap: Iris's circle, and the centre Zoom and Vertigo move about. Written here, as a custom
