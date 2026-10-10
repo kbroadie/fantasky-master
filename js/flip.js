@@ -7,10 +7,11 @@ import { get, onSwitch } from "./switches.js";
 let on = false;
 let hooks = { redraw() {} };
 
-// anchor: what was tapped, kept where it is on the screen (the page re-renders around it)
-export function toggleFantasy(anchor = "#dq") { set(!on, anchor); }
+// anchor: what was tapped, kept where it is on the screen (the page re-renders around it); at: where the tap landed,
+// which the transitions open from (else the anchor's middle)
+export function toggleFantasy(anchor = "#dq", at = null) { set(!on, anchor, at); }
 
-function set(show, anchor) {
+function set(show, anchor, tap) {
   if (show && !state.d) show = false;
   if (show === on) return;
   on = show;
@@ -31,7 +32,7 @@ function set(show, anchor) {
   // The browser pictures the page before and after and animates between the two (styles.css, html[data-vt])
   html.dataset.vt = how;
   html.classList.toggle("vt-in", show);
-  stage(at, show);
+  stage(tap ?? mid(at), show);
   const subject = how === "vertigo" ? (anchor === "#dq" ? "#dq .st-quote" : anchor) : null;
   const name = () => { if (how === "turn") nameMovers(); if (subject) $(subject)?.style.setProperty("view-transition-name", "vt-subject"); };
   name();
@@ -47,10 +48,11 @@ function set(show, anchor) {
 }
 
 // Slam: the camera zooms in on last place's row, which lifts out of the table; the other rows slide down a place as the
-// table scrolls down behind it; the row slams down as the new top row (last place leads the other view), and a shockwave
+// page scrolls to the top behind it; the row slams down as the new top row (last place leads the other view), and a shockwave
 // flips every other row to its new state as the new colours radiate out from the impact. The rows are named one by one:
 // old row i becomes new row i + 1, and the last old row the first new one. Timings in seconds
-const SLAM = { lift: 0.45, travel: 0.5, drop: 0.15, wave: 0.7, flip: 0.14 };
+const SLAM = { lift: 0.45, drop: 0.15, wave: 0.7, flip: 0.14 };
+const travel = (dy) => 0.5 + Math.min(0.4, Math.abs(dy) / 2500); // the longer the scroll, the longer it takes
 const slamRows = () => [...document.querySelectorAll("#st-body .slide.here .rows > .pc")];
 function slamReady() {
   const rows = slamRows(), r = rows.at(-1)?.getBoundingClientRect();
@@ -65,12 +67,12 @@ function slamNames(phase) {
   // The bar and strip are their own pictures, above the moving rows (a moving picture is drawn over everything else)
   for (const [sel, n] of [[".topbar", "vt-bar"], ["#st-tabs", "vt-strip"]]) $(sel).style.viewTransitionName = phase === "clear" ? "" : n;
 }
-// The table scrolls down so its top row shows under the bar and strip, where the row will land. Where the strip sticks
-// with the bar showing, as scrolling up brings the bar back
+// The page scrolls to the top, where the row will land; if the top row is still below the screen there, only as far as
+// shows it
 function slamScroll() {
-  const strip = $("#st-tabs"), under = parseFloat(getComputedStyle(strip).top) + strip.offsetHeight + 8;
-  const top = slamRows()[0]?.getBoundingClientRect().top;
-  if (top != null && top < under) scrollBy(0, top - under);
+  scrollTo(0, 0);
+  const r = slamRows()[0]?.getBoundingClientRect();
+  if (r && r.bottom > innerHeight - 24) scrollBy(0, r.bottom - innerHeight + 24);
 }
 function slamBefore() {
   slamNames("old");
@@ -78,12 +80,12 @@ function slamBefore() {
 }
 function slamAfter({ from: o, y }) {
   slamNames("new");
-  const rows = slamRows(), n = rows[0].getBoundingClientRect(), dy = y - scrollY;
-  const T = SLAM.lift + SLAM.travel + SLAM.drop, cx = n.left + n.width / 2, cy = n.top + n.height / 2;
+  const rows = slamRows(), n = rows[0].getBoundingClientRect(), dy = y - scrollY, move = travel(dy);
+  const T = SLAM.lift + move + SLAM.drop, cx = n.left + n.width / 2, cy = n.top + n.height / 2;
   const R = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy));
   const at = (d) => (T + (d / R) * SLAM.wave).toFixed(3); // when the shockwave reaches a point d from the impact
   const E = "cubic-bezier(.33, 0, .67, 1)", end = T + SLAM.wave + 2 * SLAM.flip, pc = (t) => `${((t / end) * 100).toFixed(2)}%`;
-  const L = SLAM.lift, M = L + SLAM.travel, ox = o.left + o.width / 2, oy = o.top + o.height / 2;
+  const L = SLAM.lift, M = L + move, ox = o.left + o.width / 2, oy = o.top + o.height / 2;
   const css = [`
 html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; transform-origin: ${ox}px ${oy}px; }
 @keyframes vt-cam {
@@ -101,14 +103,14 @@ html[data-vt="slam"]::view-transition-old(vt-slam) { animation: vt-slam-out ${en
 html[data-vt="slam"]::view-transition-new(vt-slam) { animation: vt-slam-in ${end}s linear both; }
 @keyframes vt-slam-out { ${pc(T - 0.02)} { opacity: 1; } ${pc(T + 0.06)}, 100% { opacity: 0; } }
 @keyframes vt-slam-in { 0%, ${pc(T - 0.02)} { opacity: 0; } ${pc(T + 0.06)}, 100% { opacity: 1; } }
-html[data-vt="slam"]::view-transition-old(root) { animation: vt-scroll ${SLAM.travel}s ${L}s ${E} both; }
+html[data-vt="slam"]::view-transition-old(root) { animation: vt-scroll ${move}s ${L}s ${E} both; }
 @keyframes vt-scroll { to { transform: translateY(${dy}px); } }
 html[data-vt="slam"]::view-transition-new(root) { animation: vt-radiate ${SLAM.wave}s ${T}s ${E} both; }
 @keyframes vt-radiate { from { clip-path: circle(0 at ${cx}px ${cy}px); } to { clip-path: circle(${Math.ceil(R)}px at ${cx}px ${cy}px); } }`];
   // Each row slides down a place with the table, then flips when the shockwave reaches it
   rows.slice(1).forEach((r, i) => {
     const b = r.getBoundingClientRect(), d = at(Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy));
-    css.push(`html[data-vt="slam"]::view-transition-group(vt-row-${i}) { z-index: 1; animation-delay: ${L}s; animation-duration: ${SLAM.travel}s; animation-timing-function: ${E}; animation-fill-mode: both; }
+    css.push(`html[data-vt="slam"]::view-transition-group(vt-row-${i}) { z-index: 1; animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
 html[data-vt="slam"]::view-transition-old(vt-row-${i}) { animation: vt-flip-out ${SLAM.flip}s ${d}s cubic-bezier(.55, 0, 1, .45) both; }
 html[data-vt="slam"]::view-transition-new(vt-row-${i}) { animation: vt-flip-in ${SLAM.flip}s ${(+d + SLAM.flip).toFixed(3)}s cubic-bezier(0, .55, .45, 1) both; }`);
   });
@@ -123,9 +125,9 @@ html[data-vt="slam"]::view-transition-old(${n}), html[data-vt="slam"]::view-tran
 
 // What depends on the tap: Iris's circle, and the centre Zoom and Vertigo move about. Written here, as a custom
 // property on the root would restyle every duck and dolphin
+const mid = (r) => (r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: innerWidth / 2, y: innerHeight / 2 });
 let stageCss = null;
-function stage(r, show) {
-  const x = r ? r.left + r.width / 2 : innerWidth / 2, y = r ? r.top + r.height / 2 : innerHeight / 2;
+function stage({ x, y }, show) {
   const R = Math.ceil(Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)));
   stageCss ??= document.head.appendChild(document.createElement("style"));
   const small = `circle(0 at ${x}px ${y}px)`, big = `circle(${R}px at ${x}px ${y}px)`;

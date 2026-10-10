@@ -1,18 +1,20 @@
-// Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js): toggles and sliders, a card per
-// effect, per device in localStorage. Defaults are the site as designed; everything applies live (fm-switch events)
+// Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js), a card per effect, per device in
+// localStorage. Defaults are the site as designed; everything applies live (fm-switch events). Each kind of setting has
+// its control: an effect's on/off a switch in its card's head (main), a small fixed set segmented buttons (steps, choice),
+// a strength a slider (range)
 export const CARDS = [
-  // How the view changes to and from Fantasy Land (flip.js)
-  { title: "Transition",
-    items: [{ key: "fzMove", type: "choice", def: "iris", options: [["off", "Off"], ["iris", "Iris"], ["ripple", "Ripple"], ["blur", "Blur"],
+  // Fantasy Land's switch in its head (not a setting: it switches the view), and how the view changes (flip.js)
+  { title: "Fantasy Land", fz: true,
+    items: [{ key: "fzMove", type: "choice", label: "Transition", def: "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["blur", "Blur"],
       ["lens", "Lens"], ["flare", "Flare"], ["swirl", "Swirl"], ["slow", "Slow"], ["flash", "Flash"], ["grade", "Grade"],
-      ["zoom", "Zoom"], ["roll", "Roll"], ["tilt", "Tilt"], ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"]] }] },
+      ["zoom", "Zoom"], ["roll", "Roll"], ["tilt", "Tilt"], ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
   { title: "Frame rate",
     items: [{ key: "fps", type: "toggle", def: false, main: true }] },
   { title: "Background effects", view: "fz",
     items: [
       { key: "fall", type: "toggle", def: true, main: true, cls: "no-fall" },
-      { key: "fallRes", type: "range", label: "Resolution", def: 1, min: 0.25, max: 1, step: 0.25, unit: "×" },
-      { key: "fallFps", type: "range", label: "Frame rate", def: 60, min: 10, max: 60, step: 5, unit: " fps" },
+      { key: "fallRes", type: "steps", label: "Resolution", def: 1, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
+      { key: "fallFps", type: "steps", label: "Frame rate", def: 60, options: [[15, "15"], [30, "30"], [45, "45"], [60, "60 fps"]] },
       { key: "fallDensity", type: "range", label: "Streaks", def: 1, min: 0, max: 3, step: 0.25, unit: "×" },
       { key: "fallFigures", type: "range", label: "Figures", def: 7, min: 0, max: 20, step: 1, unit: "" },
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
@@ -23,7 +25,7 @@ export const CARDS = [
   { title: "Podium effects",
     items: [
       { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
-      { key: "podRes", type: "range", label: "Resolution", def: 1, min: 0.25, max: 1, step: 0.25, unit: "×" },
+      { key: "podRes", type: "steps", label: "Resolution", def: 1, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
       { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
       { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
     ] },
@@ -43,7 +45,9 @@ try { for (const k of Object.keys(localStorage)) if (k.startsWith("fm-sw-") && !
 for (const [k, it] of Object.entries(ITEMS)) {
   let v = null;
   try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
-  values[k] = v == null ? it.def : it.type === "toggle" ? v === "1" : it.type === "choice" ? (it.options.some(([o]) => o === v) ? v : it.def) : +v;
+  const read = it.type === "toggle" ? v === "1" : it.type === "choice" ? v : +v;
+  // A value no longer offered (an old slider's in-between step) is the default
+  values[k] = v == null || (it.options && !it.options.some(([o]) => o === read)) ? it.def : read;
 }
 export const get = (k) => values[k];
 export function set(k, v) {
@@ -56,6 +60,7 @@ export function set(k, v) {
   apply(it);
   dispatchEvent(new CustomEvent("fm-switch", { detail: { key: k, value: v } }));
 }
+export const changed = () => Object.keys(ITEMS).filter((k) => get(k) !== ITEMS[k].def).length;
 export function resetAll() { for (const k of Object.keys(ITEMS)) if (get(k) !== ITEMS[k].def) set(k, ITEMS[k].def); }
 export const onSwitch = (keys, fn) => addEventListener("fm-switch", ({ detail: d }) => { if (keys.includes(d.key)) fn(d); });
 
