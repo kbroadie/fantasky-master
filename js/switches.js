@@ -1,70 +1,69 @@
-// Hidden switches, toggled in the duck menu (Switches): per device, in localStorage
-export const SWITCHES = [
-  { key: "upright", name: "Rainbow view right side up", note: "No turning: tap the quote (under every tab) to switch the rainbow view on and off. The phone's tilt is ignored." },
-  { key: "flip", name: "Flipped layout", note: "Upside down, turn the content rather than the page, so the phone does the scrolling. An experiment." },
-  { key: "fps", name: "Frame rate", note: "A corner box: frames a second and the longest frame, over the last second. It times the main thread; scrolling the phone does itself can stay smooth when it drops." },
-  { key: "tilt", name: "Tilt diagnostic", note: "A box of the motion sensors' readings (also ?tilt in the address)." },
+// Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js): toggles and sliders, a card per
+// effect, per device in localStorage. Defaults are the site as designed; everything applies live (fm-switch events)
+export const CARDS = [
+  { title: "Frame rate", note: "Live graphs in the corner: frames a second over the last 10 seconds, and how long each frame took. They time the main thread, so scrolling the phone does itself can stay smooth when they dip.",
+    items: [{ key: "fps", type: "toggle", def: false, main: true }] },
+  { title: "Benchmark", note: "A button in the corner that runs every interaction at three speeds, timing every frame, then gives a table of results to copy. Its scrolling is scripted, so it shows what scrolling costs to draw.",
+    items: [{ key: "bench", type: "toggle", def: false, main: true }] },
+  { title: "Falling background", note: "The rainbow view's fall: streaks, stick figures and dreamy emoji. Each frame redraws the whole screen, so frame rate and density cost the most.",
+    items: [
+      { key: "fall", type: "toggle", def: true, main: true, cls: "no-fall" },
+      { key: "fallFps", type: "range", label: "Frame rate", def: 30, min: 10, max: 60, step: 5, unit: " fps" },
+      { key: "fallDensity", type: "range", label: "Streaks", def: 1, min: 0, max: 3, step: 0.25, unit: "×" },
+      { key: "fallFigures", type: "range", label: "Figures and emoji", def: 7, min: 0, max: 20, step: 1, unit: "" },
+      { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
+      { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
+    ] },
+  { title: "Podium effects", note: "The episode winner's gold light and last place's stink gas, and the Cast leader's light. Drawn on one canvas a frame while on screen.",
+    items: [
+      { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
+      { key: "podRes", type: "range", label: "Resolution", def: 0.5, min: 0.25, max: 1, step: 0.25, unit: "×" },
+      { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
+      { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
+    ] },
+  { title: "Rainbow decorations", note: "The rainbow view's moving extras. Holding still while scrolling pauses them all while anything moves, so the scroll has the frames.",
+    items: [
+      { key: "sparkles", type: "toggle", label: "Title sparkles", def: true, cls: "no-sparkles" },
+      { key: "glint", type: "toggle", label: "Glint on Fantasy", def: true, cls: "no-glint" },
+      { key: "tabBow", type: "toggle", label: "Sliding tab rainbow", def: true, cls: "no-tabbow" },
+      { key: "dolphins", type: "toggle", label: "Leaping dolphins", def: true, cls: "no-dolphins" },
+      { key: "stillScroll", type: "toggle", label: "Hold still while scrolling", def: true },
+    ] },
+  { title: "Rainbow cards", note: "How solid the rainbow view's cards are. More see-through shows the fall behind them, but everything over it is blended again every frame.",
+    items: [{ key: "fzAlpha", type: "range", label: "Opacity", def: 0.84, min: 0.5, max: 1, step: 0.02, pct: true, css: "--fz-a" }] },
+  { title: "Scoring cards", note: "The How scoring works cards' drifting pool of light and the glint on their icons.",
+    items: [{ key: "howLight", type: "toggle", def: true, main: true, cls: "no-howlight" }] },
 ];
+const ITEMS = Object.fromEntries(CARDS.flatMap((c) => c.items.map((it) => [it.key, it])));
 const id = (k) => `fm-sw-${k}`;
-export function isOn(k) {
-  try { return localStorage.getItem(id(k)) === "1"; } catch { return false; }
-}
-export function setSwitch(k, on) {
-  try { on ? localStorage.setItem(id(k), "1") : localStorage.removeItem(id(k)); } catch { /* private mode: lasts the visit */ }
-  dispatchEvent(new CustomEvent("fm-switch", { detail: { key: k, on } }));
-}
+export const item = (k) => ITEMS[k];
+export const shown = (it, v) => (it.pct ? `${Math.round(v * 100)}%` : `${+v.toFixed(2)}${it.unit}`);
 
-// The fps switch: live graphs of frames a second (the last 10s) and frame time (the last 160 frames).
-// The loop keeps the main thread drawing every frame, so it costs a little itself; the graphs redraw 4 times a second
-let meter = null;
-function frameRate(show) {
-  if (!show) { if (meter) { cancelAnimationFrame(meter.raf); meter.el.remove(); meter = null; } return; }
-  if (meter) return;
-  const W = 160, H = 84, dpr = Math.min(2, devicePixelRatio || 1);
-  const el = Object.assign(document.createElement("div"), { className: "fps-meter" });
-  el.innerHTML = `<canvas width="${W * dpr}" height="${H * dpr}" aria-hidden="true"></canvas><button type="button" class="fps-bench">Benchmark</button>`;
-  document.body.append(el);
-  el.lastChild.addEventListener("click", (e) => { e.stopPropagation(); import("./bench.js").then((b) => b.run(el.lastChild)); });
-  const g = el.firstChild.getContext("2d");
-  g.scale(dpr, dpr);
-  meter = { el, raf: 0 };
-  const recent = [], gaps = [], rates = []; // recent: frame times in the last second
-  let last = 0, drawn = 0;
-  const col = (ms) => (ms > 34 ? "#ff8a7a" : ms > 18 ? "#ffd27a" : "#8f8");
-  const draw = (now) => {
-    g.clearRect(0, 0, W, H);
-    g.fillStyle = "rgba(0,0,0,.82)";
-    g.beginPath(); g.roundRect(0, 0, W, H, 6); g.fill();
-    g.font = "500 11px 'DM Mono', monospace"; g.textBaseline = "top";
-    // Frames a second: a line over the last 10s, against 60
-    const top = 16, h1 = 22, max1 = Math.max(60, ...rates);
-    const y1 = (v) => top + h1 - (v / max1) * h1;
-    g.strokeStyle = "rgba(255,255,255,.25)"; g.setLineDash([2, 2]); g.beginPath(); g.moveTo(6, y1(60)); g.lineTo(W - 6, y1(60)); g.stroke(); g.setLineDash([]);
-    g.strokeStyle = "#8f8"; g.lineWidth = 1.5; g.beginPath();
-    rates.forEach((v, k) => { const x = W - 6 - (rates.length - 1 - k) * ((W - 12) / 39); k ? g.lineTo(x, y1(v)) : g.moveTo(x, y1(v)); });
-    g.stroke();
-    g.fillStyle = "#8f8"; g.fillText(`${rates.at(-1) ?? 0} fps`, 6, 3);
-    // Frame time: a bar a frame over the last 160, against 17ms (60 fps) and 33ms (30 fps), up to 66ms
-    const base = H - 6, h2 = 30, y2 = (ms) => base - Math.min(ms, 66) / 66 * h2;
-    g.strokeStyle = "rgba(255,255,255,.25)"; g.lineWidth = 1; g.setLineDash([2, 2]);
-    for (const ms of [16.7, 33.3]) { g.beginPath(); g.moveTo(6, y2(ms)); g.lineTo(W - 6, y2(ms)); g.stroke(); }
-    g.setLineDash([]);
-    gaps.forEach((ms, k) => { const x = W - 6 - (gaps.length - k); g.fillStyle = col(ms); g.fillRect(x, y2(ms), 1, base - y2(ms)); });
-    const worst = Math.max(0, ...recent.map((f) => f[1]));
-    g.fillStyle = col(worst); g.textAlign = "right"; g.fillText(`${Math.round(worst)} ms`, W - 6, top + h1 + 3); g.textAlign = "left";
-  };
-  const tick = (now) => {
-    if (last) { const gap = now - last; recent.push([now, gap]); gaps.push(gap); if (gaps.length > W - 12) gaps.shift(); }
-    last = now;
-    while (recent.length && now - recent[0][0] > 1000) recent.shift();
-    if (now - drawn >= 250) {
-      drawn = now;
-      rates.push(recent.length); if (rates.length > 40) rates.shift();
-      draw(now);
-    }
-    meter.raf = requestAnimationFrame(tick);
-  };
-  meter.raf = requestAnimationFrame(tick);
+// Read once: get() runs on every scroll (still() in main.js)
+const values = {};
+for (const [k, it] of Object.entries(ITEMS)) {
+  let v = null;
+  try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
+  values[k] = v == null ? it.def : it.type === "toggle" ? v === "1" : +v;
 }
-frameRate(isOn("fps"));
-addEventListener("fm-switch", ({ detail: d }) => { if (d.key === "fps") frameRate(d.on); });
+export const get = (k) => values[k];
+export function set(k, v) {
+  const it = ITEMS[k];
+  values[k] = v;
+  try {
+    if (v === it.def) localStorage.removeItem(id(k));
+    else localStorage.setItem(id(k), it.type === "toggle" ? (v ? "1" : "0") : String(v));
+  } catch { /* private mode: lasts the visit */ }
+  apply(it);
+  dispatchEvent(new CustomEvent("fm-switch", { detail: { key: k, value: v } }));
+}
+export function resetAll() { for (const k of Object.keys(ITEMS)) if (get(k) !== ITEMS[k].def) set(k, ITEMS[k].def); }
+export const onSwitch = (keys, fn) => addEventListener("fm-switch", ({ detail: d }) => { if (keys.includes(d.key)) fn(d); });
+
+// What CSS can do on its own: a class while a toggle is off, or a custom property
+function apply(it) {
+  const html = document.documentElement;
+  if (it.cls) html.classList.toggle(it.cls, !get(it.key));
+  if (it.css) html.style.setProperty(it.css, get(it.key));
+}
+for (const it of Object.values(ITEMS)) if (it.cls || it.css) apply(it);

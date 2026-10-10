@@ -6,16 +6,11 @@ const frame = () => new Promise(requestAnimationFrame);
 const SPEEDS = ["slow", "medium", "fast"];
 let running = null;
 
-const html = document.documentElement.classList;
-function mode() {
-  return html.contains("fz-flip") ? "rainbow, flipped" : html.contains("fz-turn") ? "rainbow, turned"
-    : html.contains("fz-side") ? "rainbow, sideways" : html.contains("fz") ? "rainbow, right side up" : "normal";
-}
-// Turned, main scrolls; flipped, the reader's down is up the document
-const scroller = () => (html.contains("fz-turn") || html.contains("fz-side") ? $("main") : document.scrollingElement);
-const room = () => { const s = scroller(); return s.scrollHeight - s.clientHeight; };
-const toReaderTop = () => { const s = scroller(); s.scrollTop = html.contains("fz-flip") ? room() : 0; };
-const scrollOn = (d) => { scroller().scrollTop += html.contains("fz-flip") ? -d : d; };
+const mode = () => (document.documentElement.classList.contains("fz") ? "rainbow" : "normal");
+const doc = document.scrollingElement;
+const room = () => doc.scrollHeight - doc.clientHeight;
+const toReaderTop = () => { doc.scrollTop = 0; };
+const scrollOn = (d) => { doc.scrollTop += d; };
 
 async function scrollAt(pxs) {
   toReaderTop();

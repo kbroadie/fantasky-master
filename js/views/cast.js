@@ -2,6 +2,7 @@
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
+import { CARDS, get, shown } from "../switches.js";
 
 // Fantasy: lowest total first
 export const castOrder = (d) => [...d.contestants].sort((a, b) => rankOf(d, a) - rankOf(d, b) || a.key.localeCompare(b.key));
@@ -13,10 +14,35 @@ export const castTabs = (d) => castOrder(d).map((c, i) => `<button class="strip-
 export { median };
 
 export function castSlides(d) {
-  const scores = d.contestants.flatMap((c) => c.eps.slice(0, d.weeksScored));
-  const max = Math.max(1, ...scores);
-  return castOrder(d).map((c) => `<section class="slide">${slide(d, c, max, median(scores))}</section>`).join("");
+  return castOrder(d).map((c) => `<section class="slide">${castSlide(d, c)}</section>`).join("");
 }
+export function castSlide(d, c) {
+  const scores = d.contestants.flatMap((o) => o.eps.slice(0, d.weeksScored));
+  return slide(d, c, Math.max(1, ...scores), median(scores));
+}
+
+// An Easter egg: a tap on Richard Ayoade's portrait makes him Maurice Moss, and his cards the hidden switches (switches.js)
+const isMoss = (c) => c.full === "Richard Ayoade";
+const toggle = (it, name) => `<button type="button" class="sw-toggle" role="switch" aria-checked="${get(it.key)}" aria-label="${esc(name)}" data-sw="${it.key}"></button>`;
+const control = (it) => (it.type === "toggle"
+  ? `<label class="sw-row"><span>${esc(it.label)}</span>${toggle(it, it.label)}</label>`
+  : `<label class="sw-row sw-slide"><span>${esc(it.label)}</span><b class="sw-val">${shown(it, get(it.key))}</b>
+      <input type="range" class="sw-range" data-sw="${it.key}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}"></label>`);
+const switchCard = (c) => {
+  const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
+  return `
+    <div class="card sw-card${main && !get(main.key) ? " off" : ""}">
+      <div class="card-head"><span>${esc(c.title)}</span>${main ? toggle(main, c.title) : ""}</div>
+      <p class="sw-note">${esc(c.note)}</p>
+      ${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
+    </div>`;
+};
+const switchCards = () => CARDS.map(switchCard).join("") + `
+    <div class="card sw-card">
+      <div class="card-head"><span>Reset</span></div>
+      <p class="sw-note">Every setting back as designed.</p>
+      <div class="sw-rows"><button type="button" class="ed-btn sw-reset">Reset all</button></div>
+    </div>`;
 
 function median(xs) {
   if (!xs.length) return null;
@@ -47,19 +73,20 @@ function slide(d, c, max, med) {
   const won = (ep) => (state.fantasy ? lastIn(d, ep, c) : d.winners[ep]?.winner === c.key), rank = rankOf(d, c);
   const wins = state.fantasy ? d.episodes.filter(({ ep }) => ep <= d.weeksScored && lastIn(d, ep, c)).length : c.wins;
   const bars = barsCard(d, (ep) => ep > d.weeksScored ? null : { v: c.eps[ep - 1], won: won(ep) }, max, med, c.color);
+  const moss = state.moss && isMoss(c);
 
   return `
     <div class="ep-head cd-head${rank === 1 ? " fx-stage" : ""}">
-      <div class="cd-img${rank === 1 ? " pod-col win" : ""}">${framed(c)}</div>
+      <div class="cd-img${rank === 1 ? " pod-col win" : ""}"${isMoss(c) ? ` data-moss="${c.key}"` : ""}>${framed(c)}</div>
       <div class="kicker">${ord(rank)} of ${d.contestants.length} · Series ${state.key}</div>
-      <h2 class="ep-title"><span class="ep-w"><span class="ep-t">${esc(c.full)}</span></span></h2>
+      <h2 class="ep-title"><span class="ep-w"><span class="ep-t">${moss ? "Maurice Moss" : esc(c.full)}</span></span></h2>
       <div class="ep-sub"><b style="color:${c.color}">${c.total}</b> points · ${c.avg.toFixed(1)} an episode${wins ? ` · ${wins} win${wins > 1 ? "s" : ""}` : ""}</div>
     </div>
-    ${state.fantasy ? "" : records(d, c)}
+    ${moss ? switchCards() : `${state.fantasy ? "" : records(d, c)}
     ${bars}
     ${heatStrip(d, c)}
     ${radar(d, c)}
-    ${profile(c)}`;
+    ${profile(c)}`}`;
 }
 
 const statsRow = (c) => statsFor(state.allTime, state.key, c.full);

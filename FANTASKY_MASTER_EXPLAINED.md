@@ -323,7 +323,7 @@ The site shows it as a red line at the top of the player's opened row on the Sta
 
 ### 6.12 Fantasy mode (low scores win)
 
-An Easter egg: when a phone or tablet is held upside down (`flip.js`), the whole app shows the same data as a dream where low scores win ("Fantasy Fantasky Master"). Nothing else mentions it, README.md included. Nothing in `league.js` changes; the views turn the order round (`state.fantasy`):
+An Easter egg: tapping the quote under every tab (`flip.js`) switches the whole app to show the same data as a dream where low scores win ("Fantasy Fantasky Master"). Nothing else mentions it, README.md included. Nothing in `league.js` changes; the views turn the order round (`state.fantasy`):
 
 | Output | Normal | Fantasy mode |
 |---|---|---|
@@ -336,7 +336,7 @@ An Easter egg: when a phone or tablet is held upside down (`flip.js`), the whole
 | A pick that "won" (gold bar) | the pick won the episode | the pick scored the episode's lowest |
 | Cast order and rank | series total, highest first | `1 + count of contestants with a lower total`, lowest first |
 | Cast wins | episodes won | episodes on the lowest score |
-| Radar | z-score per axis | −z |
+| Radar | z-score per axis, −3σ at the centre | the same z, the scale turned inside out (+3σ at the centre) |
 
 The How scoring works cards read "fewest points" and "worst episode placements". The All-time records card isn't shown.
 

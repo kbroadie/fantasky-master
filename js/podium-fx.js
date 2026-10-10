@@ -1,6 +1,10 @@
-// Episode podium effects: winner's gold light (rays, glow, pool, bounce, shadows, dust, glints) and last place's stink gas (heavy, sinks to the card's bottom and spreads like dry ice, collides with all four sides). One canvas at half resolution, between the portraits and the text: what's behind them is drawn first and their shapes cut out of it, then what's in front. Scrolling sloshes gas and stirs dust; only on-screen podiums run; reduced motion gets one still frame.
+// Episode podium effects: winner's gold light (rays, glow, pool, bounce, shadows, dust, glints) and last place's stink gas (heavy, sinks to the card's bottom and spreads like dry ice, collides with all four sides). One canvas at podRes resolution (half by default), between the portraits and the text: what's behind them is drawn first and their shapes cut out of it, then what's in front. Scrolling sloshes gas and stirs dust; only on-screen podiums run; reduced motion gets one still frame.
 
-const DPR = Math.min(2, window.devicePixelRatio || 1) / 2;
+import { get, onSwitch } from "./switches.js";
+
+// The Moss cards' settings: on or off, resolution, light and gas strength
+const res = () => Math.min(2, window.devicePixelRatio || 1) * get("podRes");
+let DPR = res(), ON = get("podium"), LIGHT = get("podLight"), GAS = get("podGas");
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -77,7 +81,7 @@ class Scene {
   }
 
   layout() {
-    // Measured by offsets within the card, so it holds when the page is turned
+    // Measured by offsets within the card
     this.w = this.pod.clientWidth;
     this.h = this.pod.clientHeight;
     if (!this.w) return;
@@ -127,7 +131,7 @@ class Scene {
     const { w, floor } = this;
 
     if (this.losers.length) {
-      this.spawnGas += dt * 34;
+      this.spawnGas += dt * 34 * GAS;
       while (this.spawnGas >= 1 && this.gas.length < 180) {
         this.spawnGas--;
         const f = this.losers[Math.floor(Math.random() * this.losers.length)];
@@ -279,7 +283,7 @@ class Scene {
     x.setTransform(DPR, 0, 0, DPR, 0, 0); x.clearRect(0, 0, this.w, this.h);
     const t = this.t, f = this.win;
     const st = this.statics(), put = (x, img, a) => { x.globalAlpha = a; x.drawImage(img, 0, 0, this.w, this.h); };
-    const I = 0.82 + 0.1 * Math.sin(t * 1.4) + 0.05 * Math.sin(t * 3.7 + 1.2) + this.energy * 0.35;
+    const I = (0.82 + 0.1 * Math.sin(t * 1.4) + 0.05 * Math.sin(t * 3.7 + 1.2) + this.energy * 0.35) * LIGHT;
 
     // Behind the portraits
     if (f) {
@@ -376,7 +380,7 @@ const io = new IntersectionObserver((entries) => {
 
 function frame(now) {
   raf = 0;
-  if (document.hidden || !visible.size) return;
+  if (document.hidden || !visible.size || !ON) return;
   const dt = Math.min(0.05, (now - (then || now)) / 1000);
   then = now;
   const dy = clamp(scrollDY, -90, 90);
@@ -390,10 +394,17 @@ function frame(now) {
   raf = requestAnimationFrame(frame);
 }
 function wake() {
-  if (REDUCED || raf || document.hidden || !visible.size) return;
+  if (REDUCED || raf || document.hidden || !visible.size || !ON) return;
   then = 0;
   raf = requestAnimationFrame(frame);
 }
+
+onSwitch(["podium", "podRes", "podLight", "podGas"], () => {
+  ON = get("podium"); LIGHT = get("podLight"); GAS = get("podGas");
+  const r = res();
+  if (r !== DPR) { DPR = r; for (const sc of scenes) sc.layout(); }
+  wake();
+});
 
 if (!REDUCED) {
   addEventListener("scroll", () => { scrollDY += scrollY - lastY; lastY = scrollY; }, { passive: true });

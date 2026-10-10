@@ -26,7 +26,7 @@ const streakImg = (col, a) => sprite(`${col}/${a}`, 1, 64, (g) => {
   g.fillStyle = gr;
   g.fillRect(0, 0, 1, 64);
 });
-export function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44], rainbow = false) {
+export function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44], rainbow = false, speed = 1) {
   const r = (a, b) => a + Math.random() * (b - a), scale = (w * h) / (390 * 844) * dense;
   const hue = (gold) => (rainbow ? RAINBOW[Math.floor(Math.random() * RAINBOW.length)] : gold ? "232,176,64" : "240,232,220");
   const motes = DEPTHS.flatMap((d, k) => Array.from({ length: Math.max(dense > 1 ? 1 : 0, Math.round(d.n * scale)) }, () => ({ k, x: r(0, w), y: r(0, h), len: r(...d.len), col: hue(Math.random() < 0.2) })));
@@ -67,28 +67,31 @@ export function streaks(x, w, h, dense = 1, bright = 1, figs = 5, size = [26, 44
     x.clearRect(0, 0, w, h);
     for (const m of motes) {
       const d = DEPTHS[m.k];
-      m.y -= d.v * dt;
+      m.y -= d.v * speed * dt;
       if (m.y < -m.len) { m.y += h + m.len; m.x = r(0, w); }
       x.drawImage(streakImg(m.col, Math.min(1, d.a * bright).toFixed(3)), m.x, m.y, d.w, m.len);
     }
     for (const [i, f] of figures.entries()) {
-      f.y += f.vy * dt; f.x += f.vx * dt; f.rot += f.spin * dt;
+      f.y += f.vy * speed * dt; f.x += f.vx * speed * dt; f.rot += f.spin * speed * dt;
       if (f.y < -f.s) figures[i] = fig(h + f.s); // gone past: another comes up from below
       person(figures[i]);
     }
   };
 }
 
-// start() at 30 fps (one still frame if reduced), stop(). Each frame is a full-screen texture the GPU
+// start() at o.fps, 30 by default (one still frame if reduced), stop(). Each frame is a full-screen texture the GPU
 // uploads and blends everything over, so fewer frames are what count
-export function runner(canvas, w, h, reduced) {
+// o: the Moss cards' settings (fps, density, figures, bright, speed), the designed look by default
+export function runner(canvas, w, h, reduced, o = {}) {
   canvas.width = w; canvas.height = h;
-  const draw = streaks(canvas.getContext("2d"), w, h, 1, 1.3, Math.max(4, Math.round(7 * (w * h) / (390 * 844))), [26, 44], true);
+  const figs = o.figures ?? 7, area = (w * h) / (390 * 844);
+  const draw = streaks(canvas.getContext("2d"), w, h, o.density ?? 1, 1.3 * (o.bright ?? 1), figs ? Math.max(1, Math.round(figs * area)) : 0, [26, 44], true, o.speed ?? 1);
+  const gap = 1000 / (o.fps ?? 30) - 3; // at any refresh rate
   const raf = globalThis.requestAnimationFrame ? (f) => requestAnimationFrame(f) : (f) => setTimeout(() => f(performance.now()), 16);
   const unraf = globalThis.cancelAnimationFrame ? (id) => cancelAnimationFrame(id) : (id) => clearTimeout(id);
   let id = 0, last = 0;
   const step = (now) => {
-    if (!last || now - last >= 30) { // 30 fps at any refresh rate
+    if (!last || now - last >= gap) {
       draw(last ? Math.min(0.05, (now - last) / 1000) : 0);
       last = now;
     }
