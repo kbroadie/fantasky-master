@@ -1,7 +1,4 @@
-// Draws Fantasy mode's fall off the main thread (on request: "optimize rainbow
-// view performance"): flip.js hands it the canvas (transferControlToOffscreen)
-// and tells it to start, stop and hush (draw at half rate while the page scrolls), so the page's own scrolling and
-// animations never wait on the fall.
+// Draws the fantasy fall off the main thread: start, stop, hush (half rate while scrolling).
 import { runner } from "./fall.js";
 
 let canvas = null, run = null;

@@ -1,7 +1,4 @@
-// All-time Taskmaster stats (data/taskmaster_stats.csv, imported from the
-// league's stats sheet by tools/import-stats.mjs): every contestant in every
-// series. Used for the Performance radar's baseline, the all-time record
-// badges and the profile facts on each Cast page.
+// All-time stats (data/taskmaster_stats.csv): the radar baseline, record badges and profile facts.
 
 import { parseCSV } from "./csv.js";
 
@@ -18,7 +15,6 @@ export async function loadStats() {
 const num = (v) => (v === "" || v == null ? null : +v);
 const norm = (s) => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
-/** A contestant's row: matched by series and full name. */
 export const statsFor = (rows, series, full) => rows.find((r) => +r.series === +series && norm(r.name) === norm(full)) || null;
 
 /** Mean and SD of points per episode for Prize, solo Filmed and Live tasks, over every contestant. */
@@ -38,9 +34,6 @@ export function allTimePerEpisode(rows) {
   }
   return out;
 }
-
-// ── Record badges ───────────────────────────────────────────────────────────
-// A badge when a contestant is in the all-time top 3 for a stat.
 
 const pct = (v) => `${Math.round(v)}%`;
 const BADGES = [
@@ -64,13 +57,7 @@ const airing = (rows) => {
   return rows.some((r) => +r.series === latest && num(r.episodes) < 10) ? latest : null;
 };
 
-/**
- * The all-time record badges a contestant holds, best rank first. Only
- * finished series count, on both sides: a few episodes are too few to rank
- * (in Series 21, only one of the eight top-10 places held after four
- * episodes lasted to the final), so the series still airing gets no badges
- * and doesn't push anyone else down.
- */
+// Finished series only, on both sides: a few episodes are too few to rank
 export function badgesFor(rows, row) {
   const live = airing(rows);
   if (!row || +row.series === live) return [];
@@ -86,8 +73,6 @@ export function badgesFor(rows, row) {
   }
   return out.sort((a, b) => a.rank - b.rank);
 }
-
-// ── Profile facts ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const yes = (v) => /^y/i.test(v || "");
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

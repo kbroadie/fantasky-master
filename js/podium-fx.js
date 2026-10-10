@@ -1,31 +1,10 @@
-// Episode podium effects: the winner's gold light and last place's stink gas.
-//
-// Each podium (.pod) with a winner or a last place gets three canvases:
-//   back  (behind the portraits)  gold glow, light rays, a light pool on the
-//                                 shelf, cast shadows, a murky green glow
-//   light (over them, screen)     bounce light spilling onto the neighbours,
-//                                 gold dust, glints on the winner's frame
-//   gas   (over them, normal)     a faint veil of the stink's lowest layer,
-//                                 so the fog sits mostly behind the portraits
-//
-// The stink is drawn mostly on the back layer: heavy gas that seeps from
-// behind the last-place portrait, sinks to the bottom of the podium card and
-// spreads along it like dry ice on a countertop, colliding with all four
-// sides of the card. It never leaves the card, and it starts afresh each time
-// an episode comes on screen, so none trails along as you swipe.
-//
-// Physics: the gas and dust have inertia. Scrolling the page moves the podium
-// under them, so the gas sloshes and the dust swirls. Scroll speed also gives
-// the gold a brief surge. Only podiums on screen are simulated, nothing runs in a
-// hidden tab, and reduced-motion users get one settled, still frame.
+// Episode podium effects: winner's gold light (rays, glow, pool, bounce, shadows, dust, glints) and last place's stink gas (heavy, sinks to the card's bottom and spreads like dry ice, collides with all four sides). Canvases: back (behind portraits), light (screen), gas (veil in front). Scrolling sloshes gas and stirs dust; only on-screen podiums run; reduced motion gets one still frame.
 
 const DPR = Math.min(2, window.devicePixelRatio || 1);
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-
-// ── Sprites ─────────────────────────────────────────────────────────────────
 
 function sprite(size, paint) {
   const c = document.createElement("canvas");
@@ -34,7 +13,6 @@ function sprite(size, paint) {
   return c;
 }
 
-/** A soft round light: bright core, long falloff. */
 const glowSprite = (r, g, b) => sprite(64, (x, s) => {
   const gr = x.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
   gr.addColorStop(0, `rgba(${r},${g},${b},1)`);
@@ -45,16 +23,12 @@ const glowSprite = (r, g, b) => sprite(64, (x, s) => {
   x.fillRect(0, 0, s, s);
 });
 
-/**
- * A puff of gas: a clump of overlapping blobs, lit from above (pale
- * yellow-green on top, dark olive underneath) so a pile of them reads as a
- * volume rather than a flat haze.
- */
+// Gas puff: lit from above, dark beneath, so a pile reads as volume
 const gasSprite = () => sprite(96, (x, s) => {
   const c = s / 2;
   for (let i = 0; i < 9; i++) {
     const a = rand(0, TAU), d = rand(0, s * 0.2), bx = c + Math.cos(a) * d, by = c + Math.sin(a) * d * 0.8, r = rand(s * 0.16, s * 0.3);
-    const lit = clamp(1 - (by - (c - s * 0.25)) / (s * 0.5), 0, 1); // 1 at the top, 0 at the bottom
+    const lit = clamp(1 - (by - (c - s * 0.25)) / (s * 0.5), 0, 1);
     const col = [Math.round(52 + 118 * lit), Math.round(62 + 128 * lit), Math.round(18 + 46 * lit)];
     const gr = x.createRadialGradient(bx, by - r * 0.25, 0, bx, by, r);
     gr.addColorStop(0, `rgba(${col},.9)`);
@@ -63,7 +37,6 @@ const gasSprite = () => sprite(96, (x, s) => {
     x.fillStyle = gr;
     x.fillRect(0, 0, s, s);
   }
-  // Soften the clump's edge so it never shows a hard boundary.
   x.globalCompositeOperation = "destination-in";
   const m = x.createRadialGradient(c, c, 0, c, c, c);
   m.addColorStop(0.45, "rgba(0,0,0,1)");
@@ -79,8 +52,6 @@ const sprites = () => (SPR ||= {
   gas: [gasSprite(), gasSprite(), gasSprite(), gasSprite()],
 });
 
-// ── Scenes ──────────────────────────────────────────────────────────────────
-
 const scenes = new Set(), visible = new Set();
 let raf = 0, then = 0, scrollDY = 0, lastY = scrollY;
 
@@ -89,7 +60,7 @@ class Scene {
     this.pod = pod;
     pod.__fx = this;
     pod.classList.add("has-fx");
-    // Only the layers this podium uses: light for a winner, gas for a last place.
+    // Only the layers this podium uses
     const layer = (cls) => Object.assign(document.createElement("canvas"), { className: `fx ${cls}`, ariaHidden: "true" });
     this.back = layer("fx-back");
     this.light = pod.querySelector(".pod-col.win") ? layer("fx-light") : null;
@@ -113,9 +84,7 @@ class Scene {
   }
 
   layout() {
-    // The canvases fill the card's padding box (inside its border). Positions
-    // are measured within the card (offsets), not on the screen, so they hold
-    // when the page is turned over (fantasy mode, flip.js).
+    // Measured by offsets within the card, so it holds when the page is turned
     this.w = this.pod.clientWidth;
     this.h = this.pod.clientHeight;
     if (!this.w) return;
@@ -134,12 +103,11 @@ class Scene {
     this.frames = cols.map((col) => ({ ...rect(col.querySelector(".fp")), win: col.classList.contains("win"), last: col.classList.contains("last") }));
     this.win = this.frames.find((f) => f.win) || null;
     this.losers = this.frames.filter((f) => f.last);
-    this.floor = Math.max(...this.frames.map((f) => f.y + f.h)) + 2; // the shelf the portraits stand on
-    this.bed = this.h; // the bottom edge of the card, where the gas settles
+    this.floor = Math.max(...this.frames.map((f) => f.y + f.h)) + 2;
+    this.bed = this.h;
     if (REDUCED) this.settle();
   }
 
-  /** Page scrolling moves the podium under the gas and dust. */
   impulse(dy) {
     this.energy = Math.min(1.4, this.energy + Math.abs(dy) / 260);
     for (const p of this.gas) {
@@ -154,7 +122,7 @@ class Scene {
     }
   }
 
-  /** Off screen: drop the gas and dust, so an episode starts afresh. */
+  // Off screen: drop gas and dust, so an episode starts afresh
   reset() {
     this.gas = []; this.dust = []; this.glints = [];
     this.spawnGas = this.spawnDust = 0;
@@ -167,9 +135,6 @@ class Scene {
     this.energy *= Math.exp(-2.2 * dt);
     const { w, floor } = this;
 
-    // Gas: heavier than air. It seeps from behind the portrait, sinks to the
-    // bottom of the card and spreads along it like dry ice, hugging the
-    // surface, pushed outwards by the gas still falling behind it.
     if (this.losers.length) {
       this.spawnGas += dt * 34;
       while (this.spawnGas >= 1 && this.gas.length < 180) {
@@ -187,18 +152,14 @@ class Scene {
     const g = 30, drag = Math.exp(-1.2 * dt), { h, bed } = this;
     for (const p of this.gas) {
       p.age += dt;
-      const r = p.s0 * (1 + (p.age / p.life) * 0.9) * 0.32; // collision radius grows as the puff expands
-      const low = clamp((p.y - (bed - 40)) / 36, 0, 1); // 1 when lying on the bottom
-      // Turbulence: curling in the air, a slow rolling ripple along the bottom.
+      const r = p.s0 * (1 + (p.age / p.life) * 0.9) * 0.32;
+      const low = clamp((p.y - (bed - 40)) / 36, 0, 1);
       p.vx += Math.sin(p.y * 0.045 + this.t * 0.7 + p.seed) * (14 - 8 * low) * dt;
       p.vy += (g * (1 - low * 0.7) + Math.cos(p.x * 0.05 + this.t * 0.5 + p.seed) * 8 * (1 - low)) * dt;
-      // Dry ice: on the bottom, the pile pushes gas outwards from its source.
       if (low > 0) p.vx += Math.sign(p.x - p.src || p.seed - 50) * 22 * low * dt;
       p.vx *= drag; p.vy *= drag * (1 - low * 0.02);
       p.x += p.vx * dt; p.y += p.vy * dt;
-      // Collide with all four sides of the card.
-      // The bottom lets a puff's soft underside press against the edge, so the
-      // bank visibly lies on it; the other sides keep puffs just inside.
+      // Bottom lets a puff's soft underside press on the edge so the bank lies on it
       const rb = p.s0 * 0.06;
       if (p.y > bed - rb) { p.y = bed - rb; p.vx += Math.sign(p.x - p.src || p.seed - 50) * Math.abs(p.vy) * 0.5; p.vy = -Math.abs(p.vy) * 0.1; }
       if (p.y < r) { p.y = r; p.vy = Math.abs(p.vy) * 0.3; }
@@ -208,7 +169,6 @@ class Scene {
     }
     this.gas = this.gas.filter((p) => p.age < p.life);
 
-    // Dust: fine gold motes rising in the warm air around the winner.
     if (this.win) {
       const f = this.win;
       this.spawnDust += dt * (9 + this.energy * 20);
@@ -230,7 +190,6 @@ class Scene {
         p.x += p.vx * dt; p.y += p.vy * dt;
       }
       this.dust = this.dust.filter((p) => p.age < p.life && p.y > -10);
-      // Glints: brief four-point sparkles on the gilt frame.
       if (Math.random() < dt * (1.6 + this.energy * 4)) {
         const side = Math.floor(rand(0, 4)), u = Math.random();
         const gx = side < 2 ? f.x + u * f.w : f.x + (side === 2 ? 0.04 : 0.96) * f.w;
@@ -242,19 +201,13 @@ class Scene {
     }
   }
 
-  /** Reduced motion: run the simulation for a while, then draw one still frame. */
   settle() {
     this.gas = []; this.dust = []; this.glints = [];
     for (let i = 0; i < 240; i++) this.step(1 / 40);
     this.draw();
   }
 
-  /**
-   * The parts that never move, painted once (at full strength) while the
-   * podium is on screen, then drawn each frame as one image at the light's
-   * current strength: the glow and the pool of light (added, so their order
-   * with the rays doesn't matter), the shadows, the bounce light and the murk.
-   */
+  // Static parts painted once while on screen, drawn per frame as one image at the light's strength
   statics() {
     if (this.cache) return this.cache;
     const f = this.win, floor = this.floor;
@@ -268,7 +221,6 @@ class Scene {
     };
     this.cache = {};
     if (f) {
-      // Glow behind the winner, and a pool of light on the shelf under them.
       this.cache.glow = paint((x) => {
         x.globalCompositeOperation = "lighter";
         const R = f.h * 1.3;
@@ -286,8 +238,6 @@ class Scene {
         x.fillStyle = gr;
         x.fillRect(-f.w * 1.5, -f.w * 1.5, f.w * 3, f.w * 3);
       });
-      // Shadows: every other portrait casts one along the shelf, away from
-      // the light, darker and longer the closer it stands to the winner.
       this.cache.shade = paint((x) => {
         for (const o of this.frames) {
           if (o === f) continue;
@@ -306,8 +256,6 @@ class Scene {
           x.fill();
         }
       });
-      // Bounce light: warm gold spilling onto the portraits beside the winner,
-      // painted at the strongest the light gets (1.5), so it's only ever dimmed.
       this.cache.bounce = paint((x) => {
         const gr = x.createRadialGradient(f.cx, f.cy, f.w * 0.3, f.cx, f.cy, f.w * 2.8);
         gr.addColorStop(0, `rgba(255,190,90,${0.22 * 1.5})`);
@@ -317,7 +265,6 @@ class Scene {
         x.fillRect(0, 0, this.w, this.h);
       });
     }
-    // A murky green glow behind last place, at its strongest (.35).
     if (this.losers.length) this.cache.murk = paint((x) => {
       x.globalCompositeOperation = "lighter";
       for (const l of this.losers) {
@@ -337,16 +284,13 @@ class Scene {
     for (const c of this.ctx) { c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, this.w, this.h); }
     const t = this.t, f = this.win;
     const st = this.statics(), put = (x, img, a) => { x.globalAlpha = a; x.drawImage(img, 0, 0, this.w, this.h); };
-    // Light intensity: a slow, uneven breath, plus a surge when scrolled.
     const I = 0.82 + 0.1 * Math.sin(t * 1.4) + 0.05 * Math.sin(t * 3.7 + 1.2) + this.energy * 0.35;
 
     if (f) {
-      // Glow and pool, added once per whole unit of the light's strength.
       back.globalCompositeOperation = "lighter";
       for (let k = I; k > 0.001; k--) put(back, st.glow, Math.min(1, k));
       back.globalAlpha = 1;
       const R = f.h * 1.3;
-      // Light rays turning slowly behind the frame.
       const rays = 18, spin = t * 0.07;
       for (let i = 0; i < rays; i++) {
         const a = spin + (i * TAU) / rays + Math.sin(t * 0.5 + i * 1.7) * 0.06;
@@ -366,9 +310,7 @@ class Scene {
       back.globalCompositeOperation = "source-over";
       put(back, st.shade, 1);
       put(light, st.bounce, Math.min(1, I / 1.5));
-      // (No rim light: a glowing rectangle traced the frame's box, not its
-      // ornate edge, and screened over the gold it read as a greenish band.)
-      // Dust and glints.
+      // No rim light: it traced the box, and read as a greenish band over the gold
       const { dust, spark } = sprites();
       for (const p of this.dust) {
         const life = p.age / p.life, fade = Math.min(1, p.age * 3) * (1 - life);
@@ -392,7 +334,6 @@ class Scene {
       light.globalAlpha = 1;
     }
 
-    // A murky green glow behind last place.
     if (st.murk) {
       back.globalCompositeOperation = "lighter";
       put(back, st.murk, (0.3 + 0.05 * Math.sin(t * 1.1)) / 0.35);
@@ -400,9 +341,6 @@ class Scene {
     }
     back.globalAlpha = 1;
 
-    // The gas: shaded puffs, mostly behind the portraits. Near the bottom
-    // they flatten and widen into a low bank; a faint veil of that bank is
-    // repeated in front, so the fog wraps round the foot of the portraits.
     const puffs = sprites().gas;
     for (const p of this.gas) {
       const life = p.age / p.life;
@@ -410,7 +348,6 @@ class Scene {
       if (a <= 0.005) continue;
       const s = p.s0 * (1 + life * 0.9), low = p.low || 0;
       const sw = s * (1 + 0.8 * low), sh = s * (1 - 0.45 * low);
-      // Gas lying on the bottom is denser: the bank reads as sitting on the edge.
       back.globalAlpha = Math.min(0.5, a * (1 + 0.9 * low));
       back.drawImage(puffs[p.spr], p.x - sw / 2, p.y - sh / 2, sw, sh);
       if (low > 0.5) {
@@ -422,8 +359,6 @@ class Scene {
     if (gas) gas.globalAlpha = 1;
   }
 }
-
-// ── Loop ────────────────────────────────────────────────────────────────────
 
 const io = new IntersectionObserver((entries) => {
   for (const e of entries) {
@@ -461,11 +396,6 @@ if (!REDUCED) {
   document.addEventListener("visibilitychange", wake);
 }
 
-/**
- * Attach effects to every podium under `root` (the episode swiper), and to
- * every .fx-stage (the Cast header of whoever is in first place, which gets
- * the winner's gold light around their portrait).
- */
 export function mountPodiumFx(root) {
   for (const s of scenes) if (!s.pod.isConnected) { io.unobserve(s.pod); scenes.delete(s); visible.delete(s); }
   for (const pod of root.querySelectorAll(".pod, .fx-stage")) {
