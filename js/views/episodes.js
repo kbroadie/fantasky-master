@@ -22,7 +22,7 @@ function slide(d, e) {
   const head = (line) => `
     <div class="ep-head">
       <div class="kicker">Episode ${e.ep} · ${esc(fmtDay.format(e.air))}</div>
-      ${state.edit ? edTitle(e) : `<h2 class="ep-title">${esc(e.title || `Episode ${e.ep}`)}</h2>`}
+      ${state.edit ? edTitle(e) : `<h2 class="ep-title"><span class="ep-t">${esc(e.title || `Episode ${e.ep}`)}</span></h2>`}
       <div class="ep-sub">${line}</div>
     </div>${state.edit ? edStrip(d, e) : ""}`;
   if (e.ep > d.weeksScored) {

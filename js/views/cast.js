@@ -68,7 +68,7 @@ function slide(d, c, max, med) {
     <div class="ep-head cd-head${rank === 1 ? " fx-stage" : ""}">
       <div class="cd-img${rank === 1 ? " pod-col win" : ""}">${framed(c)}</div>
       <div class="kicker">${ord(rank)} of ${d.contestants.length} · Series ${state.key}</div>
-      <h2 class="ep-title">${esc(c.full)}</h2>
+      <h2 class="ep-title"><span class="ep-t">${esc(c.full)}</span></h2>
       <div class="ep-sub"><b style="color:${c.color}">${c.total}</b> points · ${c.avg.toFixed(1)} an episode${wins ? ` · ${wins} win${wins > 1 ? "s" : ""}` : ""}</div>
     </div>
     ${state.fantasy ? "" : records(d, c)}

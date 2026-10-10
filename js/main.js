@@ -679,13 +679,16 @@ function barTo(compact) {
     if (!b.height || (Math.abs(dy) < .5 && Math.abs(sy - 1) < .01)) return;
     // A stretched box keeps its round corners (on request): as it's scaled by
     // k, its corners' vertical radius is r / k, so they're r on the screen.
+    // The move and the stretch are one animation of transforms alone, so the
+    // compositor runs it while the main thread is busy (a border-radius in the
+    // same animation had put all of it on the main thread, and it stuttered
+    // while the page flew, on request); the radius is a second animation.
+    const opts = { id: "bar", duration: 300, easing: "cubic-bezier(.22, 1, .36, 1)" };
+    el.animate([{ translate: `0 ${dy}px`, scale: `1 ${sy}` }, { translate: "0 0", scale: "1 1" }], opts);
     const r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
-    const frame = (p) => {
-      const k = sy + (1 - sy) * p, f = { offset: p, translate: `0 ${dy * (1 - p)}px`, scale: `1 ${k}` };
-      if (r && Math.abs(sy - 1) >= .01) f.borderRadius = `${r}px / ${r / k}px`;
-      return f;
-    };
-    el.animate([0, .25, .5, .75, 1].map(frame), { id: "bar", duration: 300, easing: "cubic-bezier(.22, 1, .36, 1)" });
+    if (r && Math.abs(sy - 1) >= .01) {
+      el.animate([0, .25, .5, .75, 1].map((p) => ({ offset: p, borderRadius: `${r}px / ${r / (sy + (1 - sy) * p)}px` })), opts);
+    }
   });
   moving();
 }
