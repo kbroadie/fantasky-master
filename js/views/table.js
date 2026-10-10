@@ -88,8 +88,8 @@ export function standingsHero(d, w = stWeek(d)) {
     <div class="st-explain" id="st-explain-${w}"><div><div class="how-grid">${terms().map(howCard).join("")}</div><button type="button" class="st-wl" aria-controls="welcome">New here? <span>Read the welcome</span></button></div></div>`;
   // The kicker, like the episode head's: the series and that week's episode.
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${esc(fmtDay.format(d.episodes[w - 1].air))}</div>`;
-  if (w > d.weeksScored) return `${kicker}<h2 class="ep-title">Episode ${w}</h2><div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</div>${how}`;
-  return `${kicker}<h2 class="ep-title">Episode ${w} Standings</h2><p class="st-leaders">${leaderLine(d, atWeek(d, w), w)}</p>${how}`;
+  if (w > d.weeksScored) return `${kicker}<h2 class="ep-title"><span class="ep-t">Episode ${w}</span></h2><div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</div>${how}`;
+  return `${kicker}<h2 class="ep-title"><span class="ep-t">Episode ${w} Standings</span></h2><p class="st-leaders">${leaderLine(d, atWeek(d, w), w)}</p>${how}`;
 }
 
 /**
