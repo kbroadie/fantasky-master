@@ -8,7 +8,7 @@ import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides } from "./views/cast.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, askTilt, turned, toggleFantasy, DESKTOP } from "./flip.js";
+import { initFlip, quoteTap, turned, toggleFantasy, DESKTOP } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -417,7 +417,7 @@ $("#p-standings").addEventListener("click", (e) => {
     return;
   }
   // Phones: asks for the tilt (iOS). Desktop: toggles fantasy mode.
-  if (e.target.closest(".st-quote")) { if (DESKTOP.matches) toggleFantasy(); else askTilt(); return; }
+  if (e.target.closest(".st-quote")) { if (DESKTOP.matches) toggleFantasy(); else quoteTap(); return; }
   const swap = e.target.closest(".xp-swap");
   if (swap) {
     state.xpView = swap.dataset.xp;

@@ -154,9 +154,9 @@ function stopFall() { worker?.postMessage({ type: "stop" }); run?.stop(); }
 document.addEventListener("visibilitychange", () => { if (document.hidden) stopFall(); else if (on) fall(); });
 
 // iOS only, before any reading: ask for the tilt (must be in a tap)
-let asking = false;
+let asking = false, refused = false;
 function askHint() { document.documentElement.classList.toggle("tilt-ask", ASK && !allowed && !oriented); }
-export async function askTilt() {
+async function askTilt() {
   if (allowed || asking || oriented || probe.m) return;
   asking = true;
   try {
@@ -165,9 +165,17 @@ export async function askTilt() {
       askHint();
       try { localStorage.setItem(KEY, "1"); } catch {}
       listen();
-    }
+    } else refused = true;
   } catch { }
   asking = false;
+}
+// The quote under the boards on a phone. Safari remembers a refusal and never asks again, so once
+// refused the quote switches the dream on and off itself, unturned, as on a desktop
+export async function quoteTap() {
+  if (!refused) await askTilt();
+  if (!refused) return;
+  document.documentElement.classList.add("tilt-off");
+  toggleFantasy();
 }
 
 // ?tilt: a diagnostic box of the sensor readings
