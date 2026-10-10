@@ -370,8 +370,9 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 .race .rc-name.rc-total.top { fill: var(--gold2); } /* the leader's total, gold as first place's points are on the board */
 
 /* Rows must not be compositing layers: iOS dropped their text */
-.pc { --head: 52px; position: relative; border-bottom: 1px solid var(--b-gold); background: linear-gradient(170deg, var(--s2), var(--s1)); }
-.pc.lead { background: linear-gradient(170deg, rgba(184, 128, 24, .10), var(--s1) 55%); }
+/* The row's gradient is the head's height, then plain --s1: sized to the whole row, an opened row stretched it and its head paled */
+.pc { --head: 52px; --rest: linear-gradient(var(--s1), var(--s1)) 0 var(--head) / 100% 100% no-repeat; position: relative; border-bottom: 1px solid var(--b-gold); background: linear-gradient(170deg, var(--s2), var(--s1)) 0 0 / 100% var(--head) no-repeat, var(--rest); }
+.pc.lead { background: linear-gradient(170deg, rgba(184, 128, 24, .10), var(--s1) 55%) 0 0 / 100% var(--head) no-repeat, var(--rest); }
 /* One baseline per row (box centring sat points 2px low) */
 .pc-head { display: grid; grid-template-columns: var(--rk) minmax(0, 1fr) minmax(0, 1fr); align-items: baseline; height: var(--head); padding-inline: var(--pe); }
 .pc-head, .pc-more { position: relative; z-index: 1; } /* over the place strip (.pc::after); the column rule is measured from the head */
