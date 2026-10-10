@@ -209,7 +209,7 @@ function jump(sw, i) {
 function edgeNav(el, can, onEdge) {
   let x0 = null, y0 = 0, prev = false, next = false;
   el.addEventListener("touchstart", (e) => {
-    if (e.target.closest(".strip")) { x0 = null; return; }
+    if (e.target.closest(".strip, .sw-range")) { x0 = null; return; }
     [x0, y0] = [e.touches[0].clientX, e.touches[0].clientY];
     prev = can.prev(); next = can.next();
   }, { passive: true });
@@ -465,7 +465,7 @@ $("#cast-body").addEventListener("click", heatTap);
 // The Moss Easter egg (cast.js): his portrait swaps him and his cards; each card's toggle is a switch
 $("#cast-body").addEventListener("click", (e) => {
   const sw = e.target.closest(".sw-toggle");
-  if (sw?.hasAttribute("data-fz")) { toggleFantasy(); return; } // the preview: Moss's page in the rainbow view
+  if (sw?.hasAttribute("data-fz")) { toggleFantasy(".sw-toggle[data-fz]"); return; } // the preview: Moss's page in the rainbow view
   if (sw) {
     const k = sw.dataset.sw;
     set(k, !get(k));
@@ -552,9 +552,8 @@ addEventListener("scroll", barScroll, { passive: true });
 bar.addEventListener("focusin", () => setHidden(false));
 // Dolphins animate only on screen; the latest entry decides (batched entries come oldest first).
 // Watches the waves, not the footer: mid-swipe only they rise into view (lift)
-const footSeen = new IntersectionObserver((es) => { const e = es.at(-1); e.target.parentElement.classList.toggle("run", e.isIntersecting); });
+const footSeen = new IntersectionObserver((es) => { const e = es.at(-1); e.target.parentElement.classList.toggle("run", e.isIntersecting); $("#foot").classList.toggle("run", e.isIntersecting); });
 footSeen.observe($(".fz-waves"));
-function barAtTop() { lastY = 0; down = up = 0; barP(0); setHidden(false); }
 
 // Sideways strips fade at the edge where more tabs are hidden
 function edges() {
@@ -622,7 +621,7 @@ try {
   try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
   $("#welcome").innerHTML = welcomeCard();
   $("#welcome").hidden = !welcome;
-  initFlip({ redraw, scrolled: barAtTop });
+  initFlip({ redraw });
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);

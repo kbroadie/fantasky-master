@@ -5,20 +5,22 @@ import { runner } from "./fall.js";
 import { get, onSwitch } from "./switches.js";
 
 let on = false;
-let hooks = { redraw() {}, scrolled() {} };
+let hooks = { redraw() {} };
 
-export function toggleFantasy() { set(!on); }
+// anchor: what was tapped, kept where it is on the screen (the page re-renders around it)
+export function toggleFantasy(anchor = "#dq") { set(!on, anchor); }
 
-function set(show) {
+function set(show, anchor) {
   if (show && !state.d) show = false;
   if (show === on) return;
   on = show;
   if (show) warm();
-  scrollTo(0, 0);
-  hooks.scrolled();
+  const y0 = $(anchor)?.getBoundingClientRect().top;
   document.documentElement.classList.toggle("fz", show);
   state.fantasy = show;
   hooks.redraw();
+  const y1 = $(anchor)?.getBoundingClientRect().top;
+  if (y0 != null && y1 != null) scrollBy(0, y1 - y0);
   if (show) { fall(); glints(); } else { stopFall(); clearInterval(glinter); }
 }
 

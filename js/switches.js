@@ -3,8 +3,6 @@
 export const CARDS = [
   { title: "Frame rate",
     items: [{ key: "fps", type: "toggle", def: false, main: true }] },
-  { title: "Benchmark",
-    items: [{ key: "bench", type: "toggle", def: false, main: true }] },
   { title: "Falling background",
     items: [
       { key: "fall", type: "toggle", def: true, main: true, cls: "no-fall" },

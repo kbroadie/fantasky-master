@@ -1,4 +1,4 @@
-// Diagnostics, switched on Moss's cards (switches.js): the frame rate graphs and the benchmark button, in the site's own
+// Diagnostics, switched on Moss's cards (switches.js): the frame rate graphs, in the site's own
 // colours (read from its tokens, so the rainbow view's too). The graphs' loop keeps the main thread drawing every
 // frame, so it costs a little itself; they redraw 4 times a second
 import { get, onSwitch } from "./switches.js";
@@ -10,6 +10,7 @@ function frameRate(show) {
   const W = 168, H = 104, dpr = Math.min(2, devicePixelRatio || 1);
   const el = Object.assign(document.createElement("canvas"), { className: "fps-meter", width: W * dpr, height: H * dpr, ariaHidden: "true" });
   document.body.append(el);
+  drag(el);
   const g = el.getContext("2d");
   g.scale(dpr, dpr);
   meter = { el, raf: 0 };
@@ -49,16 +50,22 @@ function frameRate(show) {
   meter.raf = requestAnimationFrame(tick);
 }
 
-let bench = null;
-function benchButton(show) {
-  if (!show) { bench?.remove(); bench = null; return; }
-  if (bench) return;
-  bench = Object.assign(document.createElement("button"), { type: "button", className: "ed-btn gold bench-btn", textContent: "Benchmark" });
-  bench.addEventListener("click", (e) => { e.stopPropagation(); import("./bench.js").then((b) => b.run(bench)); });
-  document.body.append(bench);
-}
-
 frameRate(get("fps"));
-benchButton(get("bench"));
 onSwitch(["fps"], (d) => frameRate(d.value));
-onSwitch(["bench"], (d) => benchButton(d.value));
+
+// Drag the graphs anywhere; the place is kept on this device
+const POS = "fm-fps-pos";
+function drag(el) {
+  const place = (x, y) => {
+    x = Math.max(0, Math.min(innerWidth - el.offsetWidth, x)); y = Math.max(0, Math.min(innerHeight - el.offsetHeight, y));
+    Object.assign(el.style, { left: `${x}px`, top: `${y}px`, right: "auto", bottom: "auto" });
+    return [x, y];
+  };
+  try { const p = JSON.parse(localStorage.getItem(POS)); if (p) place(...p); } catch { /* none kept */ }
+  let from = null;
+  el.addEventListener("pointerdown", (e) => { const r = el.getBoundingClientRect(); from = [e.clientX - r.left, e.clientY - r.top]; el.setPointerCapture(e.pointerId); });
+  el.addEventListener("pointermove", (e) => { if (from) place(e.clientX - from[0], e.clientY - from[1]); });
+  const drop = () => { if (!from) return; from = null; try { localStorage.setItem(POS, JSON.stringify([el.offsetLeft, el.offsetTop])); } catch { /* private mode */ } };
+  el.addEventListener("pointerup", drop);
+  el.addEventListener("pointercancel", drop);
+}
