@@ -440,7 +440,7 @@ $("#p-standings").addEventListener("click", (e) => {
     return;
   }
   // Phones: asks for the tilt (iOS). Desktop: toggles fantasy mode.
-  if (e.target.closest(".st-quote")) { if (DESKTOP.matches) toggleFantasy(); else quoteTap(); return; }
+  if (e.target.closest(".st-quote")) { if (DESKTOP.matches || document.documentElement.classList.contains("quote-up")) toggleFantasy(); else quoteTap(); return; }
   const swap = e.target.closest(".xp-swap");
   if (swap) {
     state.xpView = swap.dataset.xp;

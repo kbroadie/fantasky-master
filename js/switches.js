@@ -1,5 +1,6 @@
 // Hidden switches, toggled in the duck menu (Switches): per device, in localStorage
 export const SWITCHES = [
+  { key: "upright", name: "Rainbow view right side up", note: "No turning: tap the quote (under every tab) to switch the rainbow view on and off. The phone's tilt is ignored." },
   { key: "flip", name: "Flipped layout", note: "Upside down, turn the content rather than the page, so the phone does the scrolling. An experiment." },
   { key: "tilt", name: "Tilt diagnostic", note: "A box of the motion sensors' readings (also ?tilt in the address)." },
 ];

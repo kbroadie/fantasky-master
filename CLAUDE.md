@@ -89,7 +89,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
   - Picks and scores are entered on the page. Episodes are edited in place, with a "Get scores from the wiki" button.
   - Every change is an op, replayed onto a fresh copy from GitHub on Save. It must pass `checkData` first.
   - The commissioner's fine-grained token stays only in that browser's localStorage (`fm-gh-key`), never in the site.
-  - **Switches** (in the bar and in the key dialog, so no key is needed): per-device toggles from `switches.js` (`fm-sw-*` in localStorage): Flipped layout (an experiment, below) and Tilt diagnostic (also `?tilt`). Add any new switch there.
+  - **Switches** (in the bar and in the key dialog, so no key is needed): per-device toggles from `switches.js` (`fm-sw-*` in localStorage): Rainbow view right side up (`html.quote-up`: the quote is right side up under every tab, as on a desktop, and switches the dream, unturned; the tilt and screen turns are ignored), Flipped layout (an experiment, below) and Tilt diagnostic (also `?tilt`). Add any new switch there.
 - **Wiki sync** (`.github/workflows/wiki-sync.yml`, `tools/sync-wiki.mjs`):
   - Runs Thursday nights and hourly through Friday.
   - Fills in the next episode's scores once the wiki's table is complete, and titles that are placeholders or differ. It never touches scored episodes and never touches picks.
