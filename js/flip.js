@@ -243,12 +243,13 @@ onSwitch(FALL, () => { if (on && !refall) refall = requestAnimationFrame(() => {
 let glinter = 0;
 function glints() {
   clearInterval(glinter);
-  if (reducedMotion) return;
+  if (reducedMotion || !get("fzDeco")) return; // a decoration, off unless Moss's cards turn it on
   const word = $(".fz-word");
   word.onanimationend = () => word.classList.remove("glint");
   glinter = setInterval(() => { if (!document.hidden) word.classList.add("glint"); }, 4000);
 }
 function stopFall() { worker?.postMessage({ type: "stop" }); run?.stop(); }
+onSwitch(["fzDeco"], () => { if (on) glints(); });
 // Not in a hidden tab: a worker without requestAnimationFrame draws on a timer that never pauses
 document.addEventListener("visibilitychange", () => { if (document.hidden) stopFall(); else if (on) fall(); });
 

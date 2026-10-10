@@ -1,39 +1,45 @@
 // Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js), a card per effect, per device in
-// localStorage. Defaults are the site as designed; everything applies live (fm-switch events). Each kind of setting has
+// localStorage. Every effect is off by default, at its lowest quality: frame pacing comes first, and the cards turn them
+// on and up. Everything applies live (fm-switch events). Each kind of setting has
 // its control: an effect's on/off a switch in its card's head (main), a small fixed set segmented buttons (steps, choice),
 // a strength a slider (range)
 export const CARDS = [
   // Fantasy Land's switch in its head (not a setting: it switches the view), and how the view changes (flip.js)
   { title: "Fantasy Land", fz: true,
-    items: [{ key: "fzMove", type: "choice", label: "Transition", def: "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["blur", "Blur"],
+    items: [{ key: "fzMove", type: "choice", label: "Transition", def: "off", options: [["iris", "Iris"], ["ripple", "Ripple"], ["blur", "Blur"],
       ["lens", "Lens"], ["flare", "Flare"], ["swirl", "Swirl"], ["slow", "Slow"], ["flash", "Flash"], ["grade", "Grade"],
       ["zoom", "Zoom"], ["roll", "Roll"], ["tilt", "Tilt"], ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
   { title: "Frame rate",
     items: [{ key: "fps", type: "toggle", def: false, main: true }] },
   // The effects step their quality to what this device keeps up with (tune.js)
   { title: "Auto-tune",
-    items: [{ key: "autoTune", type: "toggle", def: true, main: true }] },
+    items: [{ key: "autoTune", type: "toggle", def: false, main: true }] },
   { title: "Background effects", view: "fz",
     items: [
-      { key: "fall", type: "toggle", def: true, main: true, cls: "no-fall" },
-      { key: "fallRes", type: "steps", label: "Resolution", def: 1, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
-      { key: "fallFps", type: "steps", label: "Frame rate", def: 60, options: [[15, "15"], [30, "30"], [45, "45"], [60, "60 fps"]] },
+      { key: "fall", type: "toggle", def: false, main: true, cls: "no-fall" },
+      { key: "fallRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
+      // Rates a 60 or 120Hz screen divides evenly, so each frame is held as long as the last (45 came out uneven)
+      { key: "fallFps", type: "steps", label: "Frame rate", def: 15, options: [[15, "15"], [20, "20"], [30, "30"], [60, "60 fps"]] },
       { key: "fallDensity", type: "range", label: "Streaks", def: 1, min: 0, max: 3, step: 0.25, unit: "×" },
       { key: "fallFigures", type: "range", label: "Figures", def: 7, min: 0, max: 20, step: 1, unit: "" },
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
       { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
     ] },
+  // Fantasy Land's motion: the sparkles' twinkle, the glint on Fantasy, the sliding tab rainbow, the leaping dolphins, the
+  // rolling sea and the bobbing ducks. Off, it's all there, still, but the dolphins
+  { title: "Decorations", view: "fz",
+    items: [{ key: "fzDeco", type: "toggle", def: false, main: true, cls: "no-deco" }] },
   { title: "Card opacity", view: "fz",
     items: [{ key: "fzAlpha", type: "range", def: 0.84, min: 0.5, max: 1, step: 0.02, pct: true, css: "--fz-a" }] },
   { title: "Podium effects",
     items: [
-      { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
-      { key: "podRes", type: "steps", label: "Resolution", def: 1, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
+      { key: "podium", type: "toggle", def: false, main: true, cls: "no-podium" },
+      { key: "podRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
       { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
       { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
     ] },
   { title: "Scoring cards",
-    items: [{ key: "howLight", type: "toggle", def: true, main: true, cls: "no-howlight" }] },
+    items: [{ key: "howLight", type: "toggle", def: false, main: true, cls: "no-howlight" }] },
 ];
 // A card for one view only (view: "fz", Fantasy Land) shows only there
 export const cardsShown = (fantasy) => CARDS.filter((c) => !c.view || (c.view === "fz") === fantasy);
