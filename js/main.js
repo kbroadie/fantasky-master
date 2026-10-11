@@ -11,7 +11,7 @@ import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, toggleFantasy, warm } from "./flip.js";
+import { initFlip, toggleFantasy } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -325,7 +325,6 @@ $("#series").addEventListener("click", () => {
 // Where a tap landed: the transitions open from it (Iris's circle, Zoom's and Vertigo's centre); none from a keyboard
 const tapAt = (e) => (e.detail ? { x: e.clientX, y: e.clientY } : null);
 $("#dq").addEventListener("click", (e) => { if (e.target.closest(".embrace")) toggleFantasy("#dq", tapAt(e)); });
-$("#dq").addEventListener("pointerdown", warm, { once: true });
 $("#p-standings").addEventListener("click", (e) => {
   if (e.target.closest(".wl-x")) {
     $("#welcome").hidden = true;

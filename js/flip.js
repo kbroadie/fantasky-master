@@ -17,7 +17,6 @@ function set(show, anchor, tap) {
   if (show && !state.d) show = false;
   if (show === on) return;
   on = show;
-  if (show) warm();
   const html = document.documentElement, at = $(anchor)?.getBoundingClientRect();
   let how = get("fzMove");
   if (how === "slam" && !slamReady()) how = "iris"; // it needs the Standings' rows on screen
@@ -197,14 +196,6 @@ function nameMovers(clear = false) {
   els.forEach((el, i) => {
     el.style.viewTransitionName = clear || !seen[i] ? "" : el.dataset.p ? `vt-${el.dataset.side}-${slug(el.dataset.p)}` : `vt-cast-${slug(el.textContent)}`;
   });
-}
-
-// Pacifico ("Fantastikal") is fetched once a finger is on Embrace Failure, before the tap lands
-let warmed = false;
-export function warm() {
-  if (warmed) return;
-  warmed = true;
-  document.fonts?.load("1em Pacifico").catch(() => {});
 }
 
 // The fall: drawn by fall.js in a worker that owns the canvas, or here without OffscreenCanvas. Nothing heavy in the page until it shows (iOS dropped page tiles).

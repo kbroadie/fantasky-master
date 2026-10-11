@@ -134,8 +134,9 @@ export function standingsSlides(d) {
     </section>`).join("");
 }
 
-// The way into the low-scores-win mode and back (flip.js), under every tab; the label follows the mode (styles.css)
-export const EMBRACE = `<button class="embrace" type="button"><span class="em-fail">Embrace Failure</span><span class="em-win">Embrace Success</span></button>`;
+// The way into the low-scores-win mode and back (flip.js), under every tab: Patatas asks, in a speech bubble whose words
+// follow the mode (styles.css)
+export const EMBRACE = `<button class="embrace" type="button"><span class="em-who"><img src="img/patatas.webp" alt="" width="271" height="320" loading="lazy" decoding="async"><b>Patatas</b></span><span class="em-say"><span class="em-fail">Embrace Failure</span><span class="em-win">Embrace Success</span></span></button>`;
 
 // Board: head, optional race chart (state.stView; drawn at measured width by syncBoards), rows
 function board(d, w) {

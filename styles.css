@@ -300,24 +300,30 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 /* ── Standings */
 /* Two boards side by side: fixed place column, then Show and League halves per row. Nothing sorts. */
 /* Tracks: --rk place strip, two halves padded --pad, points column --sc, --g gap; --pe (head padding) is 0. */
-/* The way into the low-scores-win mode (flip.js), under every tab: "Embrace Failure" in rainbow, "Embrace Success" back
-   in the gold it returns to. A pill with a gradient hairline (two backgrounds: the page's colour inside, the gradient
-   showing through the clear border) and gradient text */
-#dq { padding: 12px var(--px) 0; text-align: center; }
+/* The way into the low-scores-win mode (flip.js), under every tab: Patatas, gold-framed like the cast, asks in a speech
+   bubble, "Embrace Failure" on a rainbow; in the mode, "Embrace Success" on the normal view's gold */
+#dq { padding: 16px var(--px) 0; text-align: center; }
 .embrace {
-  --em: linear-gradient(90deg, #ff4fc3, #ffa94d, #ffe14d, #6dff9a, #4fd8ff, #b37bff);
-  display: inline-block; padding: 11px 20px; border: 1px solid transparent; border-radius: 999px;
-  background: linear-gradient(var(--bg), var(--bg)) padding-box, var(--em) border-box;
-  font: 500 12px/1 var(--fm); letter-spacing: .12em; text-transform: uppercase;
-  cursor: pointer; transition: transform .15s var(--ease); -webkit-tap-highlight-color: transparent;
+  display: inline-flex; align-items: center; gap: 14px; padding: 4px; border: 0; background: none; color: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.embrace span { background: var(--em); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.embrace:active { transform: scale(.96); }
+.em-who { display: grid; justify-items: center; gap: 2px; width: 72px; transition: transform .15s var(--ease); }
+.em-who img { display: block; width: 100%; height: auto; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
+.em-who b { font: 800 13px var(--ff-name); color: var(--t2); }
+.em-say {
+  --em: linear-gradient(90deg, #ff4fc3, #ffa94d, #ffe14d, #6dff9a, #4fd8ff, #b37bff); --tip: #ff4fc3;
+  position: relative; margin-bottom: 18px; padding: 12px 18px; border-radius: 18px; background: var(--em); color: #1b0a2a;
+  font: 800 16px/1.15 var(--ff); box-shadow: 0 4px 16px rgba(0, 0, 0, .35); transition: transform .15s var(--ease);
+}
+/* Its tail points at Patatas */
+.em-say::before { content: ""; position: absolute; left: -10px; top: 50%; width: 12px; height: 16px; margin-top: -8px; background: var(--tip); clip-path: polygon(100% 0, 0 55%, 100% 100%); }
+.embrace:active .em-say { transform: scale(.96); }
+.embrace:active .em-who { transform: rotate(-6deg); }
 .em-win { display: none; }
 html.fz .em-fail { display: none; }
 html.fz .em-win { display: inline; }
-html.fz .embrace { --em: linear-gradient(90deg, #d4a028, #ecc040, #fff1b8, #ecc040, #d4a028); }
-@media (prefers-reduced-motion: reduce) { .embrace { transition: none; } }
+html.fz .em-say { --em: linear-gradient(90deg, #d4a028, #ecc040, #fff1b8, #ecc040, #d4a028); --tip: #d4a028; color: #241400; }
+@media (prefers-reduced-motion: reduce) { .em-who, .em-say { transition: none; } }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 .card.board { position: relative; margin: 12px var(--px); }
 .card.board::before, .card.board::after { content: ""; position: absolute; inset: 0 0 auto; height: 90px; z-index: 0; pointer-events: none; }
@@ -862,21 +868,20 @@ html.fz .topbar::before { background: linear-gradient(180deg, rgba(70, 14, 110, 
 html.fz .hdr::before { background: linear-gradient(90deg, rgba(255, 63, 164, .38), rgba(176, 75, 255, .36), rgba(23, 212, 240, .32)); }
 html.fz .hero, html.fz .ep-head { background: var(--grain), radial-gradient(90% 100% at 50% 0%, rgba(255, 90, 200, .26), transparent 80%); }
 html.fz .hero::after, html.fz .ep-head::after { background: var(--rainbow); opacity: .7; }
-/* Brand on one line, "Fantastikal DELUSION": "Fantastikal" in rainbow Pacifico; padded past its descenders (background-clip: text paints only inside the box), padding taken back by margins */
+/* Brand on one line, all Bungee as upright: FANTASTIKAL in rainbow with the TASK in it white (as FANTASKY's TASK is), then DELUSION */
 .fz-word, .fz-del { display: none; }
 html.fz .fz-name { display: none; }
-html.fz .fz-del { display: block; font-size: .82em; }
-html.fz .brand { display: grid; grid-template-columns: auto auto auto; align-items: center; column-gap: .4em; text-shadow: 0 0 10px rgba(255, 110, 210, .35); }
+html.fz .fz-del { display: block; }
+html.fz .brand { display: grid; grid-template-columns: auto auto auto; align-items: center; column-gap: .3em; text-shadow: 0 0 10px rgba(255, 110, 210, .35); }
 html.fz .fz-word {
-  display: block; position: relative; top: -.2em; margin: -.55em -.1em -.6em -.08em; padding: .55em .1em .6em .08em;
-  font-family: "Pacifico", cursive; font-size: 1.45em; line-height: 1; letter-spacing: 0;
+  display: block; position: relative;
   background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent;
   text-shadow: none; filter: drop-shadow(0 0 4px rgba(255, 120, 220, .45));
 }
-/* Raised .2em: baseline meets DELUSION's */
+html.fz .fz-word .w { color: #fff; }
 /* Glint: a copy of the word with a white band through it, run by .glint (flip.js) */
 html.fz .fz-word::after {
-  content: "Fantastikal"; position: absolute; inset: 0; padding: inherit;
+  content: "FANTASTIKAL"; position: absolute; inset: 0;
   background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .95) 50%, transparent 60%) 150% 0 / 300% 100% no-repeat;
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
