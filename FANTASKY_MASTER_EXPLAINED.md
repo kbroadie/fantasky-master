@@ -323,7 +323,7 @@ The site shows it as a red line at the top of the player's opened row on the Sta
 
 ### 6.12 Fantastikal Delusion (low scores win)
 
-Tapping **Embrace Failure** under every tab (`flip.js`) switches the whole app to show the same data as a dream where low scores win ("Fantastikal Delusion"), a happy place for the bottom of the table; **Embrace Success** switches back. README.md describes it. Nothing in `league.js` changes; the views turn the order round (`state.fantasy`):
+Tapping **Embrace failure** under every tab (`flip.js`) switches the whole app to show the same data as a dream where low scores win ("Fantastikal Delusion"), a happy place for the bottom of the table; **Embrace success** switches back. README.md describes it. Nothing in `league.js` changes; the views turn the order round (`state.fantasy`):
 
 | Output | Normal | Fantasy mode |
 |---|---|---|

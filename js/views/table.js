@@ -134,9 +134,9 @@ export function standingsSlides(d) {
     </section>`).join("");
 }
 
-// The way into the low-scores-win mode and back (flip.js), under every tab: Patatas asks, in a speech bubble whose words
-// follow the mode (styles.css)
-export const EMBRACE = `<button class="embrace" type="button"><span class="em-who"><img src="img/patatas.webp" alt="" width="271" height="320" loading="lazy" decoding="async"><b>Patatas</b></span><span class="em-say"><span class="em-fail">Embrace Failure</span><span class="em-win">Embrace Success</span></span></button>`;
+// The way into the low-scores-win mode and back (flip.js), under every tab: Patatas asks, in a comic speech bubble (an SVG
+// stretched behind the words, its outline drawn at one width) whose words follow the mode (styles.css)
+export const EMBRACE = `<button class="embrace" type="button"><span class="em-who"><img src="img/patatas.webp" alt="" width="271" height="320" loading="lazy" decoding="async"><b>Patatas</b></span><span class="em-say"><svg class="em-bub" viewBox="0 0 200 90" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="em-fill"><stop offset="0"/><stop offset=".2"/><stop offset=".4"/><stop offset=".6"/><stop offset=".8"/><stop offset="1"/></linearGradient></defs><path d="M32 7C72 1 140 3 177 8C195 11 199 29 196 46C194 66 182 78 150 81C110 85 62 84 38 79C28 77 22 71 19 63C18 61 18 60 18 58Q6 58-18 51Q4 45 17 40C14 31 14 22 19 15C22 10 26 8 32 7Z"/></svg><svg class="em-pop" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9 3 3M12 7l1-6M17 11l6-4"/></svg><span class="em-fail">Embrace failure</span><span class="em-win">Embrace success</span></span></button>`;
 
 // Board: head, optional race chart (state.stView; drawn at measured width by syncBoards), rows
 function board(d, w) {

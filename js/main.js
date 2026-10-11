@@ -694,7 +694,7 @@ addEventListener("hashchange", () => {
 });
 
 // First render waits for the fonts (≤1.2s), so it isn't laid out twice
-const FACES = ["16px Bungee", "700 16px Nunito", "800 16px Nunito", "16px Inter", "600 16px Inter", "700 16px Inter", "800 16px Inter", "16px 'DM Mono'", "500 16px 'DM Mono'"];
+const FACES = ["16px Bungee", "700 16px Nunito", "800 16px Nunito", "16px Inter", "600 16px Inter", "700 16px Inter", "800 16px Inter", "16px 'DM Mono'", "500 16px 'DM Mono'", "16px Chewy", "700 16px Cinzel"];
 const fontsIn = Promise.race([
   Promise.all(FACES.map((f) => document.fonts.load(f).catch(() => {}))),
   new Promise((r) => setTimeout(r, 1200)),
