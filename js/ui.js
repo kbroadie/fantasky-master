@@ -53,9 +53,17 @@ export function perEpisodeStats(series) {
 
 // Footer: seven ducks (one <symbol>); tapping all seven opens edit mode
 
-// As on the show: a lemon-yellow rubber duck (its body takes the fill), its bill orange and its eye black with a glint
+// As on the show (Tony Three Pies): a lemon-yellow rubber duck (its body takes the fill); a feathered wing on its side,
+// shaded from the body's own colour; its bill orange, open to a red mouth; a cartoon eye, white with a big black pupil,
+// a glint and lashes
 const DUCK_BODY = "M1.8 7.6Q3 9.4 6.5 9.4H11A3.6 3.6 0 1 1 15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1A3.6 3.6 0 0 1 14.2 9.5Q16.6 10.2 16.6 12.2Q16.6 15 12 15H6Q2.6 15 2 11.9Q1.6 9.8 1.8 7.6Z";
-const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="${DUCK_BODY}"/><path d="M15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1Q15.9 7 15.6 6Z" fill="#f28a1e"/><circle cx="13.6" cy="4.4" r=".85" fill="#1c140a"/><circle cx="13.85" cy="4.12" r=".28" fill="#fff"/></symbol>`;
+const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="${DUCK_BODY}"/>
+  <path d="M4.6 10.8Q8 9.7 10.9 11.3Q10 13.7 6.6 13.6Q4.6 12.9 4.6 10.8Z" fill="#000" opacity=".1"/>
+  <path d="M5.6 11.6Q7.6 11 9.6 11.7M5.8 12.5Q7.6 12.1 9.3 12.6" fill="none" stroke="#000" stroke-width=".3" stroke-linecap="round" opacity=".12"/>
+  <path d="M15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1Q15.9 7 15.6 6Z" fill="#f2561a"/>
+  <path d="M15.7 7.05Q17.4 7.3 19.1 6.9Q18.4 7.75 16.7 7.7Q15.9 7.6 15.7 7.05Z" fill="#b8180c"/>
+  <ellipse cx="13.5" cy="4.6" rx="1.05" ry="1.15" fill="#fff"/><circle cx="13.7" cy="4.7" r=".68" fill="#16110b"/><circle cx="13.92" cy="4.43" r=".22" fill="#fff"/>
+  <path d="M12.85 3.55l-.3-.5M13.35 3.4l-.05-.6M13.85 3.45l.25-.52" fill="none" stroke="#16110b" stroke-width=".26" stroke-linecap="round"/></symbol>`;
 
 // The Taskmaster house behind them (normal view), from a photo of its front, in its own colours with no outlines: the bungalow's Dutch gable facing the drive
 // (the arched door with its fanlight and sidelights, a round porthole each side with a lifebuoy under it, steps), the
@@ -168,7 +176,7 @@ export function footer() {
   const ducks = Array.from({ length: 7 }, () => `<span class="dk"><svg class="duck"><use href="#duck"/></svg></span>`).join("");
   // The ducks' shading in the house's light (main.js turns it): pale lemon on the side facing it, deepening to a dark
   // mustard away from it
-  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}<defs><linearGradient id="dk-shade" x1=".3" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fff08a"/><stop offset=".45" stop-color="#f6d838"/><stop offset="1" stop-color="#b48c10"/></linearGradient></defs></svg>${HOUSE}
+  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}<defs><linearGradient id="dk-shade" x1=".3" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fff69a"/><stop offset=".45" stop-color="#f6e24d"/><stop offset="1" stop-color="#b39304"/></linearGradient></defs></svg>${HOUSE}
     <div class="ducks" aria-hidden="true">${ducks}</div>`;
 }
 
