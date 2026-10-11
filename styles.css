@@ -882,7 +882,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .ln .ao { stroke: none; fill: url(#h-ao); }
 .house .ln .aox { stroke: none; fill: url(#h-aox); }
 .house .ln .inset { stroke: none; fill: url(#h-inset); }
-.house .contact { fill: #000; opacity: .45; filter: url(#h-dblur); }
+.house .contact { fill: #000; opacity: .55; filter: url(#h-dblur); }
 /* Edge highlights: a thin rim of the light's colour along the edges facing it (#h-rim, turned with the light), clipped
    inside each shape; strongest when the light is low and raking, faint under the moon (--rim) */
 .house .ln .rim { fill: none; stroke: url(#h-rim); stroke-width: 2.4; }

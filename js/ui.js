@@ -117,8 +117,10 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <g class="sun"><circle class="disc" r="9"/></g>
   </g>
   <g class="b" transform="matrix(.8 0 0 .8 39 9.2)">
-  <g class="cast"><use href="#h-mass"/><use href="#h-van"/><use class="see" href="#h-dome"/></g>
-  <g class="contact"><use href="#h-mass" transform="matrix(1 0 0 -.07 0 102.72)"/><use href="#h-van" transform="matrix(1 0 0 -.07 0 105.4)"/><ellipse cx="300" cy="99.8" rx="25.5" ry="3.4"/></g>
+  <!-- Each shadow is blurred with the structures' own shapes (hidden behind them), so it keeps its full strength up to
+       their feet and softens only away from them -->
+  <g class="cast"><use href="#h-mass"/><use href="#h-van"/><use class="see" href="#h-dome"/><use href="#h-mass"/><use href="#h-van"/></g>
+  <g class="contact"><use href="#h-mass" transform="matrix(1 0 0 -.07 0 102.72)"/><use href="#h-van" transform="matrix(1 0 0 -.07 0 105.4)"/><ellipse cx="300" cy="99.8" rx="25.5" ry="3.4"/><use href="#h-mass"/><use href="#h-van"/></g>
   <g class="ln">
     ${solid("tree", "tree")}
     ${solid("hedge", "hedge")}
