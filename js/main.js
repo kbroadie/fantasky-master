@@ -747,6 +747,20 @@ function shade() {
   // The ducks' own: each one's silhouette (14 high, its feet at y 98.1) cast the same way; the soft contact shadows under
   // their feet stay put
   house.querySelectorAll(".dcast path").forEach((el, i) => el.setAttribute("transform", `${cast(98.1)} translate(${111.25 + 25 * i} 85) scale(.875)`));
+  // And the house's shadow on them: from points up each duck's height (in the buildings' units: its feet at y 111.1,
+  // 17.5 high), back along the light to the structure that would cast it; each duck darkens by the share of it in shade
+  const solids = $$(".b .ln .o", house), pt = house.querySelector("svg").createSVGPoint();
+  const shaded = (x, y) => solids.some((el) => { pt.x = x; pt.y = y; return el.isPointInFill?.(pt); });
+  $$("#foot .dk").forEach((dk, i) => {
+    const gx = (81 + 25 * i) / 0.8, gy = 111.1;
+    let n = 0;
+    for (let up = 1; up < 18; up += 3) {
+      const h = up + (gy - 96) / sy; // the height of the point on the house whose shadow passes through this one
+      if (sy > 0 && shaded(gx - sx * (h - up), 96 - h)) n++;
+    }
+    const f = n ? `brightness(${(1 - (n / 6) * 0.35 * k).toFixed(2)})` : ""; // the sky still lights them in shade
+    if (dk.style.filter !== f) dk.style.filter = f;
+  });
 }
 // The moon is the real one over London as the episode on show aired (10pm London; sky.js): its phase, and its lit edge
 // turned as it stood. The week on the Standings, the episode on Episodes, and on Cast the latest to have aired

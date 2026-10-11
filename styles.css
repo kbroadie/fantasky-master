@@ -928,7 +928,7 @@ html:not(.fz) .duck { width: min(18px, 4.615cqw); height: min(14px, 3.59cqw); }
 html:not(.fz) .duck { fill: url(#dk-shade); opacity: 1; }
 /* In the normal view the ducks take the light too, dimmer and cooler in twilight and by night (their filter, set by
    main.js); not on the sea */
-html.fz #foot .ducks { filter: none !important; }
+html.fz #foot .ducks, html.fz #foot .dk { filter: none !important; } /* nor the house's shadow (main.js) */
 :is(.dk.lit, .editing) .duck { fill: var(--gold3); opacity: 1; filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .dk .duck { transition: transform .15s var(--ease); }
 .dk.lit .duck { transform: scale(1.18); }
