@@ -828,7 +828,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    the garage's red door, dark glass, yellow porthole rings, orange lifebuoys, the conifer's and the hedge's greens. Each
    is lit by the time of day (main.js): as bright as the light allows (--illum) and tinted by the sky (--amb, --ambk) */
 .house { --lit: #fff1d0; --sho: .2; --sha: .7; --amb: #0a0e1e; --ambk: 8%; --illum: 10%; }
-.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut), .house > .ground, .house > .ground::before {
+.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut, .rim), .house > .ground, .house > .ground::before {
   --mc: color-mix(in srgb, color-mix(in srgb, var(--m, #6a6a6a) calc(100% - var(--ambk)), var(--amb)) calc(var(--illum) * var(--face)), var(--bg));
 }
 .house .ln .m { stroke: none; fill: var(--mc); }
@@ -891,11 +891,12 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .ln .aox { stroke: none; fill: url(#h-aox); }
 .house .ln .inset { stroke: none; fill: url(#h-inset); }
 .house .contact { fill: #000; opacity: .55; filter: url(#h-dblur); }
-/* Edge highlights: a thin rim of the light's colour along the edges facing it (#h-rim, turned with the light), clipped
-   inside each shape; strongest when the light is low and raking, faint under the moon (--rim) */
-.house .ln .rim { fill: none; stroke: url(#h-rim); stroke-width: 2.4; }
-.house .r0 { stop-color: var(--lit); stop-opacity: var(--rim, .3); }
-.house .r1 { stop-color: var(--lit); stop-opacity: 0; }
+/* Edge highlights: a thin rim along the edges facing the light, in the shape's own colour made lighter (its lightness
+   raised, its hue and saturation kept; mixed toward white where a browser can't), only where the edges face the light
+   (#h-rim-mask, turned with it), clipped inside each shape; strongest when the light is low and raking, faint under
+   the moon (--rim) */
+.house .ln .rim { fill: none; stroke: color-mix(in oklab, var(--mc), #fff 40%); stroke-width: 2.4; opacity: var(--rim, .3); mask: url(#h-rim-mask); }
+@supports (color: oklch(from red l c h)) { .house .ln .rim { stroke: oklch(from var(--mc) calc(l + .2) c h); } }
 .house .cast { fill: #000; opacity: var(--sha); filter: url(#h-blur); }
 .house .ln .sh { stroke: none; fill: url(#h-eave); opacity: calc(.3 + var(--sha)); }
 /* The ducks' shadows: each one's silhouette cast on the drive like the buildings', softer, and a soft dark contact

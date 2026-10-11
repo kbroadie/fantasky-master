@@ -110,9 +110,10 @@ const BASE = { van: 98.5, dome: 99 }; // the caravan stands on its wheels; the d
 const DOME = "M276 99a24 24 0 0 1 48 0a24 3 0 0 1-48 0Z";
 // A solid shape in its material's colour (with any panels of its own); on the round ones (the conifer, the hedge) the
 // light and shade across it (#h-shade); its ambient occlusion where it meets the ground (#h-ao); and a highlight along
-// the edges facing the light (#h-rim), kept inside the shape by clipping to it so it never reads as an outline
+// the edges facing the light, in its own colour made lighter (only the edges facing the light: #h-rim-mask), kept inside
+// the shape by clipping to it so it never reads as an outline
 const solid = (k, m, inner = "", round = false) =>
-  `<path class="o ${m}" d="${MASS[k]}"/>${inner}${round ? `<path class="sd" d="${MASS[k]}"/>` : ""}<path class="ao" d="${MASS[k]}"/><path class="rim" d="${MASS[k]}" clip-path="url(#c-${k})"/>`;
+  `<path class="o ${m}" d="${MASS[k]}"/>${inner}${round ? `<path class="sd" d="${MASS[k]}"/>` : ""}<path class="ao" d="${MASS[k]}"/><path class="rim ${m}" d="${MASS[k]}" clip-path="url(#c-${k})"/>`;
 // Depth by sweeping a rounded shape back toward VP (copies along the way, in its own colour, lit as the face that
 // shows: the hedge's top, the caravan's end), for the caravan and the hedge; the garage, a box, has its faces drawn exactly
 const sweep = (k, t, m, n, f = "top") => Array.from({ length: n }, (_, i) => `<path class="m ${m} ${f}" d="${MASS[k]}" transform="${toward((t * (n - i)) / n)}"/>`).join("");
@@ -139,7 +140,8 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <filter id="h-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".35"/></filter>
     <clipPath id="h-above"><rect width="390" height="77"/></clipPath>
     <linearGradient id="h-shade" x1="0" y1="0" x2="1" y2="0"><stop class="l0" offset="0"/><stop class="l1" offset=".45"/><stop class="l2" offset="1"/></linearGradient>
-    <linearGradient id="h-rim" x1="0" y1="0" x2="1" y2="0"><stop class="r0" offset="0"/><stop class="r1" offset=".5"/></linearGradient>
+    <linearGradient id="h-rim" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <mask id="h-rim-mask" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#h-rim)"/></mask>
     <linearGradient id="h-ao" gradientUnits="userSpaceOnUse" x1="0" y1="80" x2="0" y2="96"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".42"/></linearGradient>
     <linearGradient id="h-aox" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".38"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
     <radialGradient id="h-inset" cx=".5" cy=".42" r=".62"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient>
