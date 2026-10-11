@@ -809,10 +809,10 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
   -webkit-mask-image: linear-gradient(transparent, #000 75%), var(--sides); -webkit-mask-composite: source-in;
   mask-image: linear-gradient(transparent, #000 75%), var(--sides); mask-composite: intersect;
 }
-/* The drive starts 2 units above the structures' feet (y 86), tucked under them: where its edge and theirs met exactly,
-   browsers that round an SVG's edge and a box's edge to the device's pixels differently (Safari) showed a pixel of sky
-   between them, so they seemed to float */
-.house > .ground { top: calc(84 * var(--u)); bottom: 0; }
+/* The ground runs back to y 77, the lawn behind everything (the conifer's foot, the caravan's), the drive coming up to
+   the structures' fronts; both start above the feet standing on them, tucked under, as browsers that round an SVG's
+   edge and a box's edge to the device's pixels differently (Safari) showed a pixel of sky where they met exactly */
+.house > .ground { top: calc(77 * var(--u)); bottom: 0; }
 .house .ln { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .house .ln * { vector-effect: non-scaling-stroke; }
 /* Details in a finer line */
@@ -828,11 +828,19 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    the garage's red door, dark glass, yellow porthole rings, orange lifebuoys, the conifer's and the hedge's greens. Each
    is lit by the time of day (main.js): as bright as the light allows (--illum) and tinted by the sky (--amb, --ambk) */
 .house { --lit: #fff1d0; --sho: .2; --sha: .7; --amb: #0a0e1e; --ambk: 8%; --illum: 10%; }
-.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut), .house > .ground, .house > .ground::before, .house > .ground::after {
-  --mc: color-mix(in srgb, color-mix(in srgb, var(--m, #6a6a6a) calc(100% - var(--ambk)), var(--amb)) var(--illum), var(--bg));
+.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut), .house > .ground, .house > .ground::before {
+  --mc: color-mix(in srgb, color-mix(in srgb, var(--m, #6a6a6a) calc(100% - var(--ambk)), var(--amb)) calc(var(--illum) * var(--face)), var(--bg));
 }
 .house .ln .m { stroke: none; fill: var(--mc); }
 .house .ln :is(.o, .buoy, .d.red) { fill: var(--mc); }
+/* Each face lit by which way it faces (main.js sets --fF, --fT, --fR, --fL, --fS): a front by default, the tops, the
+   right and left sides, and the wing's roof slope */
+.house { --face: var(--fF, .66); }
+.house .top, .house > .ground { --face: var(--fT, .8); }
+.house .rs { --face: var(--fR, .66); }
+.house .ls { --face: var(--fL, .66); }
+.house .slope { --face: var(--fS, .72); }
+.house .felt { --m: #3e3a38; }
 .house .brick { --m: #9c5a40; }
 .house .roof { --m: #4a4a52; }
 .house .white { --m: #e6e2d8; }
@@ -857,17 +865,16 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .tan { --m: #c89a5c; }
 .house .teal { --m: #2e6a5e; }
 .house .flower { --m: #d8463a; }
-/* The drive: resin-bound gravel, tan, as in the photo */
-.house > .ground { --m: #ab947b; }
-/* Grass either side of the drive, as in the photo: the drive widens toward us, the hedge on the lawn at the left and the
-   caravan parked on it at the right, past the dome; on a wider screen the lawns run on to the edges. Placed in the
-   drawing's units from its middle (--u), lit like everything else */
-.house > .ground::before, .house > .ground::after {
-  content: ""; position: absolute; inset: 0; --m: #6e9152;
+/* The lawn (the ground box) everywhere but the drive, which is cut into it (::before): resin-bound gravel, tan, as in the
+   photo, from just under the structures' fronts, widening toward us; the hedge on the lawn at the left and the caravan
+   parked on it at the right, past the dome; on a wider screen the lawns run on to the edges. Placed in the drawing's
+   units from its middle (--u); both lit like everything else, as tops */
+.house > .ground { --m: #6e9152; }
+.house > .ground::before {
+  content: ""; position: absolute; inset: 0; --m: #ab947b;
   background: linear-gradient(var(--mc), color-mix(in srgb, var(--mc) 55%, var(--bg)));
+  clip-path: polygon(calc(50% - 129.5 * var(--u)) calc(3.5 * var(--u)), calc(50% + 102.3 * var(--u)) calc(3.5 * var(--u)), calc(50% + 177 * var(--u)) 100%, calc(50% - 185 * var(--u)) 100%);
 }
-.house > .ground::before { clip-path: polygon(0 0, calc(50% - 133 * var(--u)) 0, calc(50% - 185 * var(--u)) 100%, 0 100%); }
-.house > .ground::after { clip-path: polygon(calc(50% + 107 * var(--u)) 0, 100% 0, 100% 100%, calc(50% + 177 * var(--u)) 100%); }
 /* Light and shade across them (main.js sets which way, and how strong: --sho, --sha): lighter on the side facing the sun
    or moon, in its colour (--lit), darker on the other; and shadows across the drive, under the eaves and at the ducks'
    feet, away from the light */
@@ -894,7 +901,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    shadow under its feet, there in any light */
 .house .dcast { fill: #000; opacity: calc(var(--sha) * .75); filter: url(#h-dblur); }
 .house .feet { fill: #000; opacity: calc(.22 + var(--sha) * .3); filter: url(#h-dblur); }
-.house .lt > * { opacity: 0; }
+.house .lt > g > * { opacity: 0; }
 /* The time of day (main.js, from the device's clock): the sun crosses the sky from 6:00 to 20:00 and the moon from 20:00
    to 6:00 (their places set each minute), passing behind the buildings' solid shapes */
 /* The moon as it looks: no outline; the lit part a pale gradient, brightest at its edge and dimming to the terminator,
@@ -903,19 +910,19 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .moon .lit { fill: url(#h-moonlit); filter: url(#h-soft); }
 /* The sun a plain bright disc, the moon's size, with no glow: white high up and redder as it nears the horizon (--sun) */
 .house .sun .disc { fill: color-mix(in srgb, var(--sun, #fff6e0) 55%, #fff); filter: url(#h-soft); }
-.show-day.up .house .lt > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
+.show-day.up .house .lt > g > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
 @keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
 .smoke {
-  position: absolute; left: 47%; bottom: 80.3%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
+  position: absolute; left: 47%; bottom: 81.9%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
   fill: none; stroke: #e9dcc0; stroke-width: 1.5; stroke-linecap: round;
 }
 .show-day.go .smoke { animation: h-smoke 4s 2s linear infinite; }
 @keyframes h-smoke { 0% { opacity: 0; transform: translateY(4px); } 30% { opacity: .4; } 100% { opacity: 0; transform: translateY(-10px); } }
 html.fz .house { display: none; }
 /* Footer card off, or reduced motion: lit on show days, still */
-html.no-sea .show-day .house .lt > * { animation: none; opacity: .95; }
+html.no-sea .show-day .house .lt > g > * { animation: none; opacity: .95; }
 html.no-sea .smoke { display: none; }
-@media (prefers-reduced-motion: reduce) { .show-day .house .lt > * { animation: none; opacity: .95; } .smoke { display: none; } }
+@media (prefers-reduced-motion: reduce) { .show-day .house .lt > g > * { animation: none; opacity: .95; } .smoke { display: none; } }
 .ducks { z-index: 1; }
 /* Under 390px the house's drawing scales down, and the ducks with it, so they keep their places over their shadows (not in
    Fantasy Land, where they ride the sea, which doesn't scale) */

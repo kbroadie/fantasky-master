@@ -704,18 +704,25 @@ function shade() {
     // The edges facing the light catch it most when it's low and raking
     "--rim": (sun ? low * (0.5 + 0.35 * (1 - Math.min(1, e / (40 * deg)))) : 0.35 * moonLit).toFixed(3),
     // How brightly the structures' own colours show: full daylight, falling through twilight to what the moon gives
-    "--illum": `${Math.max(6 + 8 * moonLit, light.height >= 0 ? 35 + 40 * Math.min(1, light.height / 20) : 35 + 2.4 * light.height).toFixed(1)}%`,
+    "--illum": `${Math.max(6 + 8 * moonLit, light.height >= 0 ? 45 + 50 * Math.min(1, light.height / 20) : 45 + 3 * light.height).toFixed(1)}%`,
     "--lit": sun ? sky.sun : "#c4d0ff",
     "--sun": sky.sun,
     "--amb": sky.horizon,
     "--ambk": `${sky.ambK.toFixed(1)}%`,
   };
+  // Each face of a structure by which way it faces (styles.css, --face): the sky's light on all of them, and the sun's
+  // (or moon's) as it falls on each. It's behind the house, over the far side, so the fronts facing us have only the
+  // sky's; the tops catch it by its height, the sides by which side it's on, the wing's roof slope a little of both
+  const lx = Math.sin(az) * Math.cos(e), ly = Math.sin(e), lz = Math.cos(az) * Math.cos(e);
+  // (and the sky's a little brighter on the sun's side, so a face turned away from it is a little darker)
+  const face = (a, n) => (a + 0.08 * k * Math.max(-1, Math.min(1, n)) + (1 - a) * k * Math.max(0, Math.min(1, n))).toFixed(3);
+  Object.assign(props, { "--fF": face(0.66, -lz), "--fT": face(0.8, ly / 0.82), "--fR": face(0.66, lx), "--fL": face(0.66, -lx), "--fS": face(0.72, 0.71 * (ly - lz)) });
   for (const p in props) house.style.setProperty(p, props[p]);
   // The sky: overhead to the horizon, a glow on the horizon under the sun (wide near sunrise and sunset, where it lingers
   // after sunset; none around the sun itself), and by night a faint one around the moon; the drive in its gravel (styles.css), lit the same way. In
   // the drawing's units from its middle
   const u = (n) => `calc(${n.toFixed(1)} * var(--u))`, x = (n) => `calc(50% + ${(n - 195).toFixed(1)} * var(--u))`;
-  const [gx] = light.at.sun, gy = 86, hi = Math.max(0, Math.min(1, light.height / 25));
+  const [gx] = light.at.sun, gy = 77, hi = Math.max(0, Math.min(1, light.height / 25));
   const glow = (c, a) => `color-mix(in srgb, ${c} ${(a * 100).toFixed(0)}%, transparent)`;
   const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${u(light.at.moon[1])}, ${glow("#c8d2ff", 0.1 * moonLit)}, transparent)`];
   house.querySelector(".sky").style.background = [...moonGlow,
@@ -740,24 +747,29 @@ function shade() {
   if (dg) for (const [a, v] of [["x1", 0.5 + 0.5 * dx], ["y1", 0.5 + 0.5 * dy], ["x2", 0.5 - 0.5 * dx], ["y2", 0.5 - 0.5 * dy]]) dg.setAttribute(a, v.toFixed(3));
   // Each point h above the ground (at y = b) falls h·sx across and h·sy down: the caravan stands nearer, on its wheels
   const cast = (b) => `matrix(1 0 ${(-sx).toFixed(3)} ${(-sy).toFixed(3)} ${(b * sx).toFixed(2)} ${(b * (1 + sy)).toFixed(2)})`;
-  const [m, v, g] = house.querySelectorAll(".cast use");
-  m.setAttribute("transform", cast(96));
-  v.setAttribute("transform", cast(98.5));
-  g.setAttribute("transform", cast(99)); // the dome stands a little nearer, on the drive
+  // Each structure's from its own feet, where its depth puts them (dy); a deep one's back (r: its scale toward the
+  // vanishing point) casts from where its back stands
+  for (const el of house.querySelectorAll(".cast use[data-b]")) {
+    const { dy, b, r, vy } = el.dataset, R = +r, foot = +vy + (+b - +vy) * R;
+    el.setAttribute("transform", `translate(0 ${dy}) ${cast(foot)}${R === 1 ? "" : ` matrix(${R} 0 0 ${R} ${(195 * (1 - R)).toFixed(2)} ${(+vy * (1 - R)).toFixed(2)})`}`);
+  }
   // The ducks' own: each one's silhouette (14 high, its feet at y 98.1) cast the same way; the soft contact shadows under
   // their feet stay put
   house.querySelectorAll(".dcast path").forEach((el, i) => el.setAttribute("transform", `${cast(98.1)} translate(${111.25 + 25 * i} 85) scale(.875)`));
   // And the house's shadow on them: from points up each duck's height (in the buildings' units: its feet at y 111.1,
   // 17.5 high), back along the light to the structure that would cast it; each duck darkens by the share of it in shade
-  const solids = $$(".b .ln .o", house), pt = house.querySelector("svg").createSVGPoint();
-  const shaded = (x, y) => solids.some((el) => { pt.x = x; pt.y = y; return el.isPointInFill?.(pt); });
+  // (each structure in its own frame, before its depth's dy)
+  const solids = $$(".b .ln .o", house).map((el) => [el, +(el.closest("[data-dy]")?.dataset.dy ?? 0)]), pt = house.querySelector("svg").createSVGPoint();
+  const shaded = (gx, gy, up) => sy > 0 && solids.some(([el, dy]) => {
+    const h = up + (gy - dy - 96) / sy; // the height of the point on it whose shadow passes through this one
+    pt.x = gx - sx * (h - up);
+    pt.y = 96 - h;
+    return el.isPointInFill?.(pt);
+  });
   $$("#foot .dk").forEach((dk, i) => {
     const gx = (81 + 25 * i) / 0.8, gy = 111.1;
     let n = 0;
-    for (let up = 1; up < 18; up += 3) {
-      const h = up + (gy - 96) / sy; // the height of the point on the house whose shadow passes through this one
-      if (sy > 0 && shaded(gx - sx * (h - up), 96 - h)) n++;
-    }
+    for (let up = 1; up < 18; up += 3) if (shaded(gx, gy, up)) n++;
     // The sky still lights them in shade; darkened, yellow turns olive, so their shade is warmed a little toward amber
     const d = (n / 6) * k, f = n ? `brightness(${(1 - 0.35 * d).toFixed(2)}) saturate(${(1 + 0.15 * d).toFixed(2)}) hue-rotate(${(-4 * d).toFixed(1)}deg)` : "";
     if (dk.style.filter !== f) dk.style.filter = f;
