@@ -66,6 +66,10 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 
 // light: the shapes shaded from the side it's on, eaves and everything on the drive casting shadows away from it; its lights (.lt, --i
 // their order) come up on show days (styles.css), the door's spilling onto the drive, and the chimney smokes
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
+// The ducks' shadows: each one's outline without its eye, as plain paths (not <use> copies, which the minute's custom
+// properties on .house would restyle), and a soft contact shadow under each; the ducks stand 25 apart from x 120
+const DUCK_BODY = DUCK.match(/d="([^"]*?) M13\.6/)[1];
+const seven = (f) => Array.from({ length: 7 }, (_, i) => f(i)).join("");
 // The solid shapes, back to front: each drawn in its material's colour under its outline, and all cast as shadows on the
 // drive (main.js)
 const MASS = {
@@ -94,6 +98,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <linearGradient id="h-eave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
     <radialGradient id="h-spill" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".3"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
     <filter id="h-blur" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
+    <filter id="h-dblur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation=".7"/></filter>
     <g id="h-mass">${mass("tree", "hedge", "garage", "chimney", "wing", "end", "gable")}</g><g id="h-van">${mass("van")}<circle cx="343" cy="95" r="3.5"/></g></defs>
   <g clip-path="url(#h-above)">
     <g class="moon"><circle r="16" fill="url(#h-moonhalo)"/><circle class="disc" r="9"/><path class="lit" d=""/></g>
@@ -102,8 +107,8 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
   <g class="b" transform="matrix(.8 0 0 .8 39 9.2)">
   <g class="cast"><use href="#h-mass"/><use href="#h-van"/></g>
   <g class="ln">
-    ${solid("tree", "tree", "faint")}
-    ${solid("hedge", "hedge", "faint")}
+    ${solid("tree", "tree")}
+    ${solid("hedge", "hedge")}
     ${solid("garage", "white")}<path class="m red" d="M28 72H74V96H28Z"/><rect class="sh" x="22" y="67" width="58" height="6"/><path class="m brown" d="M20 64H82V67H20Z"/><path class="d" d="M28 96V72H74V96M28 77H74M28 82H74M28 87H74M28 92H74"/>
     ${solid("chimney", "brick")}<path class="m brick" d="M183.5 24h14v-2.5h-14Z"/><path class="d" d="M187 21.5v-3h2.5v3M191.5 21.5v-4h2.5v4"/>
     ${solid("wing", "brick", "", 'stroke="none"')}<path class="m roof" d="M196 42H264V64H196Z"/><rect class="sh" x="196" y="64" width="68" height="8"/><path class="d" d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
@@ -138,10 +143,8 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <path class="m red" d="M352.6 89h1.2v8h-1.2ZM349.5 85.5h7.4v3.5h-7.4Z"/><circle class="o tyre" cx="343" cy="95" r="3.5"/>
     <path class="d" d="M330 86H382M368 87h1.5M382 92l7 2M348 72v-2h6v2M344 95a1 1 0 1 1-2 0a1 1 0 1 1 2 0"/>
   </g></g>
-  <g class="ln">
-    <path d="M8 93H382" opacity=".35"/>
-    <g class="feet"><ellipse cx="120" cy="99" rx="8" ry="1.6"/><ellipse cx="145" cy="99" rx="8" ry="1.6"/><ellipse cx="170" cy="99" rx="8" ry="1.6"/><ellipse cx="195" cy="99" rx="8" ry="1.6"/><ellipse cx="220" cy="99" rx="8" ry="1.6"/><ellipse cx="245" cy="99" rx="8" ry="1.6"/><ellipse cx="270" cy="99" rx="8" ry="1.6"/></g>
-  </g></svg>
+  <g class="dcast">${seven(() => `<path d="${DUCK_BODY}"/>`)}</g>
+  <g class="feet">${seven((i) => `<ellipse cx="${120 + 25 * i}" cy="98.3" rx="7.5" ry="1.3"/>`)}</g></svg>
   <svg class="smoke" viewBox="0 0 20 24"><path d="M7 23c-4-5 3-8-1-13s3-7 0-10"/><path d="M13 23c-4-5 3-8-1-13"/></svg>
 </div>`;
 

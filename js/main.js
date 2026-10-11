@@ -664,7 +664,6 @@ function showDay() {
   const house = $("#foot .house");
   if (!house) return;
   const h = now.getHours() + now.getMinutes() / 60, sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
-  house.dataset.time = h < 5 || h >= 21 ? "night" : h < 8 ? "dawn" : h < 17.5 ? "day" : "dusk";
   const at = {};
   for (const [k, t] of [["sun", sun], ["moon", moon]]) {
     const el = house.querySelector(`.${k}`), up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
@@ -699,12 +698,10 @@ function shade() {
     "--sun": sky.sun,
     "--amb": sky.horizon,
     "--ambk": `${sky.ambK.toFixed(1)}%`,
-    "--tint": sky.tint,
-    "--tintk": `${sky.tintK.toFixed(1)}%`,
   };
   for (const p in props) house.style.setProperty(p, props[p]);
   // The sky: overhead to the horizon, a glow on the horizon under the sun (wide near sunrise and sunset, where it lingers
-  // after sunset; none around the sun itself), and by night a faint one around the moon; the drive in the same light. In
+  // after sunset; none around the sun itself), and by night a faint one around the moon; the drive in its gravel (styles.css), lit the same way. In
   // the drawing's units from its middle
   const u = (n) => `calc(${n.toFixed(1)} * var(--u))`, x = (n) => `calc(50% + ${(n - 195).toFixed(1)} * var(--u))`;
   const [gx] = light.at.sun, gy = 86, hi = Math.max(0, Math.min(1, light.height / 25));
@@ -732,13 +729,9 @@ function shade() {
   const [m, v] = house.querySelectorAll(".cast use");
   m.setAttribute("transform", cast(96));
   v.setAttribute("transform", cast(98.5));
-  // The ducks' own, from about 12 high
-  house.querySelectorAll(".feet ellipse").forEach((el, i) => {
-    el.setAttribute("cx", (120 + 25 * i + 6 * sx).toFixed(1));
-    el.setAttribute("cy", (99 + 6 * sy).toFixed(1));
-    el.setAttribute("rx", (7 + 6 * Math.abs(sx)).toFixed(1));
-    el.setAttribute("ry", (1.6 + 6 * sy).toFixed(1));
-  });
+  // The ducks' own: each one's silhouette (14 high, its feet at y 98.1) cast the same way; the soft contact shadows under
+  // their feet stay put
+  house.querySelectorAll(".dcast path").forEach((el, i) => el.setAttribute("transform", `${cast(98.1)} translate(${111.25 + 25 * i} 85) scale(.875)`));
 }
 // The moon is the real one over London as the episode on show aired (10pm London; sky.js): its phase, and its lit edge
 // turned as it stood. The week on the Standings, the episode on Episodes, and on Cast the latest to have aired

@@ -803,14 +803,10 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
   mask-image: linear-gradient(transparent, #000 75%), var(--sides); mask-composite: intersect;
 }
 .house > .ground { top: calc(86 * var(--u)); bottom: 0; }
-/* Dimmed by the strokes' opacity (--lna), not the group's, so the solid shapes stay solid; tinted with the light (--tint,
-   --tintk: cool and grey by night, warm at sunrise and sunset), but for show days' gold */
-.house { --lna: .38; --lnc: color-mix(in srgb, var(--tint, var(--gold2)) var(--tintk, 0%), var(--gold2)); }
-.house .ln { fill: none; stroke: var(--lnc); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-opacity: var(--lna); }
+.house .ln { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .house .ln * { vector-effect: non-scaling-stroke; }
-/* Details in a finer, fainter line than the outlines */
-.house .ln .d { stroke-width: 1; stroke-opacity: calc(var(--lna) * .7); }
-.house .ln .faint { stroke-opacity: calc(var(--lna) * .5); }
+/* Details in a finer line */
+.house .ln .d { stroke-width: 1; }
 /* The structures have no outlines (on request): only the details that belong to them, in their own colours: joints,
    panels and edges a dark line, the glazing bars, frames and lifebuoys' bands white, the dome's struts pale */
 .house .b .ln { stroke: none; }
@@ -858,21 +854,19 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .l2 { stop-color: #000; stop-opacity: calc(var(--sho) * 1.4); }
 .house .cast { fill: #000; opacity: var(--sha); filter: url(#h-blur); }
 .house .ln .sh { stroke: none; fill: url(#h-eave); opacity: var(--sha); }
-.house .feet { stroke: none; fill: #000; opacity: calc(var(--sha) * .8); }
+/* The ducks' shadows: each one's silhouette cast on the drive like the buildings', softer, and a soft dark contact
+   shadow under its feet, there in any light */
+.house .dcast { fill: #000; opacity: calc(var(--sha) * .75); filter: url(#h-dblur); }
+.house .feet { fill: #000; opacity: calc(.22 + var(--sha) * .3); filter: url(#h-dblur); }
 .house .lt > * { opacity: 0; }
-/* The time of day (data-time, main.js, from the device's clock): the sun crosses the sky from 6:00 to 20:00 and the moon
-   from 20:00 to 6:00 (their places set each minute), passing behind the buildings' solid shapes; the lines are a
-   little brighter by day */
+/* The time of day (main.js, from the device's clock): the sun crosses the sky from 6:00 to 20:00 and the moon from 20:00
+   to 6:00 (their places set each minute), passing behind the buildings' solid shapes */
 /* The moon as it looks: no outline; the lit part a pale gradient, brightest at its edge and dimming to the terminator,
    softened a little; the dark part a faint earthshine */
 .house .moon .disc { fill: url(#h-earth); }
 .house .moon .lit { fill: url(#h-moonlit); filter: url(#h-soft); }
 /* The sun a plain bright disc, the moon's size, with no glow: white high up and redder as it nears the horizon (--sun) */
 .house .sun .disc { fill: color-mix(in srgb, var(--sun, #fff6e0) 55%, #fff); filter: url(#h-soft); }
-.house[data-time="day"] { --lna: .55; }
-.house:is([data-time="dawn"], [data-time="dusk"]) { --lna: .46; }
-.show-day .house { --lna: .9; --lnc: var(--gold2); }
-.show-day .house > svg > .ln { filter: drop-shadow(0 0 3px rgba(236, 192, 64, .4)); }
 .show-day.up .house .lt > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
 @keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
 .smoke {
