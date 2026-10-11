@@ -64,7 +64,6 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 
 // ducks, so there's sky above. The sky follows the device's clock (main.js: the sun and moon's places, the time of day);
 // its lights (.lt, --i their order) come up on show days (styles.css), and the chimney smokes
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
-const STARS = [[30, 12], [58, 30], [150, 8], [176, 24], [300, 12], [334, 30], [362, 16], [128, 30], [16, 40], [372, 44]];
 const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
   <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
     <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
@@ -75,7 +74,6 @@ const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
     <filter id="h-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".35"/></filter>
     <clipPath id="h-above"><rect width="390" height="86"/></clipPath></defs>
   <rect class="sky" x="0" y="0" width="390" height="86" fill="url(#h-sky)"/>
-  <g class="stars">${STARS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".9"/>`).join("")}</g>
   <g clip-path="url(#h-above)">
     <g class="moon"><circle r="16" fill="url(#h-halo)"/><circle class="disc" r="9"/><path class="lit" d=""/></g>
     <g class="sun"><circle r="16" fill="url(#h-halo)"/><circle r="6"/><path d="M0-10v-3M0 10v3M-10 0h-3M10 0h3M7-7l2-2M-7 7l-2 2M7 7l2 2M-7-7l-2-2"/></g>

@@ -800,20 +800,18 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .feet { stroke: none; fill: var(--gold2); opacity: .28; }
 .house .lt > * { opacity: 0; }
 /* The time of day (data-time, main.js, from the device's clock): the sun crosses the sky from 6:00 to 20:00 and the moon
-   from 20:00 to 6:00 (their places set each minute), passing behind the buildings' solid shapes; stars at night; the
+   from 20:00 to 6:00 (their places set each minute), passing behind the buildings' solid shapes; the
    horizon warms at dawn and dusk and pales by day; the lines are a little brighter by day */
 .house .ln .o { fill: var(--bg); }
 .house .sky { opacity: 0; }
 .house .s0 { stop-color: var(--sky, #ecc040); stop-opacity: .16; }
 .house .s1 { stop-color: var(--sky, #ecc040); stop-opacity: 0; }
-.house .stars { fill: #e9dcc0; opacity: 0; }
 /* The moon as it looks: no outline; the lit part a pale gradient, brightest at its edge and dimming to the terminator,
    softened a little; the dark part a faint earthshine */
 .house .moon .disc { fill: url(#h-earth); }
 .house .moon .lit { fill: url(#h-moonlit); filter: url(#h-soft); }
 .house .sun > circle:nth-of-type(2) { fill: none; stroke: var(--sun, var(--gold3)); stroke-width: 1.5; }
 .house .sun path { fill: none; stroke: var(--sun, var(--gold3)); stroke-width: 1.5; stroke-linecap: round; }
-.house[data-time="night"] .stars { opacity: .45; }
 .house[data-time="dawn"] { --sky: #ff9a7a; --sun: #ffc48a; }
 .house[data-time="day"] { --sky: #8fb8ff; }
 .house[data-time="dusk"] { --sky: #ff7a3d; --sun: #ffb070; }
