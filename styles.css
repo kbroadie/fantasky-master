@@ -790,12 +790,32 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house { position: absolute; left: 50%; bottom: 0; width: min(390px, 100%); aspect-ratio: 390 / 136; translate: -50% 0; pointer-events: none; }
 .house > svg:first-child { display: block; width: 100%; height: 100%; }
 .house .ln { fill: none; stroke: var(--gold2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: .38; }
+.house .ln * { vector-effect: non-scaling-stroke; }
 .house .lt > * { opacity: 0; }
+/* The time of day (data-time, main.js, from the device's clock): the sun crosses the sky from 6:00 to 20:00 and the moon
+   from 20:00 to 6:00 (their places set each minute), passing behind the buildings' solid shapes; stars at night; the
+   horizon warms at dawn and dusk and pales by day; the lines are a little brighter by day */
+.house .solid { fill: var(--bg); }
+.house .sky { opacity: 0; }
+.house .s0 { stop-color: var(--sky, #ecc040); stop-opacity: .16; }
+.house .s1 { stop-color: var(--sky, #ecc040); stop-opacity: 0; }
+.house .stars { fill: #e9dcc0; opacity: 0; }
+.house .moon path { fill: none; stroke: var(--gold2); stroke-width: 1.5; }
+.house .sun > circle:nth-of-type(2) { fill: none; stroke: var(--sun, var(--gold3)); stroke-width: 1.5; }
+.house .sun path { fill: none; stroke: var(--sun, var(--gold3)); stroke-width: 1.5; stroke-linecap: round; }
+.house[data-time="night"] .stars { opacity: .45; }
+.house[data-time="dawn"] { --sky: #ff9a7a; --sun: #ffc48a; }
+.house[data-time="day"] { --sky: #8fb8ff; }
+.house[data-time="dusk"] { --sky: #ff7a3d; --sun: #ffb070; }
+.house:is([data-time="dawn"], [data-time="dusk"]) .sky { opacity: 1; }
+.house[data-time="day"] .sky { opacity: 1; }
+.house[data-time="day"] .ln { opacity: .55; }
+.house:is([data-time="dawn"], [data-time="dusk"]) .ln { opacity: .46; }
 .show-day .house .ln { opacity: .9; filter: drop-shadow(0 0 3px rgba(236, 192, 64, .4)); }
 .show-day.up .house .lt > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
 @keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
 .smoke {
-  position: absolute; left: 46.2%; bottom: 79.5%; width: 5.2%; height: auto; opacity: 0; overflow: visible;
+  position: absolute; left: 47.4%; bottom: 70.3%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
   fill: none; stroke: #e9dcc0; stroke-width: 1.5; stroke-linecap: round;
 }
 .show-day.go .smoke { animation: h-smoke 4s 2s linear infinite; }

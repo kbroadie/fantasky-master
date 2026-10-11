@@ -654,8 +654,19 @@ footSeen.observe($(".fz-waves"));
 // The house (ui.js) lights up on show days: the day, on this device, that any episode airs. Checked each minute, so it
 // comes on at midnight. Its lights come up the first time it's seen (.up), and its chimney smokes while it's on screen
 function showDay() {
-  const today = new Date().toDateString();
+  const now = new Date(), today = now.toDateString();
   $("#foot").classList.toggle("show-day", Object.values(SERIES).some((s) => s.episodes.some((e) => airInstant(e.date).toDateString() === today)));
+  // And the time of day: its sky, and the sun or the moon rising from the horizon at the left, high over the house through
+  // the middle of its time, and setting at the right
+  const house = $("#foot .house");
+  if (!house) return;
+  const h = now.getHours() + now.getMinutes() / 60, sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
+  house.dataset.time = h < 5 || h >= 21 ? "night" : h < 8 ? "dawn" : h < 17.5 ? "day" : "dusk";
+  for (const [el, t] of [[house.querySelector(".sun"), sun], [house.querySelector(".moon"), moon]]) {
+    el.style.display = t >= 0 && t <= 1 ? "" : "none";
+    const up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
+    el.setAttribute("transform", `translate(${(20 + 350 * t).toFixed(1)} ${(104 - 84 * up).toFixed(1)})`);
+  }
 }
 setInterval(showDay, 60000);
 const houseSeen = new IntersectionObserver((es) => {

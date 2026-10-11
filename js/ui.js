@@ -57,14 +57,26 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 
 
 // The Taskmaster house behind them (normal view): the bungalow's front, a curved Dutch gable at each end (the arched door
 // with its fanlight between round windows; the clock over tall windows) and the tiled roof and chimney between, the
-// conifer behind, the caravan beside it and a pond for the ducks, in gold lines. Its lights (.lt, --i their order) come
-// up on show days (styles.css, main.js), and the chimney smokes
+// conifer behind, the caravan beside it and a pond for the ducks, in gold lines over solid shapes, so the sun and moon
+// pass behind them; the buildings at 80%, standing on the same ground, so there's sky above them. The sky follows the device's clock (main.js: the sun and moon's places, the time of day); its
+// lights (.lt, --i their order) come up on show days (styles.css), and the chimney smokes
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
+const SOLID = "M64 94V50q0-6 6-8q6-2 6-10q0-16 24-18q24 2 24 18q0 8 6 10q6 2 6 8V94ZM136 94V62l14-20h37V27h11v15h38l14 20V94ZM250 94V54q0-6 5-8q5-2 5-9q0-14 14-16q14 2 14 16q0 7 5 9q5 2 5 8V94ZM206 42q-4-14 8-22q4-14 16-10q12-4 16 8q12 6 6 20ZM306 92V74q0-8 8-8h40q10 0 12 10l2 16ZM20 94q-4-18 8-26q6-12 20-6q12 8 8 32Z";
+const STARS = [[30, 12], [58, 30], [150, 10], [176, 26], [300, 12], [334, 30], [362, 16], [128, 30], [16, 40], [372, 44]];
 const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
   <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
-    <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient></defs>
+    <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
+    <linearGradient id="h-sky" x1="0" y1="1" x2="0" y2="0"><stop class="s0" offset="0"/><stop class="s1" offset="1"/></linearGradient>
+    <clipPath id="h-above"><rect width="390" height="95"/></clipPath></defs>
+  <rect class="sky" x="0" y="0" width="390" height="96" fill="url(#h-sky)"/>
+  <g class="stars">${STARS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".9"/>`).join("")}</g>
+  <g clip-path="url(#h-above)">
+    <g class="moon"><circle r="16" fill="url(#h-halo)"/><path d="M-2-8a9 9 0 1 0 6 16a7 7 0 1 1-6-16z"/></g>
+    <g class="sun"><circle r="16" fill="url(#h-halo)"/><circle r="6"/><path d="M0-10v-3M0 10v3M-10 0h-3M10 0h3M7-7l2-2M-7 7l-2 2M7 7l2 2M-7-7l-2-2"/></g>
+  </g>
+  <g transform="matrix(.8 0 0 .8 39 18.8)">
+  <path class="solid" d="${SOLID}"/>
   <g class="lt">
-    ${glass(`<circle cx="36" cy="24" r="22" fill="url(#h-halo)"/>`, 0)}
     ${glass(`<ellipse cx="180" cy="66" rx="130" ry="44" fill="url(#h-halo)"/>`, 7)}
     ${glass(`<path d="M93 94V57q0-9 7-9t7 9V94z" fill="url(#h-win)"/>`, 0)}
     ${glass(`<circle cx="79" cy="63" r="4.5" fill="url(#h-win)"/>`, 1)}
@@ -75,7 +87,6 @@ const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
     ${glass(`<rect x="317" y="72" width="16" height="8" rx="2" fill="url(#h-win)"/>`, 6)}
   </g>
   <g class="ln">
-    <path d="M40 18a9 9 0 1 0 6 16a7 7 0 1 1-6-16z"/>
     <path d="M206 42q-4-14 8-22q4-14 16-10q12-4 16 8q12 6 6 20" opacity=".55"/>
     <path d="M20 94q-4-18 8-26q6-12 20-6q12 8 8 32" opacity=".55"/>
     <path d="M64 94V50q0-6 6-8q6-2 6-10q0-16 24-18q24 2 24 18q0 8 6 10q6 2 6 8V94"/>
@@ -93,6 +104,8 @@ const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
     <rect x="317" y="72" width="16" height="8" rx="2"/>
     <path d="M344 92V73h11v19"/>
     <circle cx="322" cy="94" r="4"/>
+  </g></g>
+  <g class="ln">
     <path d="M14 96H376" opacity=".35"/>
     <path d="M100 100Q195 92 290 100Q195 112 100 100Z" opacity=".8"/>
     <path d="M140 106q12 2 24 0M214 106q14 2 28 0" opacity=".45"/>
