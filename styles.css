@@ -223,7 +223,14 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .st-hero { text-align: center; padding-block: 18px 16px; } /* the same as .ep-head */
 .st-hero .ep-title { margin-bottom: 0; }
 .st-hero .ep-sub { margin-top: 6px; }
-.st-leaders { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; margin-top: 6px; font-size: 14px; color: var(--t2); text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
+/* A fixed two lines, whoever leads, in both views (so the Slam pictures the board at one height): the Show's leader over
+   the League's, or one line between them when the same player leads both */
+.st-leaders {
+  display: flex; flex-direction: column; justify-content: center; align-items: center; height: 34px; margin-top: 6px;
+  font-size: 14px; line-height: 16px; color: var(--t2); text-shadow: 0 1px 8px rgba(0, 0, 0, .7);
+}
+.st-leaders > span { white-space: nowrap; }
+.st-leaders > span:only-child { white-space: normal; text-align: center; text-wrap: balance; } /* a tie can take both lines */
 .st-leaders b { font-family: var(--ff-name); font-weight: 800; color: var(--gold2); }
 .st-leaders .st-show { color: var(--show-hi); }
 .st-leaders .st-league { color: var(--league-hi); }
@@ -852,8 +859,21 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .l0 { stop-color: var(--lit); stop-opacity: var(--sho); }
 .house .l1 { stop-color: var(--lit); stop-opacity: 0; }
 .house .l2 { stop-color: #000; stop-opacity: calc(var(--sho) * 1.4); }
+/* Ambient occlusion, whatever the light: each structure darkening into the drive (.ao), a soft contact shadow of its own
+   silhouette on the gravel at its foot (.contact), the wing's corner against the gable (.aox), the eaves always shading
+   a little (.sh), and the recesses (.inset: the portholes, fanlight, sidelights and door) darker round their edges. A
+   black overlay darkens a colour by the same share in any light, so these stay constant */
+.house .ln .ao { stroke: none; fill: url(#h-ao); }
+.house .ln .aox { stroke: none; fill: url(#h-aox); }
+.house .ln .inset { stroke: none; fill: url(#h-inset); }
+.house .contact { fill: #000; opacity: .45; filter: url(#h-dblur); }
+/* Edge highlights: a thin rim of the light's colour along the edges facing it (#h-rim, turned with the light), clipped
+   inside each shape; strongest when the light is low and raking, faint under the moon (--rim) */
+.house .ln .rim { fill: none; stroke: url(#h-rim); stroke-width: 2.4; }
+.house .r0 { stop-color: var(--lit); stop-opacity: var(--rim, .3); }
+.house .r1 { stop-color: var(--lit); stop-opacity: 0; }
 .house .cast { fill: #000; opacity: var(--sha); filter: url(#h-blur); }
-.house .ln .sh { stroke: none; fill: url(#h-eave); opacity: var(--sha); }
+.house .ln .sh { stroke: none; fill: url(#h-eave); opacity: calc(.3 + var(--sha)); }
 /* The ducks' shadows: each one's silhouette cast on the drive like the buildings', softer, and a soft dark contact
    shadow under its feet, there in any light */
 .house .dcast { fill: #000; opacity: calc(var(--sha) * .75); filter: url(#h-dblur); }
@@ -1053,14 +1073,13 @@ html.fz .profile dt { color: var(--show-hi); }
 html.fz .profile dl { border-top-color: rgba(255, 140, 225, .25); }
 html.fz .has-face > p, html.fz .has-face dl { text-shadow: 0 1px 3px rgba(30, 0, 50, .85); }
 html.fz .st-wl { display: none; }
-html.fz .st-how::before { content: "🦄"; font-size: 13px; letter-spacing: 0; }
+html.fz .st-how::before { content: "🦄"; font-size: 13px; line-height: 1; letter-spacing: 0; } /* line-height: the emoji font's taller line made the hero 2px taller than in the normal view, so its hairline (and the board under it) moved in the Slam */
 html.fz .card { border-color: rgba(255, 140, 225, .38); box-shadow: 0 0 14px rgba(255, 79, 195, .16), 0 6px 18px rgba(0, 0, 0, .3); }
 html.fz .card.board::before { background: var(--grain), radial-gradient(55% 110% at 22% 0%, rgba(255, 63, 164, .42), transparent 80%); }
 html.fz .card.board::after { background: radial-gradient(55% 110% at 78% 0%, rgba(23, 212, 240, .36), transparent 80%); }
 html.fz .hero::after, html.fz .ep-head::after { height: 1.5px; background: var(--rainbow); opacity: .8; -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
 html.fz .strip-tab.on { border-bottom-color: #ff8fd2; background: linear-gradient(180deg, rgba(255, 79, 195, .32), rgba(255, 79, 195, .06)); text-shadow: 0 0 8px rgba(255, 140, 220, .45); }
 html.fz .st-leaders b { text-shadow: 0 0 8px rgba(255, 225, 77, .3), 0 1px 6px rgba(0, 0, 0, .7); }
-html.fz .st-leaders b::after { content: "👑"; margin-left: .2em; font-size: .85em; text-shadow: none; }
 @media (prefers-reduced-motion: no-preference) {
   html.fz .fz-word.glint::after { animation: fz-glint .9s ease-in-out; }
   html.fz .tab-ind::before { animation: fz-slide 6s linear infinite; }
