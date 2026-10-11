@@ -1,6 +1,6 @@
 // The pull request this page came in with: set in every PR (CLAUDE.md), so Moss's Revision card can say whether a newer
 // one is live (the latest "Merge pull request #N" on main, asked of GitHub once a visit)
-export const PR = 153;
+export const PR = 154;
 let latest = null;
 export const latestPR = () => (latest ??= fetch("https://api.github.com/repos/kbroadie/fantasky-master/commits?sha=main&per_page=30")
   .then((r) => (r.ok ? r.json() : []))
