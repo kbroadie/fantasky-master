@@ -17,6 +17,8 @@
   --ff: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --ff-head: "Bungee", "Arial Black", sans-serif;
   --ff-name: "Nunito", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --ff-say: "Chewy", "Comic Sans MS", cursive;
+  --ff-plate: "Cinzel", Georgia, serif;
   --fm: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --px: 16px;
@@ -300,29 +302,50 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 /* ── Standings */
 /* Two boards side by side: fixed place column, then Show and League halves per row. Nothing sorts. */
 /* Tracks: --rk place strip, two halves padded --pad, points column --sc, --g gap; --pe (head padding) is 0. */
-/* The way into the low-scores-win mode (flip.js), under every tab: Patatas, gold-framed like the cast, asks in a speech
-   bubble, "Embrace Failure" on a rainbow; in the mode, "Embrace Success" on the normal view's gold */
+/* The way into the low-scores-win mode (flip.js), under every tab: Patatas, gold-framed like the cast with a brass name
+   plate (Cinzel, engraved), asks in a cartoon speech bubble (Chewy), "Embrace failure" on a rainbow; in the mode,
+   "Embrace success" on the normal view's gold. The plate and frame are real gold in both views */
 #dq { padding: 16px var(--px) 0; text-align: center; }
 .embrace {
-  display: inline-flex; align-items: center; gap: 14px; padding: 4px; border: 0; background: none; color: inherit;
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 0; background: none; color: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.em-who { display: grid; justify-items: center; gap: 2px; width: 72px; transition: transform .15s var(--ease); }
+.em-who { display: grid; justify-items: center; gap: 5px; width: 72px; transition: transform .15s var(--ease); }
 .em-who img { display: block; width: 100%; height: auto; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
-.em-who b { font: 800 13px var(--ff-name); color: var(--t2); }
-.em-say {
-  --em: linear-gradient(90deg, #ff4fc3, #ffa94d, #ffe14d, #6dff9a, #4fd8ff, #b37bff); --tip: #ff4fc3;
-  position: relative; margin-bottom: 18px; padding: 12px 18px; border-radius: 18px; background: var(--em); color: #1b0a2a;
-  font: 800 16px/1.15 var(--ff); box-shadow: 0 4px 16px rgba(0, 0, 0, .35); transition: transform .15s var(--ease);
+.em-who b {
+  padding: 2px 7px 1px; border-radius: 2px; font: 700 12px/1.3 var(--ff-plate); letter-spacing: .06em; color: #3a2500;
+  background: linear-gradient(180deg, #f3d27a, #b88018 60%, #8a6010); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 1px 2px rgba(0, 0, 0, .6);
 }
-/* Its tail points at Patatas */
-.em-say::before { content: ""; position: absolute; left: -10px; top: 50%; width: 12px; height: 16px; margin-top: -8px; background: var(--tip); clip-path: polygon(100% 0, 0 55%, 100% 100%); }
+.em-say {
+  --ink: #1b0a2a; --pop: #ecc040;
+  position: relative; margin: 0 0 18px 20px; padding: 13px 18px 15px 30px; color: var(--ink);
+  font: 400 21px/1.1 var(--ff-say); rotate: -3deg; transition: transform .15s var(--ease);
+}
+/* A comic bubble: a wobbly hand-drawn outline in ink, its tail curling to Patatas, a hard offset shadow in the other
+   view's colour (gold here, pink there) */
+.em-bub {
+  position: absolute; left: 0; top: -2px; width: calc(100% + 4px); height: calc(100% + 6px); z-index: -1; overflow: visible;
+  filter: drop-shadow(4px 5px 0 var(--pop));
+}
+.em-bub path { fill: url(#em-fill); stroke: var(--ink); stroke-width: 3px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.em-bub stop:nth-child(1) { stop-color: #ff4fc3; }
+.em-bub stop:nth-child(2) { stop-color: #ffa94d; }
+.em-bub stop:nth-child(3) { stop-color: #ffe14d; }
+.em-bub stop:nth-child(4) { stop-color: #6dff9a; }
+.em-bub stop:nth-child(5) { stop-color: #4fd8ff; }
+.em-bub stop:nth-child(6) { stop-color: #b37bff; }
+.em-say > span { position: relative; }
+/* Pop lines off its top corner */
+.em-pop { position: absolute; right: -16px; top: -16px; width: 22px; height: 22px; fill: none; stroke: var(--pop); stroke-width: 2.5; stroke-linecap: round; }
 .embrace:active .em-say { transform: scale(.96); }
 .embrace:active .em-who { transform: rotate(-6deg); }
 .em-win { display: none; }
 html.fz .em-fail { display: none; }
 html.fz .em-win { display: inline; }
-html.fz .em-say { --em: linear-gradient(90deg, #d4a028, #ecc040, #fff1b8, #ecc040, #d4a028); --tip: #d4a028; color: #241400; }
+html.fz .em-say { --ink: #241400; --pop: #ff4fc3; }
+html.fz .em-bub stop:nth-child(odd) { stop-color: #d4a028; }
+html.fz .em-bub stop:nth-child(even) { stop-color: #f6d76a; }
+html.fz .em-bub stop:nth-child(3), html.fz .em-bub stop:nth-child(4) { stop-color: #fff1b8; }
 @media (prefers-reduced-motion: reduce) { .em-who, .em-say { transition: none; } }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 .card.board { position: relative; margin: 12px var(--px); }
