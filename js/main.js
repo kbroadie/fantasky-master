@@ -7,7 +7,7 @@ import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, foot
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides, castSlide, fill, changedSay, resettable } from "./views/cast.js";
-import { get, set, item, shown, resetAll, changed, pin } from "./switches.js";
+import { get, set, item, shown, resetAll, changed, pin, onSwitch } from "./switches.js";
 import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay, reloadFresh } from "./version.js";
@@ -672,7 +672,8 @@ function showDay() {
   // the middle of its time, and setting at the right
   const house = $("#foot .house");
   if (!house) return;
-  const h = now.getHours() + now.getMinutes() / 60, sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
+  // (or at the time chosen on Moss's Time of day card)
+  const pick = get("houseTime"), h = pick === "clock" ? now.getHours() + now.getMinutes() / 60 : +pick, sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
   const at = {};
   for (const [k, t] of [["sun", sun], ["moon", moon]]) {
     const el = house.querySelector(`.${k}`), up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
@@ -792,6 +793,7 @@ function airMoon() {
   shade();
 }
 setInterval(showDay, 60000);
+onSwitch(["houseTime"], showDay);
 const houseSeen = new IntersectionObserver((es) => {
   const e = es.at(-1);
   if (e.isIntersecting) e.target.classList.add("up");

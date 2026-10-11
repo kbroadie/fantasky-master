@@ -32,6 +32,10 @@ export const CARDS = [
   // coming up on show days and its chimney's smoke. Off, still (the dolphins hidden, the house lit at once)
   { title: "Footer",
     items: [{ key: "fzSea", type: "toggle", def: true, main: true, cls: "no-sea" }] },
+  // The house's scene at a chosen time of day, or by the device's clock (main.js); the normal view only, where it is
+  { title: "Time of day", view: "up",
+    items: [{ key: "houseTime", type: "choice", label: "Time of day", def: "clock", options: [["5.5", "Dawn"], ["7", "Sunrise"], ["10", "Morning"],
+      ["13", "Midday"], ["16.5", "Afternoon"], ["19.5", "Sunset"], ["20.5", "Dusk"], ["23", "Night"], ["clock", "Clock"]] }] },
   // The rest of its motion: the sparkles' twinkle, the glint on Fantasy and the sliding tab rainbow. Off, all there, still
   { title: "Decorations", view: "fz",
     items: [{ key: "fzDeco", type: "toggle", def: false, main: true, cls: "no-deco" }] },
@@ -47,7 +51,7 @@ export const CARDS = [
   { title: "Scoring cards",
     items: [{ key: "howLight", type: "toggle", def: false, main: true, cls: "no-howlight" }] },
 ];
-// A card for one view only (view: "fz", Fantasy Land) shows only there
+// A card for one view only (view: "fz", Fantasy Land; "up", the normal view) shows only there
 export const cardsShown = (fantasy) => CARDS.filter((c) => !c.view || (c.view === "fz") === fantasy);
 const ITEMS = Object.fromEntries(CARDS.flatMap((c) => c.items.map((it) => [it.key, it])));
 const id = (k) => `fm-sw-${k}`;

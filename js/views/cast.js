@@ -45,6 +45,11 @@ const switchCard = (c) => {
     <div class="card sw-card wide"><div class="card-head"><span>${esc(c.title)}</span><button type="button" class="sw-toggle" role="switch" aria-checked="${!!state.fantasy}" aria-label="${esc(c.title)}" data-fz></button></div>
       <div class="sw-sub">${esc(it.label)}</div>${segs(it, it.label, true)}</div>`;
   }
+  if (!main && rest.length === 1 && rest[0].type === "choice") { // a lone choice: its buttons across the card
+    const it = rest[0];
+    return `
+    <div class="card sw-card wide"><div class="card-head"><span>${esc(c.title)}</span></div>${segs(it, c.title, true)}</div>`;
+  }
   if (!main && rest.length === 1) { // a lone slider: its value in the head
     const it = rest[0];
     return `
