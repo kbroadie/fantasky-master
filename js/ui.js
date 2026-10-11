@@ -83,8 +83,13 @@ const MASS = {
   van: "M330 94V79q0-7 7-7h33q8 0 10 8l2 14Z",
 };
 const mass = (...ks) => ks.map((k) => `<path d="${MASS[k]}"/>`).join("");
-// A solid shape in its material's colour under its outline, then the light and shade across it (#h-shade)
-const solid = (k, m, cls = "", attr = "", inner = "") => `<path class="o ${m} ${cls}" d="${MASS[k]}" ${attr}/>${inner}<path class="sd" d="${MASS[k]}"/>`;
+// A solid shape in its material's colour (with any panels of its own), then the light and shade across it (#h-shade),
+// its ambient occlusion where it meets the ground (#h-ao), and a highlight along the edges facing the light (#h-rim),
+// kept inside the shape by clipping to it so it never reads as an outline
+const solid = (k, m, inner = "") =>
+  `<path class="o ${m}" d="${MASS[k]}"/>${inner}<path class="sd" d="${MASS[k]}"/><path class="ao" d="${MASS[k]}"/><path class="rim" d="${MASS[k]}" clip-path="url(#c-${k})"/>`;
+// Recesses: an inner shadow round their edges (#h-inset)
+const inset = (el) => el.replace(/class="[^"]*"/, 'class="inset"');
 const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div class="ground"></div><svg viewBox="0 0 390 136">
   <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
     <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
@@ -95,6 +100,11 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <filter id="h-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".35"/></filter>
     <clipPath id="h-above"><rect width="390" height="86"/></clipPath>
     <linearGradient id="h-shade" x1="0" y1="0" x2="1" y2="0"><stop class="l0" offset="0"/><stop class="l1" offset=".45"/><stop class="l2" offset="1"/></linearGradient>
+    <linearGradient id="h-rim" x1="0" y1="0" x2="1" y2="0"><stop class="r0" offset="0"/><stop class="r1" offset=".5"/></linearGradient>
+    <linearGradient id="h-ao" gradientUnits="userSpaceOnUse" x1="0" y1="80" x2="0" y2="96"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".42"/></linearGradient>
+    <linearGradient id="h-aox" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".38"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+    <radialGradient id="h-inset" cx=".5" cy=".42" r=".62"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient>
+    ${Object.keys(MASS).map((k) => `<clipPath id="c-${k}"><path d="${MASS[k]}"/></clipPath>`).join("")}
     <linearGradient id="h-eave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
     <radialGradient id="h-spill" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".3"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
     <filter id="h-blur" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
@@ -106,18 +116,19 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
   </g>
   <g class="b" transform="matrix(.8 0 0 .8 39 9.2)">
   <g class="cast"><use href="#h-mass"/><use href="#h-van"/></g>
+  <g class="contact"><use href="#h-mass" transform="matrix(1 0 0 -.07 0 102.72)"/><use href="#h-van" transform="matrix(1 0 0 -.07 0 105.4)"/></g>
   <g class="ln">
     ${solid("tree", "tree")}
     ${solid("hedge", "hedge")}
     ${solid("garage", "white")}<path class="m red" d="M28 72H74V96H28Z"/><rect class="sh" x="22" y="67" width="58" height="6"/><path class="m brown" d="M20 64H82V67H20Z"/><path class="d" d="M28 96V72H74V96M28 77H74M28 82H74M28 87H74M28 92H74"/>
     ${solid("chimney", "brick")}<path class="m brick" d="M183.5 24h14v-2.5h-14Z"/><path class="d" d="M187 21.5v-3h2.5v3M191.5 21.5v-4h2.5v4"/>
-    ${solid("wing", "brick", "", 'stroke="none"')}<path class="m roof" d="M196 42H264V64H196Z"/><rect class="sh" x="196" y="64" width="68" height="8"/><path class="d" d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
+    ${solid("wing", "brick", `<path class="m roof" d="M196 42H264V64H196Z"/>`)}<rect class="sh" x="196" y="64" width="68" height="8"/><rect class="aox" x="198" y="42" width="7" height="54"/><path class="d" d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
     ${solid("end", "brick")}
     ${solid("gable", "brick")}
-    <path class="m white" d="M137 92V70a13 13 0 0 1 26 0V92Z"/><path class="m glass" d="M139 70a11 11 0 0 1 22 0ZM138.5 71h3v20.5h-3ZM158.5 71h3v20.5h-3Z"/><path class="m wood" d="M143 92V71h14v21Z"/>
-    <circle class="m ring" cx="124" cy="72" r="8"/><circle class="m glass" cx="124" cy="72" r="5.5"/><circle class="m ring" cx="176" cy="72" r="8"/><circle class="m glass" cx="176" cy="72" r="5.5"/>
+    <path class="m white" d="M137 92V70a13 13 0 0 1 26 0V92Z"/>${[`<path class="m glass" d="M139 70a11 11 0 0 1 22 0Z"/>`, `<path class="m glass" d="M138.5 71h3v20.5h-3Z"/>`, `<path class="m glass" d="M158.5 71h3v20.5h-3Z"/>`, `<path class="m wood" d="M143 92V71h14v21Z"/>`].map((el) => el + inset(el)).join("")}
+    ${[124, 176].map((x) => `<circle class="m ring" cx="${x}" cy="72" r="8"/><circle class="m glass" cx="${x}" cy="72" r="5.5"/><circle class="inset" cx="${x}" cy="72" r="5.5"/>`).join("")}
     <path class="m brick" d="M134 92h32v2.5h-32ZM131 94.5h38v1.5h-38Z"/>
-    ${solid("van", "cream", "", "", `<path class="m sage" d="M330 86H380.9L382 94H330Z"/><path class="m tan" d="M361 78h9v8h-9Z"/><path class="m teal" d="M361 86h9v8h-9Z"/>`)}<rect class="m glass" x="337" y="76" width="13" height="6" rx="1.5"/>
+    ${solid("van", "cream", `<path class="m sage" d="M330 86H380.9L382 94H330Z"/><path class="m tan" d="M361 78h9v8h-9Z"/><path class="m teal" d="M361 86h9v8h-9Z"/>`)}<rect class="m glass" x="337" y="76" width="13" height="6" rx="1.5"/>
   </g>
   <g class="lt">
     ${glass(`<ellipse cx="150" cy="101" rx="42" ry="8" fill="url(#h-spill)"/>`, 0)}

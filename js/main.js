@@ -692,6 +692,8 @@ function shade() {
   const props = {
     "--sha": (0.55 * k).toFixed(3),
     "--sho": (sun ? 0.06 + 0.1 * low : 0.08 * moonLit).toFixed(3),
+    // The edges facing the light catch it most when it's low and raking
+    "--rim": (sun ? low * (0.5 + 0.35 * (1 - Math.min(1, e / (40 * deg)))) : 0.35 * moonLit).toFixed(3),
     // How brightly the structures' own colours show: full daylight, falling through twilight to what the moon gives
     "--illum": `${Math.max(6 + 8 * moonLit, light.height >= 0 ? 35 + 40 * Math.min(1, light.height / 20) : 35 + 2.4 * light.height).toFixed(1)}%`,
     "--lit": sun ? sky.sun : "#c4d0ff",
@@ -717,13 +719,13 @@ function shade() {
   const dim = Math.max(0.7, Math.min(1, 1 + light.height / 40)), ducks = $("#foot .ducks");
   const f = dim < 1 ? `brightness(${dim.toFixed(2)}) saturate(${dim.toFixed(2)})` : "";
   if (ducks && ducks.style.filter !== f) ducks.style.filter = f;
-  // The shaded shapes' gradient runs from the side facing the light to the other
+  // The shaded shapes' gradient, and their edge highlights', run from the side facing the light to the other
   let vx = Math.sin(az) * Math.cos(e), vy = -Math.sin(e);
   const n = Math.hypot(vx, vy) || 1;
   vx /= n;
   vy /= n;
-  const g = house.querySelector("#h-shade");
-  for (const [a, v] of [["x1", 0.5 + 0.5 * vx], ["y1", 0.5 + 0.5 * vy], ["x2", 0.5 - 0.5 * vx], ["y2", 0.5 - 0.5 * vy]]) g.setAttribute(a, v.toFixed(3));
+  for (const g of house.querySelectorAll("#h-shade, #h-rim"))
+    for (const [a, v] of [["x1", 0.5 + 0.5 * vx], ["y1", 0.5 + 0.5 * vy], ["x2", 0.5 - 0.5 * vx], ["y2", 0.5 - 0.5 * vy]]) g.setAttribute(a, v.toFixed(3));
   // Each point h above the ground (at y = b) falls h·sx across and h·sy down: the caravan stands nearer, on its wheels
   const cast = (b) => `matrix(1 0 ${(-sx).toFixed(3)} ${(-sy).toFixed(3)} ${(b * sx).toFixed(2)} ${(b * (1 + sy)).toFixed(2)})`;
   const [m, v] = house.querySelectorAll(".cast use");
