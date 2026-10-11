@@ -68,8 +68,8 @@ const switchCards = () => {
       ${cards.map(switchCard).join("")}
       <div class="card sw-card"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset"${resettable() ? "" : " disabled"}>Reset</button></div>
         <div class="sw-count">${changedSay(n)}</div></div>
-      <div class="card sw-card${cards.filter(tiled).length % 2 ? " wide" : ""}"><div class="card-head"><span>Revision</span><b class="sw-pr">#${PR}</b></div>
-        <div class="sw-count sw-rev">Checking…</div></div>
+      <div class="card sw-card${cards.filter(tiled).length % 2 ? " wide" : ""}"><div class="card-head"><span>Revision</span><button type="button" class="ed-btn sw-reload">Reload</button></div>
+        <div class="sw-count"><b class="sw-pr">#${PR}</b> · <span class="sw-rev">Checking…</span></div></div>
     </div>`;
 };
 
