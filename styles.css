@@ -921,10 +921,12 @@ html:not(.fz) .ducks { bottom: min(27px, 6.923cqw); }
 html:not(.fz) .dk { padding: min(10px, 2.564cqw) min(3.5px, .897cqw); }
 html:not(.fz) .duck { width: min(18px, 4.615cqw); height: min(14px, 3.59cqw); }
 .duck { width: 18px; height: 14px; fill: var(--gold2); opacity: .8; }
+/* In the normal view they're solid rubber, shaded by the house's light (#dk-shade) */
+html:not(.fz) .duck { fill: url(#dk-shade); opacity: 1; }
 /* In the normal view the ducks take the light too, dimmer and cooler in twilight and by night (their filter, set by
    main.js); not on the sea */
 html.fz #foot .ducks { filter: none !important; }
-.dk.lit .duck, .editing .duck { fill: var(--gold3); opacity: 1; filter: drop-shadow(0 0 4px var(--gold-glow)); }
+:is(.dk.lit, .editing) .duck { fill: var(--gold3); opacity: 1; filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .dk .duck { transition: transform .15s var(--ease); }
 .dk.lit .duck { transform: scale(1.18); }
 @media (prefers-reduced-motion: reduce) { .dk .duck { transition: none; } .dk.lit .duck { transform: none; } }
