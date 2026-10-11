@@ -692,7 +692,9 @@ function shade() {
   const k = sun ? low : moonLit * low, sky = skyFor(light.height);
   const props = {
     "--sha": (0.85 * k).toFixed(3),
-    "--shm": `${(sun ? 13 : 3 + 7 * moonLit).toFixed(1)}%`,
+    "--sho": (sun ? 0.06 + 0.1 * low : 0.08 * moonLit).toFixed(3),
+    // How brightly the structures' own colours show: full daylight, falling through twilight to what the moon gives
+    "--illum": `${Math.max(6 + 8 * moonLit, light.height >= 0 ? 35 + 40 * Math.min(1, light.height / 20) : 35 + 2.4 * light.height).toFixed(1)}%`,
     "--lit": sun ? sky.sun : "#c4d0ff",
     "--sun": sky.sun,
     "--amb": sky.horizon,

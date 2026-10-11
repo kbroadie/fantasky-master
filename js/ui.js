@@ -66,7 +66,8 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 
 // light: the shapes shaded from the side it's on, eaves and everything on the drive casting shadows away from it; its lights (.lt, --i
 // their order) come up on show days (styles.css), the door's spilling onto the drive, and the chimney smokes
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
-// The solid shapes, back to front: each drawn under its outline, and all cast as shadows on the drive (main.js)
+// The solid shapes, back to front: each drawn in its material's colour under its outline, and all cast as shadows on the
+// drive (main.js)
 const MASS = {
   tree: "M133 96L126 75L131 74L120 59L126 58L114 43L119 42L109 29L113 28L104 16L107 15L100 4L93 15L96 16L87 28L91 29L81 42L86 43L74 58L80 59L69 74L74 75L67 96",
   hedge: "M0 96V80q2-6 7-6q3-5 8-3q5-1 7 4q3 2 3 7V96",
@@ -78,6 +79,8 @@ const MASS = {
   van: "M330 94V79q0-7 7-7h33q8 0 10 8l2 14Z",
 };
 const mass = (...ks) => ks.map((k) => `<path d="${MASS[k]}"/>`).join("");
+// A solid shape in its material's colour under its outline, then the light and shade across it (#h-shade)
+const solid = (k, m, cls = "", attr = "") => `<path class="o ${m} ${cls}" d="${MASS[k]}" ${attr}/><path class="sd" d="${MASS[k]}"/>`;
 const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div class="ground"></div><svg viewBox="0 0 390 136">
   <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
     <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
@@ -87,7 +90,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <radialGradient id="h-earth" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#b7ab92" stop-opacity=".16"/><stop offset="1" stop-color="#b7ab92" stop-opacity=".07"/></radialGradient>
     <filter id="h-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".35"/></filter>
     <clipPath id="h-above"><rect width="390" height="86"/></clipPath>
-    <linearGradient id="h-shade" x1="0" y1="0" x2="1" y2="0"><stop class="l0" offset="0"/><stop class="l1" offset="1"/></linearGradient>
+    <linearGradient id="h-shade" x1="0" y1="0" x2="1" y2="0"><stop class="l0" offset="0"/><stop class="l1" offset=".45"/><stop class="l2" offset="1"/></linearGradient>
     <linearGradient id="h-eave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
     <radialGradient id="h-spill" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".3"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
     <filter id="h-blur" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
@@ -99,14 +102,17 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
   <g transform="matrix(.8 0 0 .8 39 9.2)">
   <g class="cast"><use href="#h-mass"/><use href="#h-van"/></g>
   <g class="ln">
-    <path class="o faint" d="${MASS.tree}"/>
-    <path class="o faint" d="${MASS.hedge}"/>
-    <path class="o" d="${MASS.garage}"/><rect class="sh" x="22" y="67" width="58" height="6"/><path d="M20 64H82V67H20Z"/><path class="d" d="M28 96V72H74V96M28 77H74M28 82H74M28 87H74M28 92H74"/>
-    <path class="o" d="${MASS.chimney}"/><path d="M182.5 24h13v-2.5h-13Z"/><path class="d" d="M185.5 21.5v-3h2.5v3M190 21.5v-4h2.5v4"/>
-    <path class="o" d="${MASS.wing}" stroke="none"/><rect class="sh" x="196" y="64" width="68" height="8"/><path d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
-    <path class="o" d="${MASS.end}"/>
-    <path class="o" d="${MASS.gable}"/>
-    <path class="o" d="${MASS.van}"/>
+    ${solid("tree", "tree", "faint")}
+    ${solid("hedge", "hedge", "faint")}
+    ${solid("garage", "white")}<path class="m red" d="M28 72H74V96H28Z"/><rect class="sh" x="22" y="67" width="58" height="6"/><path class="m brown" d="M20 64H82V67H20Z"/><path class="d" d="M28 96V72H74V96M28 77H74M28 82H74M28 87H74M28 92H74"/>
+    ${solid("chimney", "brick")}<path class="m brick" d="M182.5 24h13v-2.5h-13Z"/><path class="d" d="M185.5 21.5v-3h2.5v3M190 21.5v-4h2.5v4"/>
+    ${solid("wing", "brick", "", 'stroke="none"')}<path class="m roof" d="M196 42H264V64H196Z"/><rect class="sh" x="196" y="64" width="68" height="8"/><path d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
+    ${solid("end", "brick")}
+    ${solid("gable", "brick")}
+    <path class="m white" d="M137 92V70a13 13 0 0 1 26 0V92Z"/><path class="m glass" d="M139 70a11 11 0 0 1 22 0ZM138.5 71h3v20.5h-3ZM158.5 71h3v20.5h-3Z"/><path class="m wood" d="M143 92V71h14v21Z"/>
+    <circle class="m ring" cx="124" cy="72" r="8"/><circle class="m glass" cx="124" cy="72" r="5.5"/><circle class="m ring" cx="176" cy="72" r="8"/><circle class="m glass" cx="176" cy="72" r="5.5"/>
+    <path class="m brick" d="M134 92h32v2.5h-32ZM131 94.5h38v1.5h-38Z"/>
+    ${solid("van", "white")}
   </g>
   <g class="lt">
     ${glass(`<ellipse cx="150" cy="101" rx="42" ry="8" fill="url(#h-spill)"/>`, 0)}
@@ -119,16 +125,16 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
   </g>
   <g class="ln">
     <path class="d" d="M105.5 62C105.5 55 114.5 53 119 46.5C123.5 39.5 125.5 35 125.5 30.5C125.5 24 136.5 19.5 150 19.5C163.5 19.5 174.5 24 174.5 30.5C174.5 35 176.5 39.5 181 46.5C185.5 53 194.5 55 194.5 62"/>
-    <ellipse class="d" cx="150" cy="28" rx="2.5" ry="2"/><rect class="d" x="107" y="58" width="5" height="6" rx="1"/>
+    <ellipse class="d red" cx="150" cy="28" rx="2.5" ry="2"/><rect class="d red" x="107" y="58" width="5" height="6" rx="1"/>
     <path d="M137 92V70a13 13 0 0 1 26 0V92M137 70h26M143 92V71h14v21"/>
     <path class="d" d="M142 70V92M158 70V92M148 56.6h4l-.6 3h-2.8ZM145.5 70a4.5 4.5 0 0 1 9 0M146.1 67.75L138.74 63.5M147.75 66.1L143.5 58.74M150 65.5V57M152.25 66.1L156.5 58.74M153.9 67.75L161.26 63.5M145 73h4v8h-4ZM151 73h4v8h-4ZM145 83h4v7h-4ZM151 83h4v7h-4ZM134 92h32M131 94.5h38"/>
     <circle cx="124" cy="72" r="5.5"/><circle class="d" cx="124" cy="72" r="8"/>
     <circle cx="176" cy="72" r="5.5"/><circle class="d" cx="176" cy="72" r="8"/>
-    <circle cx="124" cy="86" r="4.5"/><circle cx="176" cy="86" r="4.5"/>
+    <circle class="buoy" cx="124" cy="86" r="4.5"/><circle class="buoy" cx="176" cy="86" r="4.5"/><circle class="m brick" cx="124" cy="86" r="2.2"/><circle class="m brick" cx="176" cy="86" r="2.2"/>
     <path class="d" d="M126.2 86a2.2 2.2 0 1 1-4.4 0a2.2 2.2 0 1 1 4.4 0M178.2 86a2.2 2.2 0 1 1-4.4 0a2.2 2.2 0 1 1 4.4 0M125.56 84.44l1.62-1.62M122.44 84.44l-1.62-1.62M125.56 87.56l1.62 1.62M122.44 87.56l-1.62 1.62M177.56 84.44l1.62-1.62M174.44 84.44l-1.62-1.62M177.56 87.56l1.62 1.62M174.44 87.56l-1.62 1.62"/>
-    <path d="M276 96a24 24 0 0 1 48 0"/>
+    <path class="dome" d="M276 96a24 24 0 0 1 48 0"/><ellipse class="m floor" cx="300" cy="95" rx="22" ry="1.5"/>
     <path class="d" d="M279.2 84Q300 80 320.8 84M288.4 75Q300 72.5 311.6 75M276 96L286 83L294 96L300 82.5L306 96L314 83L324 96M286 83L293 75L300 82.5L307 75L314 83M293 75L300 72L307 75"/>
-    <rect x="337" y="76" width="13" height="6" rx="1.5"/><path d="M361 94V78h9v16"/><circle class="o" cx="343" cy="95" r="3.5"/>
+    <rect x="337" y="76" width="13" height="6" rx="1.5"/><path d="M361 94V78h9v16"/><circle class="o tyre" cx="343" cy="95" r="3.5"/>
     <path class="d" d="M330 86H382M368 87h1.5M382 92l7 2M348 72v-2h6v2M344 95a1 1 0 1 1-2 0a1 1 0 1 1 2 0"/>
   </g></g>
   <g class="ln">
