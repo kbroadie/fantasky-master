@@ -125,7 +125,7 @@ FM_CURL_IMAGES=1 PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tools/screenshot
   - PR tools may append a footer: create the PR with a placeholder body, then set the real one with `update_pull_request`, and check it.
 - **Docs:**
   - this file: short, current behaviour and rules, kept current;
-  - NOTES.md: the detail and the user's requests in their words, updated only after major milestones (the user's rule);
+  - NOTES.md: the detail and the user's requests in their words, brought up to date in every PR (the user's rule: "dont wait for milestones anymore for notes");
   - the systems doc, for scoring.
 - **Code comments** are short notes on why, not history. History goes in NOTES.md and git.
 - CI (`.github/workflows/checks.yml`) runs the data check on every push and PR. PRs also upload screenshots.
