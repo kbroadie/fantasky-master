@@ -84,7 +84,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
     <path class="o" d="M22 96V64H80V96"/><path d="M20 64H82V67H20Z"/><path class="d" d="M28 96V72H74V96M28 77H74M28 82H74M28 87H74M28 92H74"/>
     <path class="o" d="M184 50V24h10v26Z"/><path d="M182.5 24h13v-2.5h-13Z"/><path class="d" d="M185.5 21.5v-3h2.5v3M190 21.5v-4h2.5v4"/>
     <path class="o" d="M196 96V42h68v54Z" stroke="none"/><path d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
-    <path class="o" d="M263.5 96V39h7V96"/><path class="o" d="M262.5 39h9v-2.5h-9Z"/>
+    <path class="o" d="M263.5 96V37h7V96"/>
     <path class="o" d="M102 96V60C102 52 112 50 116 44C120 38 122 34 122 30C122 22 134 16 150 16C166 16 178 22 178 30C178 34 180 38 184 44C188 50 198 52 198 60V96"/>
     <path class="o" d="M330 94V79q0-7 7-7h33q8 0 10 8l2 14Z"/>
   </g>
