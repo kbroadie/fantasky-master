@@ -825,7 +825,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    the garage's red door, dark glass, yellow porthole rings, orange lifebuoys, the conifer's and the hedge's greens. Each
    is lit by the time of day (main.js): as bright as the light allows (--illum) and tinted by the sky (--amb, --ambk) */
 .house { --lit: #fff1d0; --sho: .2; --sha: .7; --amb: #0a0e1e; --ambk: 8%; --illum: 10%; }
-.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut), .house > .ground {
+.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut), .house > .ground, .house > .ground::before, .house > .ground::after {
   --mc: color-mix(in srgb, color-mix(in srgb, var(--m, #6a6a6a) calc(100% - var(--ambk)), var(--amb)) var(--illum), var(--bg));
 }
 .house .ln .m { stroke: none; fill: var(--mc); }
@@ -843,6 +843,10 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .hedge { --m: #3e5e34; }
 .house .tyre { --m: #222; }
 .house .floor { --m: #4a7ab4; }
+/* The clear dome on the drive: its floor an ellipse in perspective with a dark base ring, a faint tint in its glass so
+   it reads as a volume, and its shadow fainter than a solid's (the light passes through; its frame's shade) */
+.house .ln .pane { --m: #dfeaf4; opacity: .16; }
+.house .cast .see { opacity: .4; }
 /* The caravan as it is on the show: cream over a pale sage band, its door tan with a painted flower over green, a brown
    window frame, and the red mailbox in front */
 .house .cream { --m: #ece8da; }
@@ -852,6 +856,15 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .flower { --m: #d8463a; }
 /* The drive: resin-bound gravel, tan, as in the photo */
 .house > .ground { --m: #ab947b; }
+/* Grass either side of the drive, as in the photo: the drive widens toward us, the hedge on the lawn at the left and the
+   caravan parked on it at the right, past the dome; on a wider screen the lawns run on to the edges. Placed in the
+   drawing's units from its middle (--u), lit like everything else */
+.house > .ground::before, .house > .ground::after {
+  content: ""; position: absolute; inset: 0; --m: #6e9152;
+  background: linear-gradient(var(--mc), color-mix(in srgb, var(--mc) 55%, var(--bg)));
+}
+.house > .ground::before { clip-path: polygon(0 0, calc(50% - 133 * var(--u)) 0, calc(50% - 185 * var(--u)) 100%, 0 100%); }
+.house > .ground::after { clip-path: polygon(calc(50% + 107 * var(--u)) 0, 100% 0, 100% 100%, calc(50% + 177 * var(--u)) 100%); }
 /* Light and shade across them (main.js sets which way, and how strong: --sho, --sha): lighter on the side facing the sun
    or moon, in its colour (--lit), darker on the other; and shadows across the drive, under the eaves and at the ducks'
    feet, away from the light */
@@ -908,10 +921,12 @@ html:not(.fz) .ducks { bottom: min(27px, 6.923cqw); }
 html:not(.fz) .dk { padding: min(10px, 2.564cqw) min(3.5px, .897cqw); }
 html:not(.fz) .duck { width: min(18px, 4.615cqw); height: min(14px, 3.59cqw); }
 .duck { width: 18px; height: 14px; fill: var(--gold2); opacity: .8; }
+/* In the normal view they're solid rubber, shaded by the house's light (#dk-shade) */
+html:not(.fz) .duck { fill: url(#dk-shade); opacity: 1; }
 /* In the normal view the ducks take the light too, dimmer and cooler in twilight and by night (their filter, set by
    main.js); not on the sea */
 html.fz #foot .ducks { filter: none !important; }
-.dk.lit .duck, .editing .duck { fill: var(--gold3); opacity: 1; filter: drop-shadow(0 0 4px var(--gold-glow)); }
+:is(.dk.lit, .editing) .duck { fill: var(--gold3); opacity: 1; filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .dk .duck { transition: transform .15s var(--ease); }
 .dk.lit .duck { transform: scale(1.18); }
 @media (prefers-reduced-motion: reduce) { .dk .duck { transition: none; } .dk.lit .duck { transform: none; } }
