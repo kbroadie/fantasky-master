@@ -81,7 +81,6 @@ const mass = (...ks) => ks.map((k) => `<path d="${MASS[k]}"/>`).join("");
 const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div class="ground"></div><svg viewBox="0 0 390 136">
   <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
     <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
-    <radialGradient id="h-corona" cx=".5" cy=".5" r=".5"><stop class="c0" offset="0"/><stop class="c1" offset=".35"/><stop class="c2" offset="1"/></radialGradient>
     <radialGradient id="h-moonhalo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#dfe6ff" stop-opacity=".16"/><stop offset="1" stop-color="#dfe6ff" stop-opacity="0"/></radialGradient>
     <radialGradient id="h-glow" cx=".5" cy=".7" r=".6"><stop offset="0" stop-color="#fff1b8" stop-opacity=".75"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
     <linearGradient id="h-moonlit" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a39478"/><stop offset=".5" stop-color="#e6d9bb"/><stop offset="1" stop-color="#fff7e2"/></linearGradient>
@@ -95,7 +94,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <g id="h-mass">${mass("tree", "hedge", "garage", "chimney", "wing", "end", "gable")}</g><g id="h-van">${mass("van")}<circle cx="343" cy="95" r="3.5"/></g></defs>
   <g clip-path="url(#h-above)">
     <g class="moon"><circle r="16" fill="url(#h-moonhalo)"/><circle class="disc" r="9"/><path class="lit" d=""/></g>
-    <g class="sun"><circle r="22" fill="url(#h-corona)"/><circle class="disc" r="5.5"/></g>
+    <g class="sun"><circle class="disc" r="9"/></g>
   </g>
   <g transform="matrix(.8 0 0 .8 39 9.2)">
   <g class="cast"><use href="#h-mass"/><use href="#h-van"/></g>

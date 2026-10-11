@@ -829,11 +829,8 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    softened a little; the dark part a faint earthshine */
 .house .moon .disc { fill: url(#h-earth); }
 .house .moon .lit { fill: url(#h-moonlit); filter: url(#h-soft); }
-/* The sun a bright disc in its glow, white high up and redder as it nears the horizon (--sun) */
+/* The sun a plain bright disc, the moon's size, with no glow: white high up and redder as it nears the horizon (--sun) */
 .house .sun .disc { fill: color-mix(in srgb, var(--sun, #fff6e0) 55%, #fff); filter: url(#h-soft); }
-.house .c0 { stop-color: var(--sun, #fff6e0); stop-opacity: .75; }
-.house .c1 { stop-color: var(--sun, #fff6e0); stop-opacity: .22; }
-.house .c2 { stop-color: var(--sun, #fff6e0); stop-opacity: 0; }
 .house[data-time="day"] { --lna: .55; }
 .house:is([data-time="dawn"], [data-time="dusk"]) { --lna: .46; }
 .show-day .house { --lna: .9; --lnc: var(--gold2); }

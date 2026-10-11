@@ -701,10 +701,11 @@ function shade() {
     "--tintk": `${sky.tintK.toFixed(1)}%`,
   };
   for (const p in props) house.style.setProperty(p, props[p]);
-  // The sky: overhead to the horizon, a glow around the sun (wide and low near the horizon, where it lingers after
-  // sunset), and by night a faint one around the moon; the drive in the same light. In the drawing's units from its middle
+  // The sky: overhead to the horizon, a glow on the horizon under the sun (wide near sunrise and sunset, where it lingers
+  // after sunset; none around the sun itself), and by night a faint one around the moon; the drive in the same light. In
+  // the drawing's units from its middle
   const u = (n) => `calc(${n.toFixed(1)} * var(--u))`, x = (n) => `calc(50% + ${(n - 195).toFixed(1)} * var(--u))`;
-  const [gx, gy] = light.at.sun, hi = Math.max(0, Math.min(1, light.height / 25));
+  const [gx] = light.at.sun, gy = 86, hi = Math.max(0, Math.min(1, light.height / 25));
   const glow = (c, a) => `color-mix(in srgb, ${c} ${(a * 100).toFixed(0)}%, transparent)`;
   const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${u(light.at.moon[1])}, ${glow("#c8d2ff", 0.1 * moonLit)}, transparent)`];
   house.querySelector(".sky").style.background = [...moonGlow,
