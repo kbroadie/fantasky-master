@@ -55,58 +55,63 @@ export function perEpisodeStats(series) {
 
 const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 9.4H11A3.6 3.6 0 1 1 15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1A3.6 3.6 0 0 1 14.2 9.5Q16.6 10.2 16.6 12.2Q16.6 15 12 15H6Q2.6 15 2 11.9Q1.6 9.8 1.8 7.6Z M13.6 4.4A.75 .75 0 1 0 13.61 4.4Z" fill-rule="evenodd"/></symbol>`;
 
-// The Taskmaster house behind them (normal view): the bungalow's front, a curved Dutch gable at each end (the arched door
-// with its fanlight between round windows; the clock over tall windows) and the tiled roof and chimney between, the
-// conifer behind, the caravan beside it and a pond for the ducks, in gold lines over solid shapes, so the sun and moon
-// pass behind them; the buildings at 80%, standing on the same ground, so there's sky above them. The sky follows the device's clock (main.js: the sun and moon's places, the time of day); its
-// lights (.lt, --i their order) come up on show days (styles.css), and the chimney smokes
+// The Taskmaster house behind them (normal view), from a photo of its front: the bungalow's Dutch gable facing the drive
+// (the arched door with its fanlight and sidelights, a round porthole each side with a lifebuoy under it, steps), the
+// chimney behind its shoulder and the lower tiled wing running right to a narrow curved end; the garage with its
+// up-and-over door, the tall conifer behind, the clear geodesic dome on the drive, the caravan beyond it, and a pond for
+// the ducks. Gold lines over solid shapes, so the sun and moon pass behind them; at 80%, standing a little above the
+// ducks, so there's sky above. The sky follows the device's clock (main.js: the sun and moon's places, the time of day);
+// its lights (.lt, --i their order) come up on show days (styles.css), and the chimney smokes
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
-const SOLID = "M64 94V50q0-6 6-8q6-2 6-10q0-16 24-18q24 2 24 18q0 8 6 10q6 2 6 8V94ZM136 94V62l14-20h37V27h11v15h38l14 20V94ZM250 94V54q0-6 5-8q5-2 5-9q0-14 14-16q14 2 14 16q0 7 5 9q5 2 5 8V94ZM206 42q-4-14 8-22q4-14 16-10q12-4 16 8q12 6 6 20ZM306 92V74q0-8 8-8h40q10 0 12 10l2 16ZM20 94q-4-18 8-26q6-12 20-6q12 8 8 32Z";
-const STARS = [[30, 12], [58, 30], [150, 10], [176, 26], [300, 12], [334, 30], [362, 16], [128, 30], [16, 40], [372, 44]];
+const SOLID = "M64 96C60 80 58 60 66 46C64 34 72 24 80 16C84 8 94 2 100 4C108 8 116 20 120 30C130 40 132 56 128 70L132 96Z" +
+  "M22 96V66H80V96ZM184 50V24h10v26ZM196 96V42h66v54ZM262 96V50q0-14 6-14t6 14V96Z" +
+  "M102 96V60C102 52 112 50 116 44C120 38 122 34 122 30C122 22 134 16 150 16C166 16 178 22 178 30C178 34 180 38 184 44C188 50 198 52 198 60V96Z" +
+  "M330 94V78q0-6 6-6h34q8 0 10 8l2 14ZM0 96q-2-16 6-22q8-8 16 0q4 10 2 22Z";
+const STARS = [[30, 12], [58, 30], [150, 8], [176, 24], [300, 12], [334, 30], [362, 16], [128, 30], [16, 40], [372, 44]];
 const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
   <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
     <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
+    <radialGradient id="h-glow" cx=".5" cy=".7" r=".6"><stop offset="0" stop-color="#fff1b8" stop-opacity=".75"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
     <linearGradient id="h-sky" x1="0" y1="1" x2="0" y2="0"><stop class="s0" offset="0"/><stop class="s1" offset="1"/></linearGradient>
-    <clipPath id="h-above"><rect width="390" height="95"/></clipPath></defs>
-  <rect class="sky" x="0" y="0" width="390" height="96" fill="url(#h-sky)"/>
+    <clipPath id="h-above"><rect width="390" height="86"/></clipPath></defs>
+  <rect class="sky" x="0" y="0" width="390" height="86" fill="url(#h-sky)"/>
   <g class="stars">${STARS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".9"/>`).join("")}</g>
   <g clip-path="url(#h-above)">
     <g class="moon"><circle r="16" fill="url(#h-halo)"/><path d="M-2-8a9 9 0 1 0 6 16a7 7 0 1 1-6-16z"/></g>
     <g class="sun"><circle r="16" fill="url(#h-halo)"/><circle r="6"/><path d="M0-10v-3M0 10v3M-10 0h-3M10 0h3M7-7l2-2M-7 7l-2 2M7 7l2 2M-7-7l-2-2"/></g>
   </g>
-  <g transform="matrix(.8 0 0 .8 39 18.8)">
+  <g transform="matrix(.8 0 0 .8 39 9.2)">
   <path class="solid" d="${SOLID}"/>
   <g class="lt">
-    ${glass(`<ellipse cx="180" cy="66" rx="130" ry="44" fill="url(#h-halo)"/>`, 7)}
-    ${glass(`<path d="M93 94V57q0-9 7-9t7 9V94z" fill="url(#h-win)"/>`, 0)}
-    ${glass(`<circle cx="79" cy="63" r="4.5" fill="url(#h-win)"/>`, 1)}
-    ${glass(`<circle cx="121" cy="63" r="4.5" fill="url(#h-win)"/>`, 2)}
-    ${glass(`<rect x="262" y="55" width="6" height="30" rx="1" fill="url(#h-win)"/>`, 3)}
-    ${glass(`<rect x="280" y="55" width="6" height="30" rx="1" fill="url(#h-win)"/>`, 4)}
-    ${glass(`<circle cx="274" cy="40" r="5.5" fill="url(#h-win)"/>`, 5)}
-    ${glass(`<rect x="317" y="72" width="16" height="8" rx="2" fill="url(#h-win)"/>`, 6)}
+    ${glass(`<ellipse cx="160" cy="66" rx="130" ry="44" fill="url(#h-halo)"/>`, 5)}
+    ${glass(`<path d="M137 70a13 13 0 0 1 26 0ZM137 70h5v22h-5ZM158 70h5v22h-5Z" fill="url(#h-win)"/>`, 0)}
+    ${glass(`<circle cx="124" cy="72" r="5.5" fill="url(#h-win)"/>`, 1)}
+    ${glass(`<circle cx="176" cy="72" r="5.5" fill="url(#h-win)"/>`, 2)}
+    ${glass(`<path d="M276 96a24 24 0 0 1 48 0Z" fill="url(#h-glow)"/>`, 3)}
+    ${glass(`<rect x="338" y="77" width="12" height="6" rx="1.5" fill="url(#h-win)"/>`, 4)}
   </g>
   <g class="ln">
-    <path d="M206 42q-4-14 8-22q4-14 16-10q12-4 16 8q12 6 6 20" opacity=".55"/>
-    <path d="M20 94q-4-18 8-26q6-12 20-6q12 8 8 32" opacity=".55"/>
-    <path d="M64 94V50q0-6 6-8q6-2 6-10q0-16 24-18q24 2 24 18q0 8 6 10q6 2 6 8V94"/>
-    <path d="M93 94V57q0-9 7-9t7 9V94M93 59h14M100 59v-10M100 59l-5-6M100 59l5-6"/>
-    <circle cx="79" cy="63" r="4.5"/><circle cx="79" cy="63" r="7" opacity=".5"/>
-    <circle cx="121" cy="63" r="4.5"/><circle cx="121" cy="63" r="7" opacity=".5"/>
-    <path d="M88 94h24M90 91h20" opacity=".7"/>
-    <path d="M136 62h114M150 42h86M136 62l14-20M250 62l-14-20"/>
-    <path d="M187 42V27h11v15M185 27h15"/>
-    <path d="M142 64V94M244 64V94M136 94H250M160 80l76 8" opacity=".6"/>
-    <path d="M250 94V54q0-6 5-8q5-2 5-9q0-14 14-16q14 2 14 16q0 7 5 9q5 2 5 8V94"/>
-    <circle cx="274" cy="40" r="5.5"/><path d="M274 40v-3.5M274 40l2.5 1.5"/>
-    <rect x="262" y="55" width="6" height="30" rx="1"/><rect x="280" y="55" width="6" height="30" rx="1"/>
-    <path d="M306 92V74q0-8 8-8h40q10 0 12 10l2 16zM368 90h8"/>
-    <rect x="317" y="72" width="16" height="8" rx="2"/>
-    <path d="M344 92V73h11v19"/>
-    <circle cx="322" cy="94" r="4"/>
+    <path d="M64 96C60 80 58 60 66 46C64 34 72 24 80 16C84 8 94 2 100 4C108 8 116 20 120 30C130 40 132 56 128 70L132 96" opacity=".5"/>
+    <path d="M0 96q-2-16 6-22q8-8 16 0q4 10 2 22" opacity=".5"/>
+    <path d="M22 96V66H80V96M20 66h62"/><path d="M28 96V71h46v25M28 77h46M28 83h46M28 89h46" opacity=".6"/>
+    <path d="M184 44V24h10v26M182 24h14"/>
+    <path d="M196 42h66M198 64h66M204 50h54M201 57h60" opacity=".9"/><path d="M204 64V96" opacity=".6"/>
+    <path d="M262 96V50q0-14 6-14t6 14V96"/>
+    <path d="M102 96V60C102 52 112 50 116 44C120 38 122 34 122 30C122 22 134 16 150 16C166 16 178 22 178 30C178 34 180 38 184 44C188 50 198 52 198 60V96"/>
+    <ellipse cx="150" cy="27" rx="2.5" ry="2" opacity=".7"/><rect x="107" y="58" width="5" height="6" rx="1" opacity=".7"/>
+    <path d="M137 92V70a13 13 0 0 1 26 0V92M137 70h26M142 70V92M158 70V92M143 92V73h14v19M150 70l-11.3-6.5M150 70l-6.5-11.3M150 70V57M150 70l6.5-11.3M150 70l11.3-6.5"/>
+    <path d="M134 92h32M131 95h38" opacity=".7"/>
+    <circle cx="124" cy="72" r="5.5"/><circle cx="124" cy="72" r="8" opacity=".6"/>
+    <circle cx="176" cy="72" r="5.5"/><circle cx="176" cy="72" r="8" opacity=".6"/>
+    <circle cx="124" cy="86" r="4.5"/><circle cx="124" cy="86" r="2"/><circle cx="176" cy="86" r="4.5"/><circle cx="176" cy="86" r="2"/>
+    <path d="M276 96a24 24 0 0 1 48 0M300 72v24M283 79l17 6 17-6M277 89l11-10 12 6 12-6 11 10M288 96l0-17M312 96V79" opacity=".75"/>
+    <path d="M330 94V78q0-6 6-6h34q8 0 10 8l2 14zM382 92h6"/>
+    <rect x="338" y="77" width="12" height="6" rx="1.5"/>
+    <path d="M362 94V79h9v15"/>
+    <circle cx="342" cy="96" r="3"/>
   </g></g>
   <g class="ln">
-    <path d="M14 96H376" opacity=".35"/>
+    <path d="M8 86H382" opacity=".35"/>
     <path d="M100 100Q195 92 290 100Q195 112 100 100Z" opacity=".8"/>
     <path d="M140 106q12 2 24 0M214 106q14 2 28 0" opacity=".45"/>
   </g></svg>

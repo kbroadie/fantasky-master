@@ -815,7 +815,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .show-day.up .house .lt > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
 @keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
 .smoke {
-  position: absolute; left: 47.4%; bottom: 70.3%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
+  position: absolute; left: 46.7%; bottom: 80.3%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
   fill: none; stroke: #e9dcc0; stroke-width: 1.5; stroke-linecap: round;
 }
 .show-day.go .smoke { animation: h-smoke 4s 2s linear infinite; }
