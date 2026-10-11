@@ -81,20 +81,19 @@ const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
 const seven = (f) => Array.from({ length: 7 }, (_, i) => f(i)).join("");
 // The scene in depth: one vanishing point at eye height above the drive (VP, the buildings' units), each structure's
 // front at its depth (Z: in front of the gable's wall < 0 < behind it), so nearer things stand lower on the drive (dy,
-// the same size: only their places follow the perspective); a structure's depth recedes toward VP (back), which gives
-// the faces of it that can be seen from here: the garage's flat roof and right side, the caravan's roof and end, the
-// hedge's top
-const VP = { x: 195, y: 40 }, FAR = 120;
+// the same size: only their places follow the perspective). It's seen from a distance, so a structure's own depth
+// recedes almost in parallel (back: up by RISE a unit, and drifting toward the middle by DRIFT a unit of its distance from
+// it), which shows only a little of the faces that can be seen from here: the garage's flat roof and right side, the
+// caravan's end, the hedge's top
+const VP = { x: 195, y: 40 }, FAR = 120, RISE = 0.11, DRIFT = 0.0008;
 const sc = (z) => FAR / (FAR + z);
 const Z = { tree: 22, van: 18, wing: 10, end: 10, chimney: 6, garage: 2, gable: -4, hedge: -6, dome: -10 };
 const DY = Object.fromEntries(Object.entries(Z).map(([k, z]) => [k, +((96 - VP.y) * (sc(z) - 1)).toFixed(2)]));
 DY.dome = +(DY.dome - 3).toFixed(2); // its drawing already stands 3 nearer
-// A point t further back than k's front, in k's own frame (before its dy), and the scale that takes it there
-const ratio = (k, t) => sc(Z[k] + t) / sc(Z[k]);
-const vyOf = (k) => +(VP.y - DY[k]).toFixed(2);
-const back = (k, t) => { const r = ratio(k, t), vy = vyOf(k); return ([x, y]) => [VP.x + (x - VP.x) * r, vy + (y - vy) * r]; };
+// A point t further back than a structure's front (in its own frame), and the transform that takes its front there
+const back = (t) => ([x, y]) => [x + (VP.x - x) * DRIFT * t, y - RISE * t];
 const poly = (ps) => `M${ps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join("L")}Z`;
-const toward = (k, r) => `matrix(${r.toFixed(4)} 0 0 ${r.toFixed(4)} ${(VP.x * (1 - r)).toFixed(2)} ${(vyOf(k) * (1 - r)).toFixed(2)})`;
+const toward = (t) => `matrix(${(1 - DRIFT * t).toFixed(4)} 0 0 1 ${(VP.x * DRIFT * t).toFixed(2)} ${(-RISE * t).toFixed(2)})`;
 const at = (k, inner) => `<g data-dy="${DY[k]}" transform="translate(0 ${DY[k]})">${inner}</g>`;
 // The solid shapes (each structure's front face), back to front, cast as shadows on the drive (main.js)
 const MASS = {
@@ -116,13 +115,13 @@ const solid = (k, m, inner = "", round = false) =>
   `<path class="o ${m}" d="${MASS[k]}"/>${inner}${round ? `<path class="sd" d="${MASS[k]}"/>` : ""}<path class="ao" d="${MASS[k]}"/><path class="rim" d="${MASS[k]}" clip-path="url(#c-${k})"/>`;
 // Depth by sweeping a rounded shape back toward VP (copies along the way, in its own colour, lit as the face that
 // shows: the hedge's top, the caravan's end), for the caravan and the hedge; the garage, a box, has its faces drawn exactly
-const sweep = (k, t, m, n, f = "top") => Array.from({ length: n }, (_, i) => `<path class="m ${m} ${f}" d="${MASS[k]}" transform="${toward(k, ratio(k, (t * (n - i)) / n))}"/>`).join("");
-const gb = back("garage", 40);
+const sweep = (k, t, m, n, f = "top") => Array.from({ length: n }, (_, i) => `<path class="m ${m} ${f}" d="${MASS[k]}" transform="${toward((t * (n - i)) / n)}"/>`).join("");
+const gb = back(40);
 const GARAGE_3D = `<path class="m felt top" d="${poly([[20, 64], [82, 64], gb([82, 64]), gb([20, 64])])}"/><path class="m white rs" d="${poly([[80, 67], [80, 96], gb([80, 96]), gb([80, 67])])}"/><path class="m brown rs" d="${poly([[82, 64], [82, 67], gb([82, 67]), gb([82, 64])])}"/>`;
 // Shadows: cast (main.js shears each from its own feet, and the deep ones from their backs too) and, blurred with them,
 // the structures' own shapes, hidden behind them, so a shadow keeps its strength up to their feet
-const castOf = (k, href, t = 0, n = 0) => [1, ...Array.from({ length: n }, (_, i) => ratio(k, (t * (i + 1)) / n))]
-  .map((r) => `<use href="${href}" data-dy="${DY[k]}" data-b="${BASE[k] ?? 96}" data-r="${r.toFixed(4)}" data-vy="${vyOf(k)}"/>`).join("");
+const castOf = (k, href, t = 0, n = 0) => [0, ...Array.from({ length: n }, (_, i) => (t * (i + 1)) / n)]
+  .map((d) => `<use href="${href}" data-dy="${DY[k]}" data-b="${((BASE[k] ?? 96) - RISE * d).toFixed(2)}"${d ? ` data-back="${toward(d)}"` : ""}/>`).join("");
 const behind = (k, href) => `<use href="${href}" transform="translate(0 ${DY[k]})"/>`;
 const contact = (k, href) => { const b = BASE[k] ?? 96; return `<use href="${href}" transform="translate(0 ${DY[k]}) matrix(1 0 0 -.07 0 ${(b * 1.07).toFixed(2)})"/>`; };
 const KEYS = ["tree", "hedge", "garage", "chimney", "wing", "end", "gable"];

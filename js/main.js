@@ -747,11 +747,11 @@ function shade() {
   if (dg) for (const [a, v] of [["x1", 0.5 + 0.5 * dx], ["y1", 0.5 + 0.5 * dy], ["x2", 0.5 - 0.5 * dx], ["y2", 0.5 - 0.5 * dy]]) dg.setAttribute(a, v.toFixed(3));
   // Each point h above the ground (at y = b) falls h·sx across and h·sy down: the caravan stands nearer, on its wheels
   const cast = (b) => `matrix(1 0 ${(-sx).toFixed(3)} ${(-sy).toFixed(3)} ${(b * sx).toFixed(2)} ${(b * (1 + sy)).toFixed(2)})`;
-  // Each structure's from its own feet, where its depth puts them (dy); a deep one's back (r: its scale toward the
-  // vanishing point) casts from where its back stands
+  // Each structure's from its own feet, where its depth puts them (dy); a deep one's back casts from where its back
+  // stands (b, and the transform that takes its front there)
   for (const el of house.querySelectorAll(".cast use[data-b]")) {
-    const { dy, b, r, vy } = el.dataset, R = +r, foot = +vy + (+b - +vy) * R;
-    el.setAttribute("transform", `translate(0 ${dy}) ${cast(foot)}${R === 1 ? "" : ` matrix(${R} 0 0 ${R} ${(195 * (1 - R)).toFixed(2)} ${(+vy * (1 - R)).toFixed(2)})`}`);
+    const { dy, b, back = "" } = el.dataset;
+    el.setAttribute("transform", `translate(0 ${dy}) ${cast(+b)} ${back}`);
   }
   // The ducks' own: each one's silhouette (14 high, its feet at y 98.1) cast the same way; the soft contact shadows under
   // their feet stay put

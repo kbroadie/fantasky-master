@@ -866,14 +866,15 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .teal { --m: #2e6a5e; }
 .house .flower { --m: #d8463a; }
 /* The lawn (the ground box) everywhere but the drive, which is cut into it (::before): resin-bound gravel, tan, as in the
-   photo, from just under the structures' fronts, widening toward us; the hedge on the lawn at the left and the caravan
+   photo, from just under the structures' fronts, widening a little toward us (seen from a distance, its edges nearly
+   parallel); the hedge on the lawn at the left and the caravan
    parked on it at the right, past the dome; on a wider screen the lawns run on to the edges. Placed in the drawing's
    units from its middle (--u); both lit like everything else, as tops */
 .house > .ground { --m: #6e9152; }
 .house > .ground::before {
   content: ""; position: absolute; inset: 0; --m: #ab947b;
   background: linear-gradient(var(--mc), color-mix(in srgb, var(--mc) 55%, var(--bg)));
-  clip-path: polygon(calc(50% - 129.5 * var(--u)) calc(3.5 * var(--u)), calc(50% + 102.3 * var(--u)) calc(3.5 * var(--u)), calc(50% + 177 * var(--u)) 100%, calc(50% - 185 * var(--u)) 100%);
+  clip-path: polygon(calc(50% - 129.5 * var(--u)) calc(3.5 * var(--u)), calc(50% + 102.3 * var(--u)) calc(3.5 * var(--u)), calc(50% + 127 * var(--u)) 100%, calc(50% - 152 * var(--u)) 100%);
 }
 /* Light and shade across them (main.js sets which way, and how strong: --sho, --sha): lighter on the side facing the sun
    or moon, in its colour (--lit), darker on the other; and shadows across the drive, under the eaves and at the ducks'
