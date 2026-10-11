@@ -111,7 +111,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
     <circle cx="342" cy="96" r="3"/>
   </g></g>
   <g class="ln">
-    <path d="M8 86H382" opacity=".35"/>
+    <path d="M8 93H382" opacity=".35"/>
     <g class="feet"><ellipse cx="120" cy="99" rx="8" ry="1.6"/><ellipse cx="145" cy="99" rx="8" ry="1.6"/><ellipse cx="170" cy="99" rx="8" ry="1.6"/><ellipse cx="195" cy="99" rx="8" ry="1.6"/><ellipse cx="220" cy="99" rx="8" ry="1.6"/><ellipse cx="245" cy="99" rx="8" ry="1.6"/><ellipse cx="270" cy="99" rx="8" ry="1.6"/></g>
   </g></svg>
   <svg class="smoke" viewBox="0 0 20 24"><path d="M7 23c-4-5 3-8-1-13s3-7 0-10"/><path d="M13 23c-4-5 3-8-1-13"/></svg>
