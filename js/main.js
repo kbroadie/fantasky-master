@@ -670,7 +670,44 @@ function showDay() {
     const up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
     el.setAttribute("transform", `translate(${(20 + 350 * t).toFixed(1)} ${(104 - 84 * up).toFixed(1)})`);
   }
+  light = sun >= 0 && sun <= 1 ? { t: sun, sun: true } : { t: moon, sun: false };
   airMoon();
+  shade();
+}
+// Light and shade from whichever is up: the buildings lit on its side, and shadows cast forward across the drive, away from
+// it, long and to the side when it's low and short when it's high (sx, sy: how far across and down the shadow of each unit
+// of height reaches); by the moon, as strong as it's full
+let light = null, moonLit = 0.5;
+function shade() {
+  const house = $("#foot .house");
+  if (!house || !light) return;
+  const { t, sun } = light, deg = Math.PI / 180;
+  const e = (sun ? 55 : 45) * Math.sin(Math.PI * t) * deg, az = (t - 0.5) * 160 * deg;
+  const reach = Math.min(2.5, 1 / Math.tan(Math.max(e, 0.01))), low = Math.min(1, e / (8 * deg));
+  const sx = Math.max(-1.6, Math.min(1.6, -Math.sin(az) * reach)), sy = 0.45 * Math.cos(az) * reach;
+  const k = sun ? low : moonLit * low;
+  house.style.setProperty("--sha", (0.85 * k).toFixed(3));
+  house.style.setProperty("--shm", `${(sun ? 13 : 3 + 7 * moonLit).toFixed(1)}%`);
+  house.style.setProperty("--gra", (sun ? 0.06 + 0.12 * Math.min(1, e / (15 * deg)) : 0.03 + 0.07 * moonLit).toFixed(3));
+  // The shaded shapes' gradient runs from the side facing the light to the other
+  let vx = Math.sin(az) * Math.cos(e), vy = -Math.sin(e);
+  const n = Math.hypot(vx, vy) || 1;
+  vx /= n;
+  vy /= n;
+  const g = house.querySelector("#h-shade");
+  for (const [a, v] of [["x1", 0.5 + 0.5 * vx], ["y1", 0.5 + 0.5 * vy], ["x2", 0.5 - 0.5 * vx], ["y2", 0.5 - 0.5 * vy]]) g.setAttribute(a, v.toFixed(3));
+  // Each point h above the ground (at y = b) falls h·sx across and h·sy down: the caravan stands nearer, on its wheels
+  const cast = (b) => `matrix(1 0 ${(-sx).toFixed(3)} ${(-sy).toFixed(3)} ${(b * sx).toFixed(2)} ${(b * (1 + sy)).toFixed(2)})`;
+  const [m, v] = house.querySelectorAll(".cast use");
+  m.setAttribute("transform", cast(96));
+  v.setAttribute("transform", cast(98.5));
+  // The ducks' own, from about 12 high
+  house.querySelectorAll(".feet ellipse").forEach((el, i) => {
+    el.setAttribute("cx", (120 + 25 * i + 6 * sx).toFixed(1));
+    el.setAttribute("cy", (99 + 6 * sy).toFixed(1));
+    el.setAttribute("rx", (7 + 6 * Math.abs(sx)).toFixed(1));
+    el.setAttribute("ry", (1.6 + 6 * sy).toFixed(1));
+  });
 }
 // The moon is the real one over London as the episode on show aired (10pm London; sky.js): its phase, and its lit edge
 // turned as it stood. The week on the Standings, the episode on Episodes, and on Cast the latest to have aired
@@ -685,6 +722,8 @@ function airMoon() {
   const m = moonAt(air);
   el.setAttribute("d", moonPath(m.lit, 9));
   el.setAttribute("transform", `rotate(${m.edge.toFixed(1)})`);
+  moonLit = m.lit;
+  shade();
 }
 setInterval(showDay, 60000);
 const houseSeen = new IntersectionObserver((es) => {
