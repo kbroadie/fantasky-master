@@ -3,7 +3,7 @@ import { loadText, parseCSV, buildSeries } from "./csv.js";
 import { initEdit } from "./edit.js";
 import { derive, currentSeriesKey } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
-import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, QUOTE } from "./views/table.js";
+import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides, castSlide, fill, changedSay, resettable } from "./views/cast.js";
 import { get, set, item, shown, resetAll, changed, pin } from "./switches.js";
@@ -11,7 +11,7 @@ import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, toggleFantasy, warm } from "./flip.js";
+import { initFlip, toggleFantasy } from "./flip.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -45,7 +45,7 @@ function loadSeries(key) {
   renderStandings(d);
   renderSlides(d);
   if (!$("#foot").children.length) $("#foot").innerHTML = footer();
-  if (!$("#dq").children.length) $("#dq").innerHTML = QUOTE;
+  if (!$("#dq").children.length) $("#dq").innerHTML = EMBRACE;
   countdown();
 }
 
@@ -324,8 +324,7 @@ $("#series").addEventListener("click", () => {
 
 // Where a tap landed: the transitions open from it (Iris's circle, Zoom's and Vertigo's centre); none from a keyboard
 const tapAt = (e) => (e.detail ? { x: e.clientX, y: e.clientY } : null);
-$("#dq").addEventListener("click", (e) => { if (e.target.closest(".st-quote")) toggleFantasy("#dq", tapAt(e)); });
-$("#dq").addEventListener("pointerdown", warm, { once: true });
+$("#dq").addEventListener("click", (e) => { if (e.target.closest(".embrace")) toggleFantasy("#dq", tapAt(e)); });
 $("#p-standings").addEventListener("click", (e) => {
   if (e.target.closest(".wl-x")) {
     $("#welcome").hidden = true;

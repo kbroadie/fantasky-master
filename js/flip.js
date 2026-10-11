@@ -1,5 +1,5 @@
-// Fantasy Fantasky Master: an Easter egg, never mentioned on the site. The quote under every tab switches it on
-// and off: fantasy mode (state.fantasy, html.fz), low scores win, with the fall behind everything.
+// Fantastikal Delusion: the same app where low scores win, a happy place for the bottom of the table. "Embrace Failure"
+// under every tab switches it on, "Embrace Success" off: fantasy mode (state.fantasy, html.fz), the fall behind everything.
 import { $, state, reducedMotion } from "./ui.js";
 import { runner } from "./fall.js";
 import { get, val, onSwitch } from "./switches.js";
@@ -17,7 +17,6 @@ function set(show, anchor, tap) {
   if (show && !state.d) show = false;
   if (show === on) return;
   on = show;
-  if (show) warm();
   const html = document.documentElement, at = $(anchor)?.getBoundingClientRect();
   let how = get("fzMove");
   if (how === "slam" && !slamReady()) how = "iris"; // it needs the Standings' rows on screen
@@ -35,7 +34,7 @@ function set(show, anchor, tap) {
   html.dataset.vt = how;
   html.classList.toggle("vt-in", show);
   stage(tap ?? mid(at), show);
-  const subject = how === "vertigo" ? (anchor === "#dq" ? "#dq .st-quote" : anchor) : null;
+  const subject = how === "vertigo" ? (anchor === "#dq" ? "#dq .embrace" : anchor) : null;
   const name = () => { if (how === "turn") nameMovers(); if (subject) $(subject)?.style.setProperty("view-transition-name", "vt-subject"); };
   name();
   if (how === "ripple") for (const a of document.querySelectorAll("#vt-wave animate")) a.beginElement();
@@ -197,14 +196,6 @@ function nameMovers(clear = false) {
   els.forEach((el, i) => {
     el.style.viewTransitionName = clear || !seen[i] ? "" : el.dataset.p ? `vt-${el.dataset.side}-${slug(el.dataset.p)}` : `vt-cast-${slug(el.textContent)}`;
   });
-}
-
-// Pacifico ("Fantasy") is fetched once a finger is on the quote, before the tap lands
-let warmed = false;
-export function warm() {
-  if (warmed) return;
-  warmed = true;
-  document.fonts?.load("1em Pacifico").catch(() => {});
 }
 
 // The fall: drawn by fall.js in a worker that owns the canvas, or here without OffscreenCanvas. Nothing heavy in the page until it shows (iOS dropped page tiles).
