@@ -59,14 +59,11 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 
 // (the arched door with its fanlight and sidelights, a round porthole each side with a lifebuoy under it, steps), the
 // chimney behind its shoulder and the lower tiled wing running right to a narrow curved end; the garage with its
 // up-and-over door, the tall conifer behind, the clear geodesic dome on the drive, the caravan beyond it, and the
-// ducks on the drive in front, a shadow at each one's feet. Gold lines over solid shapes, so the sun and moon pass behind them; at 80%, standing a little above the
+// ducks on the drive in front, a shadow at each one's feet. Gold lines over solid shapes, drawn back to front, so nearer things hide what's behind them and the sun
+// and moon pass behind them; at 80%, standing a little above the
 // ducks, so there's sky above. The sky follows the device's clock (main.js: the sun and moon's places, the time of day);
 // its lights (.lt, --i their order) come up on show days (styles.css), and the chimney smokes
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
-const SOLID = "M64 96C60 80 58 60 66 46C64 34 72 24 80 16C84 8 94 2 100 4C108 8 116 20 120 30C130 40 132 56 128 70L132 96Z" +
-  "M22 96V66H80V96ZM184 50V24h10v26ZM196 96V42h66v54ZM262 96V50q0-14 6-14t6 14V96Z" +
-  "M102 96V60C102 52 112 50 116 44C120 38 122 34 122 30C122 22 134 16 150 16C166 16 178 22 178 30C178 34 180 38 184 44C188 50 198 52 198 60V96Z" +
-  "M330 94V78q0-6 6-6h34q8 0 10 8l2 14ZM0 96q-2-16 6-22q8-8 16 0q4 10 2 22Z";
 const STARS = [[30, 12], [58, 30], [150, 8], [176, 24], [300, 12], [334, 30], [362, 16], [128, 30], [16, 40], [372, 44]];
 const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
   <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
@@ -81,34 +78,37 @@ const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
     <g class="sun"><circle r="16" fill="url(#h-halo)"/><circle r="6"/><path d="M0-10v-3M0 10v3M-10 0h-3M10 0h3M7-7l2-2M-7 7l-2 2M7 7l2 2M-7-7l-2-2"/></g>
   </g>
   <g transform="matrix(.8 0 0 .8 39 9.2)">
-  <path class="solid" d="${SOLID}"/>
+  <g class="ln">
+    <path class="o faint" d="M133 96L126 75L131 74L120 59L126 58L114 43L119 42L109 29L113 28L104 16L107 15L100 4L93 15L96 16L87 28L91 29L81 42L86 43L74 58L80 59L69 74L74 75L67 96"/>
+    <path class="o faint" d="M0 96V80q2-6 7-6q3-5 8-3q5-1 7 4q3 2 3 7V96"/>
+    <path class="o" d="M22 96V64H80V96"/><path d="M20 64H82V67H20Z"/><path class="d" d="M28 96V72H74V96M28 77H74M28 82H74M28 87H74M28 92H74"/>
+    <path class="o" d="M184 50V24h10v26Z"/><path d="M182.5 24h13v-2.5h-13Z"/><path class="d" d="M185.5 21.5v-3h2.5v3M190 21.5v-4h2.5v4"/>
+    <path class="o" d="M196 96V42h68v54Z" stroke="none"/><path d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
+    <path class="o" d="M263.5 96V39h7V96"/><path class="o" d="M262.5 39h9v-2.5h-9Z"/>
+    <path class="o" d="M102 96V60C102 52 112 50 116 44C120 38 122 34 122 30C122 22 134 16 150 16C166 16 178 22 178 30C178 34 180 38 184 44C188 50 198 52 198 60V96"/>
+    <path class="o" d="M330 94V79q0-7 7-7h33q8 0 10 8l2 14Z"/>
+  </g>
   <g class="lt">
     ${glass(`<ellipse cx="160" cy="66" rx="130" ry="44" fill="url(#h-halo)"/>`, 5)}
     ${glass(`<path d="M137 70a13 13 0 0 1 26 0ZM137 70h5v22h-5ZM158 70h5v22h-5Z" fill="url(#h-win)"/>`, 0)}
     ${glass(`<circle cx="124" cy="72" r="5.5" fill="url(#h-win)"/>`, 1)}
     ${glass(`<circle cx="176" cy="72" r="5.5" fill="url(#h-win)"/>`, 2)}
     ${glass(`<path d="M276 96a24 24 0 0 1 48 0Z" fill="url(#h-glow)"/>`, 3)}
-    ${glass(`<rect x="338" y="77" width="12" height="6" rx="1.5" fill="url(#h-win)"/>`, 4)}
+    ${glass(`<rect x="337" y="76" width="13" height="6" rx="1.5" fill="url(#h-win)"/>`, 4)}
   </g>
   <g class="ln">
-    <path d="M64 96C60 80 58 60 66 46C64 34 72 24 80 16C84 8 94 2 100 4C108 8 116 20 120 30C130 40 132 56 128 70L132 96" opacity=".5"/>
-    <path d="M0 96q-2-16 6-22q8-8 16 0q4 10 2 22" opacity=".5"/>
-    <path d="M22 96V66H80V96M20 66h62"/><path d="M28 96V71h46v25M28 77h46M28 83h46M28 89h46" opacity=".6"/>
-    <path d="M184 44V24h10v26M182 24h14"/>
-    <path d="M196 42h66M198 64h66M204 50h54M201 57h60" opacity=".9"/><path d="M204 64V96" opacity=".6"/>
-    <path d="M262 96V50q0-14 6-14t6 14V96"/>
-    <path d="M102 96V60C102 52 112 50 116 44C120 38 122 34 122 30C122 22 134 16 150 16C166 16 178 22 178 30C178 34 180 38 184 44C188 50 198 52 198 60V96"/>
-    <ellipse cx="150" cy="27" rx="2.5" ry="2" opacity=".7"/><rect x="107" y="58" width="5" height="6" rx="1" opacity=".7"/>
-    <path d="M137 92V70a13 13 0 0 1 26 0V92M137 70h26M142 70V92M158 70V92M143 92V73h14v19M150 70l-11.3-6.5M150 70l-6.5-11.3M150 70V57M150 70l6.5-11.3M150 70l11.3-6.5"/>
-    <path d="M134 92h32M131 95h38" opacity=".7"/>
-    <circle cx="124" cy="72" r="5.5"/><circle cx="124" cy="72" r="8" opacity=".6"/>
-    <circle cx="176" cy="72" r="5.5"/><circle cx="176" cy="72" r="8" opacity=".6"/>
-    <circle cx="124" cy="86" r="4.5"/><circle cx="124" cy="86" r="2"/><circle cx="176" cy="86" r="4.5"/><circle cx="176" cy="86" r="2"/>
-    <path d="M276 96a24 24 0 0 1 48 0M300 72v24M283 79l17 6 17-6M277 89l11-10 12 6 12-6 11 10M288 96l0-17M312 96V79" opacity=".75"/>
-    <path d="M330 94V78q0-6 6-6h34q8 0 10 8l2 14zM382 92h6"/>
-    <rect x="338" y="77" width="12" height="6" rx="1.5"/>
-    <path d="M362 94V79h9v15"/>
-    <circle cx="342" cy="96" r="3"/>
+    <path class="d" d="M105.5 62C105.5 55 114.5 53 119 46.5C123.5 39.5 125.5 35 125.5 30.5C125.5 24 136.5 19.5 150 19.5C163.5 19.5 174.5 24 174.5 30.5C174.5 35 176.5 39.5 181 46.5C185.5 53 194.5 55 194.5 62"/>
+    <ellipse class="d" cx="150" cy="28" rx="2.5" ry="2"/><rect class="d" x="107" y="58" width="5" height="6" rx="1"/>
+    <path d="M137 92V70a13 13 0 0 1 26 0V92M137 70h26M143 92V71h14v21"/>
+    <path class="d" d="M142 70V92M158 70V92M148 56.6h4l-.6 3h-2.8ZM145.5 70a4.5 4.5 0 0 1 9 0M146.1 67.75L138.74 63.5M147.75 66.1L143.5 58.74M150 65.5V57M152.25 66.1L156.5 58.74M153.9 67.75L161.26 63.5M145 73h4v8h-4ZM151 73h4v8h-4ZM145 83h4v7h-4ZM151 83h4v7h-4ZM134 92h32M131 94.5h38"/>
+    <circle cx="124" cy="72" r="5.5"/><circle class="d" cx="124" cy="72" r="8"/>
+    <circle cx="176" cy="72" r="5.5"/><circle class="d" cx="176" cy="72" r="8"/>
+    <circle cx="124" cy="86" r="4.5"/><circle cx="176" cy="86" r="4.5"/>
+    <path class="d" d="M126.2 86a2.2 2.2 0 1 1-4.4 0a2.2 2.2 0 1 1 4.4 0M178.2 86a2.2 2.2 0 1 1-4.4 0a2.2 2.2 0 1 1 4.4 0M125.56 84.44l1.62-1.62M122.44 84.44l-1.62-1.62M125.56 87.56l1.62 1.62M122.44 87.56l-1.62 1.62M177.56 84.44l1.62-1.62M174.44 84.44l-1.62-1.62M177.56 87.56l1.62 1.62M174.44 87.56l-1.62 1.62"/>
+    <path d="M276 96a24 24 0 0 1 48 0"/>
+    <path class="d" d="M279.2 84Q300 80 320.8 84M288.4 75Q300 72.5 311.6 75M276 96L286 83L294 96L300 82.5L306 96L314 83L324 96M286 83L293 75L300 82.5L307 75L314 83M293 75L300 72L307 75"/>
+    <rect x="337" y="76" width="13" height="6" rx="1.5"/><path d="M361 94V78h9v16"/><circle class="o" cx="343" cy="95" r="3.5"/>
+    <path class="d" d="M330 86H382M368 87h1.5M382 92l7 2M348 72v-2h6v2M344 95a1 1 0 1 1-2 0a1 1 0 1 1 2 0"/>
   </g></g>
   <g class="ln">
     <path d="M8 93H382" opacity=".35"/>
