@@ -825,7 +825,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    the garage's red door, dark glass, yellow porthole rings, orange lifebuoys, the conifer's and the hedge's greens. Each
    is lit by the time of day (main.js): as bright as the light allows (--illum) and tinted by the sky (--amb, --ambk) */
 .house { --lit: #fff1d0; --sho: .2; --sha: .7; --amb: #0a0e1e; --ambk: 8%; --illum: 10%; }
-.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut), .house > .ground {
+.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut), .house > .ground, .house > .ground::before, .house > .ground::after {
   --mc: color-mix(in srgb, color-mix(in srgb, var(--m, #6a6a6a) calc(100% - var(--ambk)), var(--amb)) var(--illum), var(--bg));
 }
 .house .ln .m { stroke: none; fill: var(--mc); }
@@ -852,6 +852,15 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .flower { --m: #d8463a; }
 /* The drive: resin-bound gravel, tan, as in the photo */
 .house > .ground { --m: #ab947b; }
+/* Grass either side of the drive, as in the photo: the drive widens toward us, the hedge on the lawn at the left and the
+   caravan parked on it at the right, past the dome; on a wider screen the lawns run on to the edges. Placed in the
+   drawing's units from its middle (--u), lit like everything else */
+.house > .ground::before, .house > .ground::after {
+  content: ""; position: absolute; inset: 0; --m: #6e9152;
+  background: linear-gradient(var(--mc), color-mix(in srgb, var(--mc) 55%, var(--bg)));
+}
+.house > .ground::before { clip-path: polygon(0 0, calc(50% - 133 * var(--u)) 0, calc(50% - 185 * var(--u)) 100%, 0 100%); }
+.house > .ground::after { clip-path: polygon(calc(50% + 107 * var(--u)) 0, 100% 0, 100% 100%, calc(50% + 177 * var(--u)) 100%); }
 /* Light and shade across them (main.js sets which way, and how strong: --sho, --sha): lighter on the side facing the sun
    or moon, in its colour (--lit), darker on the other; and shadows across the drive, under the eaves and at the ducks'
    feet, away from the light */
