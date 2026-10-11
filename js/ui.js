@@ -55,9 +55,102 @@ export function perEpisodeStats(series) {
 
 const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 9.4H11A3.6 3.6 0 1 1 15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1A3.6 3.6 0 0 1 14.2 9.5Q16.6 10.2 16.6 12.2Q16.6 15 12 15H6Q2.6 15 2 11.9Q1.6 9.8 1.8 7.6Z M13.6 4.4A.75 .75 0 1 0 13.61 4.4Z" fill-rule="evenodd"/></symbol>`;
 
+// The Taskmaster house behind them (normal view), from a photo of its front, in its own colours with no outlines: the bungalow's Dutch gable facing the drive
+// (the arched door with its fanlight and sidelights, a round porthole each side with a lifebuoy under it, steps), the
+// chimney behind its shoulder and the lower tiled wing running right to a narrow curved end; the garage with its
+// up-and-over door, the tall conifer behind, the clear geodesic dome on the drive, the caravan beyond it, and the
+// ducks on the drive in front. Solid shapes, drawn back to front, so nearer things hide what's behind
+// them and the sun and moon pass behind them; at 80%, standing a little above the ducks, so there's sky above. The sky
+// follows the device's clock (main.js: the sun and moon's places, the sky's colours and the scene's grade, from the sun's
+// height, twilight included; the sky and the drive are boxes behind the drawing, the screen's width), and so does the
+// light: the shapes shaded from the side it's on, eaves and everything on the drive casting shadows away from it; its lights (.lt, --i
+// their order) come up on show days (styles.css), the door's spilling onto the drive, and the chimney smokes
+const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
+// The ducks' shadows: each one's outline without its eye, as plain paths (not <use> copies, which the minute's custom
+// properties on .house would restyle), and a soft contact shadow under each; the ducks stand 25 apart from x 120
+const DUCK_BODY = DUCK.match(/d="([^"]*?) M13\.6/)[1];
+const seven = (f) => Array.from({ length: 7 }, (_, i) => f(i)).join("");
+// The solid shapes, back to front: each drawn in its material's colour under its outline, and all cast as shadows on the
+// drive (main.js)
+const MASS = {
+  tree: "M133 96L126 75L131 74L120 59L126 58L114 43L119 42L109 29L113 28L104 16L107 15L100 4L93 15L96 16L87 28L91 29L81 42L86 43L74 58L80 59L69 74L74 75L67 96",
+  hedge: "M0 96V80q2-6 7-6q3-5 8-3q5-1 7 4q3 2 3 7V96",
+  garage: "M22 96V64H80V96",
+  chimney: "M185 58V24h11v34Z",
+  wing: "M196 96V42h68v54Z",
+  end: "M263.5 96V37h7V96",
+  gable: "M102 96V60C102 52 112 50 116 44C120 38 122 34 122 30C122 22 134 16 150 16C166 16 178 22 178 30C178 34 180 38 184 44C188 50 198 52 198 60V96",
+  van: "M330 94V79q0-7 7-7h33q8 0 10 8l2 14Z",
+};
+const mass = (...ks) => ks.map((k) => `<path d="${MASS[k]}"/>`).join("");
+// A solid shape in its material's colour under its outline, then the light and shade across it (#h-shade)
+const solid = (k, m, cls = "", attr = "", inner = "") => `<path class="o ${m} ${cls}" d="${MASS[k]}" ${attr}/>${inner}<path class="sd" d="${MASS[k]}"/>`;
+const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div class="ground"></div><svg viewBox="0 0 390 136">
+  <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
+    <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
+    <radialGradient id="h-moonhalo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#dfe6ff" stop-opacity=".16"/><stop offset="1" stop-color="#dfe6ff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="h-glow" cx=".5" cy=".7" r=".6"><stop offset="0" stop-color="#fff1b8" stop-opacity=".75"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
+    <linearGradient id="h-moonlit" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a39478"/><stop offset=".5" stop-color="#e6d9bb"/><stop offset="1" stop-color="#fff7e2"/></linearGradient>
+    <radialGradient id="h-earth" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#b7ab92" stop-opacity=".16"/><stop offset="1" stop-color="#b7ab92" stop-opacity=".07"/></radialGradient>
+    <filter id="h-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".35"/></filter>
+    <clipPath id="h-above"><rect width="390" height="86"/></clipPath>
+    <linearGradient id="h-shade" x1="0" y1="0" x2="1" y2="0"><stop class="l0" offset="0"/><stop class="l1" offset=".45"/><stop class="l2" offset="1"/></linearGradient>
+    <linearGradient id="h-eave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+    <radialGradient id="h-spill" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".3"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
+    <filter id="h-blur" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
+    <filter id="h-dblur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation=".7"/></filter>
+    <g id="h-mass">${mass("tree", "hedge", "garage", "chimney", "wing", "end", "gable")}</g><g id="h-van">${mass("van")}<circle cx="343" cy="95" r="3.5"/></g></defs>
+  <g clip-path="url(#h-above)">
+    <g class="moon"><circle r="16" fill="url(#h-moonhalo)"/><circle class="disc" r="9"/><path class="lit" d=""/></g>
+    <g class="sun"><circle class="disc" r="9"/></g>
+  </g>
+  <g class="b" transform="matrix(.8 0 0 .8 39 9.2)">
+  <g class="cast"><use href="#h-mass"/><use href="#h-van"/></g>
+  <g class="ln">
+    ${solid("tree", "tree")}
+    ${solid("hedge", "hedge")}
+    ${solid("garage", "white")}<path class="m red" d="M28 72H74V96H28Z"/><rect class="sh" x="22" y="67" width="58" height="6"/><path class="m brown" d="M20 64H82V67H20Z"/><path class="d" d="M28 96V72H74V96M28 77H74M28 82H74M28 87H74M28 92H74"/>
+    ${solid("chimney", "brick")}<path class="m brick" d="M183.5 24h14v-2.5h-14Z"/><path class="d" d="M187 21.5v-3h2.5v3M191.5 21.5v-4h2.5v4"/>
+    ${solid("wing", "brick", "", 'stroke="none"')}<path class="m roof" d="M196 42H264V64H196Z"/><rect class="sh" x="196" y="64" width="68" height="8"/><path class="d" d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
+    ${solid("end", "brick")}
+    ${solid("gable", "brick")}
+    <path class="m white" d="M137 92V70a13 13 0 0 1 26 0V92Z"/><path class="m glass" d="M139 70a11 11 0 0 1 22 0ZM138.5 71h3v20.5h-3ZM158.5 71h3v20.5h-3Z"/><path class="m wood" d="M143 92V71h14v21Z"/>
+    <circle class="m ring" cx="124" cy="72" r="8"/><circle class="m glass" cx="124" cy="72" r="5.5"/><circle class="m ring" cx="176" cy="72" r="8"/><circle class="m glass" cx="176" cy="72" r="5.5"/>
+    <path class="m brick" d="M134 92h32v2.5h-32ZM131 94.5h38v1.5h-38Z"/>
+    ${solid("van", "cream", "", "", `<path class="m sage" d="M330 86H380.9L382 94H330Z"/><path class="m tan" d="M361 78h9v8h-9Z"/><path class="m teal" d="M361 86h9v8h-9Z"/>`)}<rect class="m glass" x="337" y="76" width="13" height="6" rx="1.5"/>
+  </g>
+  <g class="lt">
+    ${glass(`<ellipse cx="150" cy="101" rx="42" ry="8" fill="url(#h-spill)"/>`, 0)}
+    ${glass(`<ellipse cx="160" cy="66" rx="130" ry="44" fill="url(#h-halo)"/>`, 5)}
+    ${glass(`<path d="M137 70a13 13 0 0 1 26 0ZM137 70h5v22h-5ZM158 70h5v22h-5Z" fill="url(#h-win)"/>`, 0)}
+    ${glass(`<circle cx="124" cy="72" r="5.5" fill="url(#h-win)"/>`, 1)}
+    ${glass(`<circle cx="176" cy="72" r="5.5" fill="url(#h-win)"/>`, 2)}
+    ${glass(`<path d="M276 96a24 24 0 0 1 48 0Z" fill="url(#h-glow)"/>`, 3)}
+    ${glass(`<rect x="337" y="76" width="13" height="6" rx="1.5" fill="url(#h-win)"/>`, 4)}
+  </g>
+  <g class="ln">
+    <path class="d" d="M105.5 62C105.5 55 114.5 53 119 46.5C123.5 39.5 125.5 35 125.5 30.5C125.5 24 136.5 19.5 150 19.5C163.5 19.5 174.5 24 174.5 30.5C174.5 35 176.5 39.5 181 46.5C185.5 53 194.5 55 194.5 62"/>
+    <ellipse class="d red" cx="150" cy="28" rx="2.5" ry="2"/><rect class="d red" x="107" y="58" width="5" height="6" rx="1"/>
+    <path class="frame" d="M137 70h26"/>
+    <path class="d frame" d="M145.5 70a4.5 4.5 0 0 1 9 0M146.1 67.75L138.74 63.5M147.75 66.1L143.5 58.74M150 65.5V57M152.25 66.1L156.5 58.74M153.9 67.75L161.26 63.5"/>
+    <path class="d" d="M148 56.6h4l-.6 3h-2.8ZM145 73h4v8h-4ZM151 73h4v8h-4ZM145 83h4v7h-4ZM151 83h4v7h-4ZM134 92h32M131 94.5h38"/>
+    <circle class="d" cx="124" cy="72" r="8"/><circle class="d" cx="176" cy="72" r="8"/>
+    <circle class="buoy" cx="124" cy="86" r="4.5"/><circle class="buoy" cx="176" cy="86" r="4.5"/><circle class="m brick" cx="124" cy="86" r="2.2"/><circle class="m brick" cx="176" cy="86" r="2.2"/>
+    <path class="d frame" d="M125.56 84.44l1.62-1.62M122.44 84.44l-1.62-1.62M125.56 87.56l1.62 1.62M122.44 87.56l-1.62 1.62M177.56 84.44l1.62-1.62M174.44 84.44l-1.62-1.62M177.56 87.56l1.62 1.62M174.44 87.56l-1.62 1.62"/>
+    <path class="strut" d="M276 96a24 24 0 0 1 48 0"/><ellipse class="m floor" cx="300" cy="95" rx="22" ry="1.5"/>
+    <path class="d strut" d="M279.2 84Q300 80 320.8 84M288.4 75Q300 72.5 311.6 75M276 96L286 83L294 96L300 82.5L306 96L314 83L324 96M286 83L293 75L300 82.5L307 75L314 83M293 75L300 72L307 75"/>
+    <rect class="d frame" style="--m: #6a4a38" x="337" y="76" width="13" height="6" rx="1.5"/><path class="d" d="M361 94V78h9v16"/><circle class="m flower" cx="365.5" cy="81.5" r="1.6"/>
+    <path class="m red" d="M352.6 89h1.2v8h-1.2ZM349.5 85.5h7.4v3.5h-7.4Z"/><circle class="o tyre" cx="343" cy="95" r="3.5"/>
+    <path class="d" d="M330 86H382M368 87h1.5M382 92l7 2M348 72v-2h6v2M344 95a1 1 0 1 1-2 0a1 1 0 1 1 2 0"/>
+  </g></g>
+  <g class="dcast">${seven(() => `<path d="${DUCK_BODY}"/>`)}</g>
+  <g class="feet">${seven((i) => `<ellipse cx="${120 + 25 * i}" cy="98.3" rx="7.5" ry="1.3"/>`)}</g></svg>
+  <svg class="smoke" viewBox="0 0 20 24"><path d="M7 23c-4-5 3-8-1-13s3-7 0-10"/><path d="M13 23c-4-5 3-8-1-13"/></svg>
+</div>`;
+
 export function footer() {
   const ducks = Array.from({ length: 7 }, () => `<span class="dk"><svg class="duck"><use href="#duck"/></svg></span>`).join("");
-  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}</svg>
+  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}</svg>${HOUSE}
     <div class="ducks" aria-hidden="true">${ducks}</div>`;
 }
 

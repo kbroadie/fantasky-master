@@ -784,10 +784,113 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .ducks { position: absolute; left: var(--px); right: var(--px); bottom: 27px; display: flex; align-items: center; justify-content: center; }
 /* Each duck's span is its tap target */
 .dk { display: flex; padding: 10px 3.5px; cursor: default; -webkit-tap-highlight-color: transparent; }
-.ducks::before, .ducks::after { content: ""; flex: 1; height: 1px; max-width: 120px; }
-.ducks::before { background: linear-gradient(90deg, transparent, var(--b-gold)); margin-right: 7.5px; }
-.ducks::after { background: linear-gradient(90deg, var(--b-gold), transparent); margin-left: 7.5px; }
+/* The Taskmaster house behind them (ui.js), its drawing 390 × 136 at most, from the band's bottom: gold lines, dim. On show
+   days (.show-day, main.js) the lines glow, and as it comes into view (.up, once) its lights come up one by one; the
+   chimney smokes while it's on screen (.go). Only opacity and transform move; nothing at all on other days */
+.house { position: absolute; left: 50%; bottom: 0; width: min(390px, 100%); aspect-ratio: 390 / 136; translate: -50% 0; pointer-events: none; }
+.house > svg:first-of-type { position: relative; display: block; width: 100%; height: 100%; }
+/* The sky and the drive behind the drawing, the footer's whole width (--u: one unit of the drawing); main.js paints them
+   from the sun's height each minute. The sky fades into the page above it */
+.house > .sky, .house > .ground { position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); }
+/* Wider than the drawing, the sides fade out too, over the outer part of the extra width */
+.house > .sky, .house > .ground {
+  --sides: linear-gradient(90deg, transparent, #000 calc((100% - 390px) * .4), #000 calc(100% - (100% - 390px) * .4), transparent);
+  -webkit-mask-image: var(--sides); mask-image: var(--sides);
+}
+.house > .sky {
+  top: 0; height: calc(86 * var(--u));
+  -webkit-mask-image: linear-gradient(transparent, #000 75%), var(--sides); -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(transparent, #000 75%), var(--sides); mask-composite: intersect;
+}
+.house > .ground { top: calc(86 * var(--u)); bottom: 0; }
+.house .ln { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.house .ln * { vector-effect: non-scaling-stroke; }
+/* Details in a finer line */
+.house .ln .d { stroke-width: 1; }
+/* The structures have no outlines (on request): only the details that belong to them, in their own colours: joints,
+   panels and edges a dark line, the glazing bars, frames and lifebuoys' bands white, the dome's struts pale */
+.house .b .ln { stroke: none; }
+.house .b .ln .d { stroke: #000; stroke-opacity: .32; }
+.house .b .ln :is(.frame, .strut) { stroke: var(--mc); stroke-opacity: 1; }
+.house .frame { --m: #f0ece2; }
+.house .strut { --m: #e8eef4; }
+/* The structures in their own colours, from the photo (--m): red-brown brick, a dark tiled roof, white render and frames,
+   the garage's red door, dark glass, yellow porthole rings, orange lifebuoys, the conifer's and the hedge's greens. Each
+   is lit by the time of day (main.js): as bright as the light allows (--illum) and tinted by the sky (--amb, --ambk) */
+.house { --lit: #fff1d0; --sho: .2; --sha: .7; --amb: #0a0e1e; --ambk: 8%; --illum: 10%; }
+.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut), .house > .ground {
+  --mc: color-mix(in srgb, color-mix(in srgb, var(--m, #6a6a6a) calc(100% - var(--ambk)), var(--amb)) var(--illum), var(--bg));
+}
+.house .ln .m { stroke: none; fill: var(--mc); }
+.house .ln :is(.o, .buoy, .d.red) { fill: var(--mc); }
+.house .brick { --m: #9c5a40; }
+.house .roof { --m: #4a4a52; }
+.house .white { --m: #e6e2d8; }
+.house .red { --m: #a8322a; }
+.house .brown { --m: #6a4a38; }
+.house .wood { --m: #5e2a1e; }
+.house .glass { --m: #3c4a5c; }
+.house .ring { --m: #d0a838; }
+.house .buoy { --m: #e8582e; }
+.house .tree { --m: #2c4630; }
+.house .hedge { --m: #3e5e34; }
+.house .tyre { --m: #222; }
+.house .floor { --m: #4a7ab4; }
+/* The caravan as it is on the show: cream over a pale sage band, its door tan with a painted flower over green, a brown
+   window frame, and the red mailbox in front */
+.house .cream { --m: #ece8da; }
+.house .sage { --m: #b4ccbc; }
+.house .tan { --m: #c89a5c; }
+.house .teal { --m: #2e6a5e; }
+.house .flower { --m: #d8463a; }
+/* The drive: resin-bound gravel, tan, as in the photo */
+.house > .ground { --m: #ab947b; }
+/* Light and shade across them (main.js sets which way, and how strong: --sho, --sha): lighter on the side facing the sun
+   or moon, in its colour (--lit), darker on the other; and shadows across the drive, under the eaves and at the ducks'
+   feet, away from the light */
+.house .ln .sd { stroke: none; fill: url(#h-shade); }
+.house .l0 { stop-color: var(--lit); stop-opacity: var(--sho); }
+.house .l1 { stop-color: var(--lit); stop-opacity: 0; }
+.house .l2 { stop-color: #000; stop-opacity: calc(var(--sho) * 1.4); }
+.house .cast { fill: #000; opacity: var(--sha); filter: url(#h-blur); }
+.house .ln .sh { stroke: none; fill: url(#h-eave); opacity: var(--sha); }
+/* The ducks' shadows: each one's silhouette cast on the drive like the buildings', softer, and a soft dark contact
+   shadow under its feet, there in any light */
+.house .dcast { fill: #000; opacity: calc(var(--sha) * .75); filter: url(#h-dblur); }
+.house .feet { fill: #000; opacity: calc(.22 + var(--sha) * .3); filter: url(#h-dblur); }
+.house .lt > * { opacity: 0; }
+/* The time of day (main.js, from the device's clock): the sun crosses the sky from 6:00 to 20:00 and the moon from 20:00
+   to 6:00 (their places set each minute), passing behind the buildings' solid shapes */
+/* The moon as it looks: no outline; the lit part a pale gradient, brightest at its edge and dimming to the terminator,
+   softened a little; the dark part a faint earthshine */
+.house .moon .disc { fill: url(#h-earth); }
+.house .moon .lit { fill: url(#h-moonlit); filter: url(#h-soft); }
+/* The sun a plain bright disc, the moon's size, with no glow: white high up and redder as it nears the horizon (--sun) */
+.house .sun .disc { fill: color-mix(in srgb, var(--sun, #fff6e0) 55%, #fff); filter: url(#h-soft); }
+.show-day.up .house .lt > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
+@keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
+.smoke {
+  position: absolute; left: 47%; bottom: 80.3%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
+  fill: none; stroke: #e9dcc0; stroke-width: 1.5; stroke-linecap: round;
+}
+.show-day.go .smoke { animation: h-smoke 4s 2s linear infinite; }
+@keyframes h-smoke { 0% { opacity: 0; transform: translateY(4px); } 30% { opacity: .4; } 100% { opacity: 0; transform: translateY(-10px); } }
+html.fz .house { display: none; }
+/* Footer card off, or reduced motion: lit on show days, still */
+html.no-sea .show-day .house .lt > * { animation: none; opacity: .95; }
+html.no-sea .smoke { display: none; }
+@media (prefers-reduced-motion: reduce) { .show-day .house .lt > * { animation: none; opacity: .95; } .smoke { display: none; } }
+.ducks { z-index: 1; }
+/* Under 390px the house's drawing scales down, and the ducks with it, so they keep their places over their shadows (not in
+   Fantasy Land, where they ride the sea, which doesn't scale) */
+.foot { container-type: inline-size; }
+html:not(.fz) .ducks { bottom: min(27px, 6.923cqw); }
+html:not(.fz) .dk { padding: min(10px, 2.564cqw) min(3.5px, .897cqw); }
+html:not(.fz) .duck { width: min(18px, 4.615cqw); height: min(14px, 3.59cqw); }
 .duck { width: 18px; height: 14px; fill: var(--gold2); opacity: .8; }
+/* In the normal view the ducks take the light too, dimmer and cooler in twilight and by night (their filter, set by
+   main.js); not on the sea */
+html.fz #foot .ducks { filter: none !important; }
 .dk.lit .duck, .editing .duck { fill: var(--gold3); opacity: 1; filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .dk .duck { transition: transform .15s var(--ease); }
 .dk.lit .duck { transform: scale(1.18); }
@@ -1102,7 +1205,6 @@ html.no-howlight .how-card { animation: none !important; }
 /* In the dream the ducks float on the dolphins' sea, riding its waves: main.js starts each one's bob where the wave under it is.
    The sea moves a wavelength in 5s; its crests and troughs are parabolas, so each quarter is a quadratic ease, ±5px */
 html.fz #foot { position: relative; height: 0; margin: 0; }
-html.fz .ducks::before, html.fz .ducks::after { display: none; }
 html.fz #foot.run .dk { animation: fz-bob 5s infinite; }
 @media (prefers-reduced-motion: reduce) { html.fz #foot.run .dk { animation-play-state: paused; } } /* still, where the still sea is */
 @keyframes fz-bob {

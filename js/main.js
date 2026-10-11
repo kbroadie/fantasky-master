@@ -1,7 +1,8 @@
 // Wiring: data, render, tabs, swipers, bar, countdown. Routes: #/22/episodes/4, #/22/cast/Nina.
 import { loadText, parseCSV, buildSeries } from "./csv.js";
 import { initEdit } from "./edit.js";
-import { derive, currentSeriesKey } from "./league.js";
+import { derive, currentSeriesKey, airInstant } from "./league.js";
+import { moonAt, moonPath, skyFor } from "./sky.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
@@ -44,7 +45,8 @@ function loadSeries(key) {
   btn.setAttribute("aria-label", `Series ${key}. Tap to switch series`);
   renderStandings(d);
   renderSlides(d);
-  if (!$("#foot").children.length) $("#foot").innerHTML = footer();
+  if (!$("#foot").children.length) { $("#foot").innerHTML = footer(); houseSeen.observe($("#foot")); }
+  showDay();
   if (!$("#dq").children.length) $("#dq").innerHTML = EMBRACE;
   countdown();
 }
@@ -109,6 +111,7 @@ function show(page) {
   if (page === "standings") { jump(ST, ST.get()); queueLight(); }
   if (page === "episodes") jump(EP, state.ep - 1);
   if (page === "cast") jump(CAST, state.cast);
+  airMoon();
   writeHash();
 }
 
@@ -229,6 +232,7 @@ function mark(sw, i, smooth = true) {
   const tabs = $(sw.tabs), t = tabs.children[i];
   [...tabs.children].forEach((b, j) => b.classList.toggle("on", j === i));
   [...$(sw.body).children].forEach((s, j) => s.classList.toggle("here", j === i)); // only the slide on show twinkles
+  airMoon();
   if (t) tabs.scrollTo({ left: t.offsetLeft - (tabs.clientWidth - t.offsetWidth) / 2, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
   edges();
   fitTitles(); // the titles that have come near
@@ -650,6 +654,107 @@ const footSeen = new IntersectionObserver((es) => {
   $("#foot").classList.toggle("run", e.isIntersecting);
 });
 footSeen.observe($(".fz-waves"));
+// The house (ui.js) lights up on show days: the day, on this device, that any episode airs. Checked each minute, so it
+// comes on at midnight. Its lights come up the first time it's seen (.up), and its chimney smokes while it's on screen
+function showDay() {
+  const now = new Date(), today = now.toDateString();
+  $("#foot").classList.toggle("show-day", Object.values(SERIES).some((s) => s.episodes.some((e) => airInstant(e.date).toDateString() === today)));
+  // And the time of day: its sky, and the sun or the moon rising from the horizon at the left, high over the house through
+  // the middle of its time, and setting at the right
+  const house = $("#foot .house");
+  if (!house) return;
+  const h = now.getHours() + now.getMinutes() / 60, sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
+  const at = {};
+  for (const [k, t] of [["sun", sun], ["moon", moon]]) {
+    const el = house.querySelector(`.${k}`), up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
+    at[k] = [20 + 350 * Math.max(0, Math.min(1, t)), t >= 0 && t <= 1 ? 104 - 84 * up : 86];
+    el.style.display = t >= 0 && t <= 1 ? "" : "none";
+    el.setAttribute("transform", `translate(${at[k][0].toFixed(1)} ${at[k][1].toFixed(1)})`);
+  }
+  // The sun's height (degrees): up to 55° at midday, and below the horizon by night, through twilight to -40° at 1:00
+  const day = sun >= 0 && sun <= 1;
+  light = { t: day ? sun : moon, sun: day, at, height: day ? 55 * Math.sin(Math.PI * sun) : -40 * Math.sin(Math.PI * moon) };
+  airMoon();
+  shade();
+}
+// Light and shade from whichever is up: the buildings lit on its side, and shadows cast forward across the drive, away from
+// it, long and to the side when it's low and short when it's high (sx, sy: how far across and down the shadow of each unit
+// of height reaches); by the moon, as strong as it's full
+let light = null, moonLit = 0.5;
+function shade() {
+  const house = $("#foot .house");
+  if (!house || !light) return;
+  const { t, sun } = light, deg = Math.PI / 180;
+  const e = (sun ? 55 : 45) * Math.sin(Math.PI * t) * deg, az = (t - 0.5) * 160 * deg;
+  const reach = Math.min(2.5, 1 / Math.tan(Math.max(e, 0.01))), low = Math.min(1, e / (8 * deg));
+  const sx = Math.max(-1.6, Math.min(1.6, -Math.sin(az) * reach)), sy = 0.45 * Math.cos(az) * reach;
+  const k = sun ? low : moonLit * low, sky = skyFor(light.height);
+  const props = {
+    "--sha": (0.55 * k).toFixed(3),
+    "--sho": (sun ? 0.06 + 0.1 * low : 0.08 * moonLit).toFixed(3),
+    // How brightly the structures' own colours show: full daylight, falling through twilight to what the moon gives
+    "--illum": `${Math.max(6 + 8 * moonLit, light.height >= 0 ? 35 + 40 * Math.min(1, light.height / 20) : 35 + 2.4 * light.height).toFixed(1)}%`,
+    "--lit": sun ? sky.sun : "#c4d0ff",
+    "--sun": sky.sun,
+    "--amb": sky.horizon,
+    "--ambk": `${sky.ambK.toFixed(1)}%`,
+  };
+  for (const p in props) house.style.setProperty(p, props[p]);
+  // The sky: overhead to the horizon, a glow on the horizon under the sun (wide near sunrise and sunset, where it lingers
+  // after sunset; none around the sun itself), and by night a faint one around the moon; the drive in its gravel (styles.css), lit the same way. In
+  // the drawing's units from its middle
+  const u = (n) => `calc(${n.toFixed(1)} * var(--u))`, x = (n) => `calc(50% + ${(n - 195).toFixed(1)} * var(--u))`;
+  const [gx] = light.at.sun, gy = 86, hi = Math.max(0, Math.min(1, light.height / 25));
+  const glow = (c, a) => `color-mix(in srgb, ${c} ${(a * 100).toFixed(0)}%, transparent)`;
+  const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${u(light.at.moon[1])}, ${glow("#c8d2ff", 0.1 * moonLit)}, transparent)`];
+  house.querySelector(".sky").style.background = [...moonGlow,
+    `radial-gradient(${u(220 - 100 * hi)} ${u(60 + 20 * hi)} at ${x(gx)} ${u(gy)}, ${glow(sky.glow, sky.glowA)}, transparent)`,
+    `linear-gradient(${sky.top}, ${sky.horizon})`].join(",");
+  house.querySelector(".ground").style.background = [
+    `radial-gradient(${u(200)} ${u(30)} at ${x(gx)} 0, ${glow(sky.glow, sky.glowA * 0.3)}, transparent)`,
+    "linear-gradient(var(--mc), color-mix(in srgb, var(--mc) 55%, var(--bg)))"].join(",");
+  // The ducks in the same light: dimmer and cooler in twilight and by night
+  const dim = Math.max(0.7, Math.min(1, 1 + light.height / 40)), ducks = $("#foot .ducks");
+  const f = dim < 1 ? `brightness(${dim.toFixed(2)}) saturate(${dim.toFixed(2)})` : "";
+  if (ducks && ducks.style.filter !== f) ducks.style.filter = f;
+  // The shaded shapes' gradient runs from the side facing the light to the other
+  let vx = Math.sin(az) * Math.cos(e), vy = -Math.sin(e);
+  const n = Math.hypot(vx, vy) || 1;
+  vx /= n;
+  vy /= n;
+  const g = house.querySelector("#h-shade");
+  for (const [a, v] of [["x1", 0.5 + 0.5 * vx], ["y1", 0.5 + 0.5 * vy], ["x2", 0.5 - 0.5 * vx], ["y2", 0.5 - 0.5 * vy]]) g.setAttribute(a, v.toFixed(3));
+  // Each point h above the ground (at y = b) falls h·sx across and h·sy down: the caravan stands nearer, on its wheels
+  const cast = (b) => `matrix(1 0 ${(-sx).toFixed(3)} ${(-sy).toFixed(3)} ${(b * sx).toFixed(2)} ${(b * (1 + sy)).toFixed(2)})`;
+  const [m, v] = house.querySelectorAll(".cast use");
+  m.setAttribute("transform", cast(96));
+  v.setAttribute("transform", cast(98.5));
+  // The ducks' own: each one's silhouette (14 high, its feet at y 98.1) cast the same way; the soft contact shadows under
+  // their feet stay put
+  house.querySelectorAll(".dcast path").forEach((el, i) => el.setAttribute("transform", `${cast(98.1)} translate(${111.25 + 25 * i} 85) scale(.875)`));
+}
+// The moon is the real one over London as the episode on show aired (10pm London; sky.js): its phase, and its lit edge
+// turned as it stood. The week on the Standings, the episode on Episodes, and on Cast the latest to have aired
+let moonFor = null;
+function airMoon() {
+  const eps = state.d?.episodes, el = $("#foot .house .lit");
+  if (!eps?.length || !el) return;
+  const i = state.page === "standings" ? stWeek(state.d) - 1 : state.page === "episodes" ? state.ep - 1 : Math.max(0, eps.filter((e) => e.air <= Date.now()).length - 1);
+  const air = eps[Math.min(Math.max(i, 0), eps.length - 1)].air;
+  if (+air === moonFor) return;
+  moonFor = +air;
+  const m = moonAt(air);
+  el.setAttribute("d", moonPath(m.lit, 9));
+  el.setAttribute("transform", `rotate(${m.edge.toFixed(1)})`);
+  moonLit = m.lit;
+  shade();
+}
+setInterval(showDay, 60000);
+const houseSeen = new IntersectionObserver((es) => {
+  const e = es.at(-1);
+  if (e.isIntersecting) e.target.classList.add("up");
+  e.target.classList.toggle("go", e.isIntersecting);
+});
 // The ducks ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
 // with them, so each duck's bob starts where the wave under it is
 function ducksOnWaves() {

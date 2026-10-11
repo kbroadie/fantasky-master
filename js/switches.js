@@ -28,8 +28,9 @@ export const CARDS = [
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
       { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
     ] },
-  // Fantasy Land's footer: the rolling sea, the ducks bobbing on it and the leaping dolphins. Off, it's still, without them
-  { title: "Footer", view: "fz",
+  // The footers: Fantasy Land's rolling sea, the ducks bobbing on it and the leaping dolphins; upright, the house's lights
+  // coming up on show days and its chimney's smoke. Off, still (the dolphins hidden, the house lit at once)
+  { title: "Footer",
     items: [{ key: "fzSea", type: "toggle", def: true, main: true, cls: "no-sea" }] },
   // The rest of its motion: the sparkles' twinkle, the glint on Fantasy and the sliding tab rainbow. Off, all there, still
   { title: "Decorations", view: "fz",
