@@ -325,6 +325,17 @@ $("#series").addEventListener("click", () => {
 // Where a tap landed: the transitions open from it (Iris's circle, Zoom's and Vertigo's centre); none from a keyboard
 const tapAt = (e) => (e.detail ? { x: e.clientX, y: e.clientY } : null);
 $("#dq").addEventListener("click", (e) => { if (e.target.closest(".embrace")) toggleFantasy("#dq", tapAt(e)); });
+// Patatas pressed: held while the finger is down and a moment after, so a quick tap shows it (iOS shows :active only
+// with a touch listener), then he springs back
+$("#dq").addEventListener("pointerdown", (e) => {
+  const b = e.target.closest(".embrace");
+  if (!b) return;
+  clearTimeout(b.up);
+  b.classList.add("down");
+  const ac = new AbortController(), up = () => { ac.abort(); b.up = setTimeout(() => b.classList.remove("down"), 160); };
+  addEventListener("pointerup", up, { signal: ac.signal });
+  addEventListener("pointercancel", up, { signal: ac.signal });
+});
 $("#p-standings").addEventListener("click", (e) => {
   if (e.target.closest(".wl-x")) {
     $("#welcome").hidden = true;

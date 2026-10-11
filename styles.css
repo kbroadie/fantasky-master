@@ -310,7 +310,7 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 0; background: none; color: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.em-who { display: grid; justify-items: center; gap: 5px; width: 72px; transition: transform .15s var(--ease); }
+.em-who { display: grid; justify-items: center; gap: 5px; width: 72px; transition: transform .35s var(--spring); }
 .em-who img { display: block; width: 100%; height: auto; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
 .em-who b {
   padding: 2px 7px 1px; border-radius: 2px; font: 700 12px/1.3 var(--ff-plate); letter-spacing: .06em; color: #3a2500;
@@ -319,7 +319,7 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .em-say {
   --ink: #1b0a2a; --pop: #ecc040;
   position: relative; margin: 0 0 18px 20px; padding: 13px 18px 15px 30px; color: var(--ink);
-  font: 400 21px/1.1 var(--ff-say); rotate: -3deg; transition: transform .15s var(--ease);
+  font: 400 21px/1.1 var(--ff-say); rotate: -3deg; transition: transform .35s var(--spring);
 }
 /* A comic bubble: a wobbly hand-drawn outline in ink, its tail curling to Patatas, a hard offset shadow in the other
    view's colour (gold here, pink there) */
@@ -336,9 +336,22 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .em-bub stop:nth-child(6) { stop-color: #b37bff; }
 .em-say > span { position: relative; }
 /* Pop lines off its top corner */
-.em-pop { position: absolute; right: -16px; top: -16px; width: 22px; height: 22px; fill: none; stroke: var(--pop); stroke-width: 2.5; stroke-linecap: round; }
-.embrace:active .em-say { transform: scale(.96); }
-.embrace:active .em-who { transform: rotate(-6deg); }
+.em-pop {
+  position: absolute; right: -16px; top: -16px; width: 22px; height: 22px; fill: none; stroke: var(--pop); stroke-width: 2.5; stroke-linecap: round;
+  transform-origin: 0 100%; transition: transform .35s var(--spring);
+}
+/* Pressed (.down, main.js, held a moment so a quick tap shows it; :active too): the bubble sinks onto its shadow, Patatas
+   ducks into his frame, and the pop lines burst; let go, they spring back */
+.embrace { --spring: cubic-bezier(.3, 1.6, .5, 1); }
+.embrace:is(.down, :active) :is(.em-say, .em-who, .em-pop) { transition-duration: .08s; transition-timing-function: ease-out; }
+.embrace:is(.down, :active) .em-say { transform: translate(3px, 4px) scale(.97); }
+.embrace:is(.down, :active) .em-bub { filter: drop-shadow(1px 1px 0 var(--pop)); }
+.embrace:is(.down, :active) .em-who { transform: translateY(3px) rotate(-5deg) scale(.94); }
+.embrace:is(.down, :active) .em-pop { transform: scale(1.4) rotate(-8deg); }
+@media (hover: hover) and (pointer: fine) {
+  .embrace:hover:not(.down, :active) .em-say { transform: translateY(-2px); }
+  .embrace:hover:not(.down, :active) .em-who { transform: rotate(3deg); }
+}
 .em-win { display: none; }
 html.fz .em-fail { display: none; }
 html.fz .em-win { display: inline; }
@@ -346,7 +359,7 @@ html.fz .em-say { --ink: #241400; --pop: #ff4fc3; }
 html.fz .em-bub stop:nth-child(odd) { stop-color: #d4a028; }
 html.fz .em-bub stop:nth-child(even) { stop-color: #f6d76a; }
 html.fz .em-bub stop:nth-child(3), html.fz .em-bub stop:nth-child(4) { stop-color: #fff1b8; }
-@media (prefers-reduced-motion: reduce) { .em-who, .em-say { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .em-who, .em-say, .em-pop { transition: none; } }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 .card.board { position: relative; margin: 12px var(--px); }
 .card.board::before, .card.board::after { content: ""; position: absolute; inset: 0 0 auto; height: 90px; z-index: 0; pointer-events: none; }
