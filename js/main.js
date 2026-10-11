@@ -758,7 +758,8 @@ function shade() {
       const h = up + (gy - 96) / sy; // the height of the point on the house whose shadow passes through this one
       if (sy > 0 && shaded(gx - sx * (h - up), 96 - h)) n++;
     }
-    const f = n ? `brightness(${(1 - (n / 6) * 0.35 * k).toFixed(2)})` : ""; // the sky still lights them in shade
+    // The sky still lights them in shade; darkened, yellow turns olive, so their shade is warmed a little toward amber
+    const d = (n / 6) * k, f = n ? `brightness(${(1 - 0.35 * d).toFixed(2)}) saturate(${(1 + 0.15 * d).toFixed(2)}) hue-rotate(${(-4 * d).toFixed(1)}deg)` : "";
     if (dk.style.filter !== f) dk.style.filter = f;
   });
 }

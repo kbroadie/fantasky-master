@@ -53,7 +53,9 @@ export function perEpisodeStats(series) {
 
 // Footer: seven ducks (one <symbol>); tapping all seven opens edit mode
 
-const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 9.4H11A3.6 3.6 0 1 1 15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1A3.6 3.6 0 0 1 14.2 9.5Q16.6 10.2 16.6 12.2Q16.6 15 12 15H6Q2.6 15 2 11.9Q1.6 9.8 1.8 7.6Z M13.6 4.4A.75 .75 0 1 0 13.61 4.4Z" fill-rule="evenodd"/></symbol>`;
+// As on the show: a lemon-yellow rubber duck (its body takes the fill), its bill orange and its eye black with a glint
+const DUCK_BODY = "M1.8 7.6Q3 9.4 6.5 9.4H11A3.6 3.6 0 1 1 15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1A3.6 3.6 0 0 1 14.2 9.5Q16.6 10.2 16.6 12.2Q16.6 15 12 15H6Q2.6 15 2 11.9Q1.6 9.8 1.8 7.6Z";
+const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="${DUCK_BODY}"/><path d="M15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1Q15.9 7 15.6 6Z" fill="#f28a1e"/><circle cx="13.6" cy="4.4" r=".85" fill="#1c140a"/><circle cx="13.85" cy="4.12" r=".28" fill="#fff"/></symbol>`;
 
 // The Taskmaster house behind them (normal view), from a photo of its front, in its own colours with no outlines: the bungalow's Dutch gable facing the drive
 // (the arched door with its fanlight and sidelights, a round porthole each side with a lifebuoy under it, steps), the
@@ -66,9 +68,8 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 
 // light: the shapes shaded from the side it's on, eaves and everything on the drive casting shadows away from it; its lights (.lt, --i
 // their order) come up on show days (styles.css), the door's spilling onto the drive, and the chimney smokes
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
-// The ducks' shadows: each one's outline without its eye, as plain paths (not <use> copies, which the minute's custom
+// The ducks' shadows: each one's outline, as plain paths (not <use> copies, which the minute's custom
 // properties on .house would restyle), and a soft contact shadow under each; the ducks stand 25 apart from x 120
-const DUCK_BODY = DUCK.match(/d="([^"]*?) M13\.6/)[1];
 const seven = (f) => Array.from({ length: 7 }, (_, i) => f(i)).join("");
 // The solid shapes, back to front: each drawn in its material's colour under its outline, and all cast as shadows on the
 // drive (main.js)
@@ -165,8 +166,9 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
 
 export function footer() {
   const ducks = Array.from({ length: 7 }, () => `<span class="dk"><svg class="duck"><use href="#duck"/></svg></span>`).join("");
-  // The ducks' shading in the house's light (main.js turns it): lit yellow, deepening to orange away from the light
-  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}<defs><linearGradient id="dk-shade" x1=".3" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#ffe17a"/><stop offset=".45" stop-color="#f0b82a"/><stop offset="1" stop-color="#a8640c"/></linearGradient></defs></svg>${HOUSE}
+  // The ducks' shading in the house's light (main.js turns it): pale lemon on the side facing it, deepening to a dark
+  // mustard away from it
+  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}<defs><linearGradient id="dk-shade" x1=".3" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fff08a"/><stop offset=".45" stop-color="#f6d838"/><stop offset="1" stop-color="#b48c10"/></linearGradient></defs></svg>${HOUSE}
     <div class="ducks" aria-hidden="true">${ducks}</div>`;
 }
 
