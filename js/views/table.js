@@ -134,16 +134,8 @@ export function standingsSlides(d) {
     </section>`).join("");
 }
 
-// The way into the fantasy Easter egg: a contestant's quote under every tab (main.js), unmarked but for its underline
-const QUOTES = [
-  ["I changed it because I didn't like the truth.", "Paul Chowdhry, S3"],
-  ["I stand by the point, even if the facts don’t.", "Hugh Dennis, S4"],
-  ["I wasn't looking at it, so it didn't happen.", "Judi Love, S13"],
-  ["It’s not a mistake if you meant to do it.", "Ed Gamble, S9"],
-  ["That’s just how I see the world.", "Lucy Beaumont, S16"],
-];
-const [said, by] = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-export const QUOTE = `<button class="st-quote" type="button"><q>${esc(said)}</q> <cite>— ${esc(by)}</cite></button>`;
+// The way into the low-scores-win mode and back (flip.js), under every tab; the label follows the mode (styles.css)
+export const EMBRACE = `<button class="embrace" type="button"><span class="em-fail">Embrace Failure</span><span class="em-win">Embrace Success</span></button>`;
 
 // Board: head, optional race chart (state.stView; drawn at measured width by syncBoards), rows
 function board(d, w) {

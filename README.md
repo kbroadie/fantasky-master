@@ -105,6 +105,12 @@ The site has three tabs: **Standings**, **Episodes** and **Cast**.
 - A radar comparing their prize, filmed and live tasks with every Taskmaster contestant ever, and their all-time records once the series is over.
 - A short bio and personal facts.
 
+**Embrace Failure**
+
+- Having a bad series? Tap **Embrace Failure** at the bottom of any page and the whole site turns into **Fantastikal Delusion**, where the lowest scores win: the same standings, episodes and cast, with the order turned round, in rainbow colours.
+- The player with the fewest points leads, and an episode is won by its lowest scorer.
+- Tap **Embrace Success** to come back to reality.
+
 **Switching series**
 
 - The site opens on the current series. Tap the gold series number at the top to switch to another series.

@@ -321,9 +321,9 @@ The site shows it as a red line at the top of the player's opened row on the Sta
 | Per-task extremes | In each task, the highest and lowest scores, flagged only if not all 5 scores are equal. |
 | Player best / worst week | Max / min of the player's scored weekly values: raw `epPts`, or `rankPoints` on the League board (where 5 is best and 1 is worst). |
 
-### 6.12 Fantasy mode (low scores win)
+### 6.12 Fantastikal Delusion (low scores win)
 
-An Easter egg: tapping the quote under every tab (`flip.js`) switches the whole app to show the same data as a dream where low scores win ("Fantasy Fantasky Master"). Nothing else mentions it, README.md included. Nothing in `league.js` changes; the views turn the order round (`state.fantasy`):
+Tapping **Embrace Failure** under every tab (`flip.js`) switches the whole app to show the same data as a dream where low scores win ("Fantastikal Delusion"), a happy place for the bottom of the table; **Embrace Success** switches back. README.md describes it. Nothing in `league.js` changes; the views turn the order round (`state.fantasy`):
 
 | Output | Normal | Fantasy mode |
 |---|---|---|
