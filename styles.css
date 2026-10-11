@@ -809,7 +809,10 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
   -webkit-mask-image: linear-gradient(transparent, #000 75%), var(--sides); -webkit-mask-composite: source-in;
   mask-image: linear-gradient(transparent, #000 75%), var(--sides); mask-composite: intersect;
 }
-.house > .ground { top: calc(86 * var(--u)); bottom: 0; }
+/* The drive starts 2 units above the structures' feet (y 86), tucked under them: where its edge and theirs met exactly,
+   browsers that round an SVG's edge and a box's edge to the device's pixels differently (Safari) showed a pixel of sky
+   between them, so they seemed to float */
+.house > .ground { top: calc(84 * var(--u)); bottom: 0; }
 .house .ln { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .house .ln * { vector-effect: non-scaling-stroke; }
 /* Details in a finer line */
