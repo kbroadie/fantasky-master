@@ -1066,14 +1066,14 @@ html.fz .profile dt { color: var(--show-hi); }
 html.fz .profile dl { border-top-color: rgba(255, 140, 225, .25); }
 html.fz .has-face > p, html.fz .has-face dl { text-shadow: 0 1px 3px rgba(30, 0, 50, .85); }
 html.fz .st-wl { display: none; }
-html.fz .st-how::before { content: "🦄"; font-size: 13px; letter-spacing: 0; }
+html.fz .st-how::before { content: "🦄"; font-size: 13px; line-height: 1; letter-spacing: 0; } /* line-height: the emoji font's taller line made the hero 2px taller than in the normal view, so its hairline (and the board under it) moved in the Slam */
 html.fz .card { border-color: rgba(255, 140, 225, .38); box-shadow: 0 0 14px rgba(255, 79, 195, .16), 0 6px 18px rgba(0, 0, 0, .3); }
 html.fz .card.board::before { background: var(--grain), radial-gradient(55% 110% at 22% 0%, rgba(255, 63, 164, .42), transparent 80%); }
 html.fz .card.board::after { background: radial-gradient(55% 110% at 78% 0%, rgba(23, 212, 240, .36), transparent 80%); }
 html.fz .hero::after, html.fz .ep-head::after { height: 1.5px; background: var(--rainbow); opacity: .8; -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
 html.fz .strip-tab.on { border-bottom-color: #ff8fd2; background: linear-gradient(180deg, rgba(255, 79, 195, .32), rgba(255, 79, 195, .06)); text-shadow: 0 0 8px rgba(255, 140, 220, .45); }
 html.fz .st-leaders b { text-shadow: 0 0 8px rgba(255, 225, 77, .3), 0 1px 6px rgba(0, 0, 0, .7); }
-html.fz .st-leaders b::after { content: "👑"; margin-left: .2em; font-size: .85em; text-shadow: none; }
+html.fz .st-leaders b::after { content: "👑"; margin-left: .2em; font-size: .85em; line-height: 1; text-shadow: none; }
 @media (prefers-reduced-motion: no-preference) {
   html.fz .fz-word.glint::after { animation: fz-glint .9s ease-in-out; }
   html.fz .tab-ind::before { animation: fz-slide 6s linear infinite; }
