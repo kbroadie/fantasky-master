@@ -807,7 +807,8 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .s0 { stop-color: var(--sky, #ecc040); stop-opacity: .16; }
 .house .s1 { stop-color: var(--sky, #ecc040); stop-opacity: 0; }
 .house .stars { fill: #e9dcc0; opacity: 0; }
-.house .moon path { fill: none; stroke: var(--gold2); stroke-width: 1.5; }
+.house .moon .disc { fill: none; stroke: var(--gold2); stroke-width: 1; stroke-opacity: .22; }
+.house .moon .lit { fill: rgba(236, 192, 64, .42); stroke: var(--gold2); stroke-width: 1.5; stroke-linejoin: round; }
 .house .sun > circle:nth-of-type(2) { fill: none; stroke: var(--sun, var(--gold3)); stroke-width: 1.5; }
 .house .sun path { fill: none; stroke: var(--sun, var(--gold3)); stroke-width: 1.5; stroke-linecap: round; }
 .house[data-time="night"] .stars { opacity: .45; }

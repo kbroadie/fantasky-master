@@ -2,6 +2,7 @@
 import { loadText, parseCSV, buildSeries } from "./csv.js";
 import { initEdit } from "./edit.js";
 import { derive, currentSeriesKey, airInstant } from "./league.js";
+import { moonAt, moonPath } from "./sky.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
@@ -110,6 +111,7 @@ function show(page) {
   if (page === "standings") { jump(ST, ST.get()); queueLight(); }
   if (page === "episodes") jump(EP, state.ep - 1);
   if (page === "cast") jump(CAST, state.cast);
+  airMoon();
   writeHash();
 }
 
@@ -230,6 +232,7 @@ function mark(sw, i, smooth = true) {
   const tabs = $(sw.tabs), t = tabs.children[i];
   [...tabs.children].forEach((b, j) => b.classList.toggle("on", j === i));
   [...$(sw.body).children].forEach((s, j) => s.classList.toggle("here", j === i)); // only the slide on show twinkles
+  airMoon();
   if (t) tabs.scrollTo({ left: t.offsetLeft - (tabs.clientWidth - t.offsetWidth) / 2, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
   edges();
   fitTitles(); // the titles that have come near
@@ -667,13 +670,22 @@ function showDay() {
     const up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
     el.setAttribute("transform", `translate(${(20 + 350 * t).toFixed(1)} ${(104 - 84 * up).toFixed(1)})`);
   }
-  // The crescent turned as London's evening crescent stands that week: lit towards the sun, down the ecliptic, whose angle
-  // to the horizon at sunset at 51.5°N is steepest in late March (62°: lit from below, a smile) and shallowest in late
-  // September (15°: lit from the side, an upright ")"). Drawn as ")", turned clockwise by that angle
-  const week = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / 6048e5) + 1;
-  house.querySelector(".cres").setAttribute("transform", `rotate(${moonAngle(week).toFixed(1)})`);
+  airMoon();
 }
-const moonAngle = (week) => 38.5 + 23.5 * Math.cos((2 * Math.PI * (week - 12)) / 52);
+// The moon is the real one over London as the episode on show aired (10pm London; sky.js): its phase, and its lit edge
+// turned as it stood. The week on the Standings, the episode on Episodes, and on Cast the latest to have aired
+let moonFor = null;
+function airMoon() {
+  const eps = state.d?.episodes, el = $("#foot .house .lit");
+  if (!eps?.length || !el) return;
+  const i = state.page === "standings" ? stWeek(state.d) - 1 : state.page === "episodes" ? state.ep - 1 : Math.max(0, eps.filter((e) => e.air <= Date.now()).length - 1);
+  const air = eps[Math.min(Math.max(i, 0), eps.length - 1)].air;
+  if (+air === moonFor) return;
+  moonFor = +air;
+  const m = moonAt(air);
+  el.setAttribute("d", moonPath(m.lit, 9));
+  el.setAttribute("transform", `rotate(${m.edge.toFixed(1)})`);
+}
 setInterval(showDay, 60000);
 const houseSeen = new IntersectionObserver((es) => {
   const e = es.at(-1);
