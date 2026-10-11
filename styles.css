@@ -811,11 +811,18 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 /* Details in a finer, fainter line than the outlines */
 .house .ln .d { stroke-width: 1; stroke-opacity: calc(var(--lna) * .7); }
 .house .ln .faint { stroke-opacity: calc(var(--lna) * .5); }
+/* The structures have no outlines (on request): only the details that belong to them, in their own colours: joints,
+   panels and edges a dark line, the glazing bars, frames and lifebuoys' bands white, the dome's struts pale */
+.house .b .ln { stroke: none; }
+.house .b .ln .d { stroke: #000; stroke-opacity: .32; }
+.house .b .ln :is(.frame, .strut) { stroke: var(--mc); stroke-opacity: 1; }
+.house .frame { --m: #f0ece2; }
+.house .strut { --m: #e8eef4; }
 /* The structures in their own colours, from the photo (--m): red-brown brick, a dark tiled roof, white render and frames,
    the garage's red door, dark glass, yellow porthole rings, orange lifebuoys, the conifer's and the hedge's greens. Each
    is lit by the time of day (main.js): as bright as the light allows (--illum) and tinted by the sky (--amb, --ambk) */
 .house { --lit: #fff1d0; --sho: .2; --sha: .7; --amb: #0a0e1e; --ambk: 8%; --illum: 10%; }
-.house .ln :is(.o, .m, .buoy, .d.red) {
+.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut) {
   --mc: color-mix(in srgb, color-mix(in srgb, var(--m, #6a6a6a) calc(100% - var(--ambk)), var(--amb)) var(--illum), var(--bg));
 }
 .house .ln .m { stroke: none; fill: var(--mc); }
@@ -856,7 +863,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house[data-time="day"] { --lna: .55; }
 .house:is([data-time="dawn"], [data-time="dusk"]) { --lna: .46; }
 .show-day .house { --lna: .9; --lnc: var(--gold2); }
-.show-day .house .ln { filter: drop-shadow(0 0 3px rgba(236, 192, 64, .4)); }
+.show-day .house > svg > .ln { filter: drop-shadow(0 0 3px rgba(236, 192, 64, .4)); }
 .show-day.up .house .lt > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
 @keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
 .smoke {

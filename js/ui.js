@@ -55,11 +55,11 @@ export function perEpisodeStats(series) {
 
 const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 9.4H11A3.6 3.6 0 1 1 15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1A3.6 3.6 0 0 1 14.2 9.5Q16.6 10.2 16.6 12.2Q16.6 15 12 15H6Q2.6 15 2 11.9Q1.6 9.8 1.8 7.6Z M13.6 4.4A.75 .75 0 1 0 13.61 4.4Z" fill-rule="evenodd"/></symbol>`;
 
-// The Taskmaster house behind them (normal view), from a photo of its front: the bungalow's Dutch gable facing the drive
+// The Taskmaster house behind them (normal view), from a photo of its front, in its own colours with no outlines: the bungalow's Dutch gable facing the drive
 // (the arched door with its fanlight and sidelights, a round porthole each side with a lifebuoy under it, steps), the
 // chimney behind its shoulder and the lower tiled wing running right to a narrow curved end; the garage with its
 // up-and-over door, the tall conifer behind, the clear geodesic dome on the drive, the caravan beyond it, and the
-// ducks on the drive in front. Gold lines over solid shapes, drawn back to front, so nearer things hide what's behind
+// ducks on the drive in front. Solid shapes, drawn back to front, so nearer things hide what's behind
 // them and the sun and moon pass behind them; at 80%, standing a little above the ducks, so there's sky above. The sky
 // follows the device's clock (main.js: the sun and moon's places, the sky's colours and the scene's grade, from the sun's
 // height, twilight included; the sky and the drive are boxes behind the drawing, the screen's width), and so does the
@@ -99,20 +99,20 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <g class="moon"><circle r="16" fill="url(#h-moonhalo)"/><circle class="disc" r="9"/><path class="lit" d=""/></g>
     <g class="sun"><circle class="disc" r="9"/></g>
   </g>
-  <g transform="matrix(.8 0 0 .8 39 9.2)">
+  <g class="b" transform="matrix(.8 0 0 .8 39 9.2)">
   <g class="cast"><use href="#h-mass"/><use href="#h-van"/></g>
   <g class="ln">
     ${solid("tree", "tree", "faint")}
     ${solid("hedge", "hedge", "faint")}
     ${solid("garage", "white")}<path class="m red" d="M28 72H74V96H28Z"/><rect class="sh" x="22" y="67" width="58" height="6"/><path class="m brown" d="M20 64H82V67H20Z"/><path class="d" d="M28 96V72H74V96M28 77H74M28 82H74M28 87H74M28 92H74"/>
     ${solid("chimney", "brick")}<path class="m brick" d="M182.5 24h13v-2.5h-13Z"/><path class="d" d="M185.5 21.5v-3h2.5v3M190 21.5v-4h2.5v4"/>
-    ${solid("wing", "brick", "", 'stroke="none"')}<path class="m roof" d="M196 42H264V64H196Z"/><rect class="sh" x="196" y="64" width="68" height="8"/><path d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
+    ${solid("wing", "brick", "", 'stroke="none"')}<path class="m roof" d="M196 42H264V64H196Z"/><rect class="sh" x="196" y="64" width="68" height="8"/><path class="d" d="M196 42H264M198 64H266"/><path class="d" d="M200 48H264M199 53H264.5M198.5 58.5H265.5M204 64V96"/>
     ${solid("end", "brick")}
     ${solid("gable", "brick")}
     <path class="m white" d="M137 92V70a13 13 0 0 1 26 0V92Z"/><path class="m glass" d="M139 70a11 11 0 0 1 22 0ZM138.5 71h3v20.5h-3ZM158.5 71h3v20.5h-3Z"/><path class="m wood" d="M143 92V71h14v21Z"/>
     <circle class="m ring" cx="124" cy="72" r="8"/><circle class="m glass" cx="124" cy="72" r="5.5"/><circle class="m ring" cx="176" cy="72" r="8"/><circle class="m glass" cx="176" cy="72" r="5.5"/>
     <path class="m brick" d="M134 92h32v2.5h-32ZM131 94.5h38v1.5h-38Z"/>
-    ${solid("van", "white")}
+    ${solid("van", "white")}<rect class="m glass" x="337" y="76" width="13" height="6" rx="1.5"/>
   </g>
   <g class="lt">
     ${glass(`<ellipse cx="150" cy="101" rx="42" ry="8" fill="url(#h-spill)"/>`, 0)}
@@ -126,15 +126,15 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
   <g class="ln">
     <path class="d" d="M105.5 62C105.5 55 114.5 53 119 46.5C123.5 39.5 125.5 35 125.5 30.5C125.5 24 136.5 19.5 150 19.5C163.5 19.5 174.5 24 174.5 30.5C174.5 35 176.5 39.5 181 46.5C185.5 53 194.5 55 194.5 62"/>
     <ellipse class="d red" cx="150" cy="28" rx="2.5" ry="2"/><rect class="d red" x="107" y="58" width="5" height="6" rx="1"/>
-    <path d="M137 92V70a13 13 0 0 1 26 0V92M137 70h26M143 92V71h14v21"/>
-    <path class="d" d="M142 70V92M158 70V92M148 56.6h4l-.6 3h-2.8ZM145.5 70a4.5 4.5 0 0 1 9 0M146.1 67.75L138.74 63.5M147.75 66.1L143.5 58.74M150 65.5V57M152.25 66.1L156.5 58.74M153.9 67.75L161.26 63.5M145 73h4v8h-4ZM151 73h4v8h-4ZM145 83h4v7h-4ZM151 83h4v7h-4ZM134 92h32M131 94.5h38"/>
-    <circle cx="124" cy="72" r="5.5"/><circle class="d" cx="124" cy="72" r="8"/>
-    <circle cx="176" cy="72" r="5.5"/><circle class="d" cx="176" cy="72" r="8"/>
+    <path class="frame" d="M137 70h26"/>
+    <path class="d frame" d="M145.5 70a4.5 4.5 0 0 1 9 0M146.1 67.75L138.74 63.5M147.75 66.1L143.5 58.74M150 65.5V57M152.25 66.1L156.5 58.74M153.9 67.75L161.26 63.5"/>
+    <path class="d" d="M148 56.6h4l-.6 3h-2.8ZM145 73h4v8h-4ZM151 73h4v8h-4ZM145 83h4v7h-4ZM151 83h4v7h-4ZM134 92h32M131 94.5h38"/>
+    <circle class="d" cx="124" cy="72" r="8"/><circle class="d" cx="176" cy="72" r="8"/>
     <circle class="buoy" cx="124" cy="86" r="4.5"/><circle class="buoy" cx="176" cy="86" r="4.5"/><circle class="m brick" cx="124" cy="86" r="2.2"/><circle class="m brick" cx="176" cy="86" r="2.2"/>
-    <path class="d" d="M126.2 86a2.2 2.2 0 1 1-4.4 0a2.2 2.2 0 1 1 4.4 0M178.2 86a2.2 2.2 0 1 1-4.4 0a2.2 2.2 0 1 1 4.4 0M125.56 84.44l1.62-1.62M122.44 84.44l-1.62-1.62M125.56 87.56l1.62 1.62M122.44 87.56l-1.62 1.62M177.56 84.44l1.62-1.62M174.44 84.44l-1.62-1.62M177.56 87.56l1.62 1.62M174.44 87.56l-1.62 1.62"/>
-    <path class="dome" d="M276 96a24 24 0 0 1 48 0"/><ellipse class="m floor" cx="300" cy="95" rx="22" ry="1.5"/>
-    <path class="d" d="M279.2 84Q300 80 320.8 84M288.4 75Q300 72.5 311.6 75M276 96L286 83L294 96L300 82.5L306 96L314 83L324 96M286 83L293 75L300 82.5L307 75L314 83M293 75L300 72L307 75"/>
-    <rect x="337" y="76" width="13" height="6" rx="1.5"/><path d="M361 94V78h9v16"/><circle class="o tyre" cx="343" cy="95" r="3.5"/>
+    <path class="d frame" d="M125.56 84.44l1.62-1.62M122.44 84.44l-1.62-1.62M125.56 87.56l1.62 1.62M122.44 87.56l-1.62 1.62M177.56 84.44l1.62-1.62M174.44 84.44l-1.62-1.62M177.56 87.56l1.62 1.62M174.44 87.56l-1.62 1.62"/>
+    <path class="strut" d="M276 96a24 24 0 0 1 48 0"/><ellipse class="m floor" cx="300" cy="95" rx="22" ry="1.5"/>
+    <path class="d strut" d="M279.2 84Q300 80 320.8 84M288.4 75Q300 72.5 311.6 75M276 96L286 83L294 96L300 82.5L306 96L314 83L324 96M286 83L293 75L300 82.5L307 75L314 83M293 75L300 72L307 75"/>
+    <rect class="d frame" x="337" y="76" width="13" height="6" rx="1.5"/><path class="d" d="M361 94V78h9v16"/><circle class="o tyre" cx="343" cy="95" r="3.5"/>
     <path class="d" d="M330 86H382M368 87h1.5M382 92l7 2M348 72v-2h6v2M344 95a1 1 0 1 1-2 0a1 1 0 1 1 2 0"/>
   </g></g>
   <g class="ln">
