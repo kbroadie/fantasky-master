@@ -1,5 +1,5 @@
-// Fantastikal Delusion: the same app where low scores win, a happy place for the bottom of the table. "Embrace Failure"
-// under every tab switches it on, "Embrace Success" off: fantasy mode (state.fantasy, html.fz), the fall behind everything.
+// Fantastikal Delusion: the same app where low scores win, a happy place for the bottom of the table. "Embrace failure"
+// under every tab switches it on, "Embrace success" off: fantasy mode (state.fantasy, html.fz), the fall behind everything.
 import { $, state, reducedMotion } from "./ui.js";
 import { runner } from "./fall.js";
 import { get, val, onSwitch } from "./switches.js";
