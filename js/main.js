@@ -691,7 +691,7 @@ function shade() {
   const sx = Math.max(-1.6, Math.min(1.6, -Math.sin(az) * reach)), sy = 0.45 * Math.cos(az) * reach;
   const k = sun ? low : moonLit * low, sky = skyFor(light.height);
   const props = {
-    "--sha": (0.85 * k).toFixed(3),
+    "--sha": (0.55 * k).toFixed(3),
     "--sho": (sun ? 0.06 + 0.1 * low : 0.08 * moonLit).toFixed(3),
     // How brightly the structures' own colours show: full daylight, falling through twilight to what the moon gives
     "--illum": `${Math.max(6 + 8 * moonLit, light.height >= 0 ? 35 + 40 * Math.min(1, light.height / 20) : 35 + 2.4 * light.height).toFixed(1)}%`,
@@ -715,7 +715,7 @@ function shade() {
     `linear-gradient(${sky.top}, ${sky.horizon})`].join(",");
   house.querySelector(".ground").style.background = [
     `radial-gradient(${u(200)} ${u(30)} at ${x(gx)} 0, ${glow(sky.glow, sky.glowA * 0.3)}, transparent)`,
-    `linear-gradient(${sky.ground}, color-mix(in srgb, ${sky.ground} 45%, var(--bg)))`].join(",");
+    "linear-gradient(var(--mc), color-mix(in srgb, var(--mc) 55%, var(--bg)))"].join(",");
   // The ducks in the same light: dimmer and cooler in twilight and by night
   const dim = Math.max(0.7, Math.min(1, 1 + light.height / 40)), ducks = $("#foot .ducks");
   const f = dim < 1 ? `brightness(${dim.toFixed(2)}) saturate(${dim.toFixed(2)})` : "";

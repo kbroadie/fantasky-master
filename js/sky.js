@@ -47,18 +47,18 @@ export function moonPath(lit, r) {
 }
 
 // The sky and the scene's grade for the sun's height (degrees; below the horizon through twilight and night): the sky's
-// colour overhead and at the horizon, the glow around the sun (or where it's set), the drive's colour, the tint the
+// colour overhead and at the horizon, the glow around the sun (or where it's set), the tint the
 // lines take and how much, and how much of the sky's light reaches the shaded sides. Between the rows, it's interpolated
 const GRADE = [
-  // height, overhead, horizon, glow, glow's strength, drive, tint, tint %, ambient %
-  [-18, "#020308", "#070a16", "#070a16", 0, "#08080b", "#6f80b8", 40, 6],
-  [-12, "#04071a", "#111a38", "#232650", 0.35, "#0a0a10", "#7586bd", 36, 8],
-  [-6, "#0a1534", "#2c3362", "#8a4660", 0.7, "#0f0e15", "#8a8cc0", 28, 10],
-  [-2, "#142553", "#5b4a7c", "#e2643c", 0.9, "#17141a", "#c49a92", 18, 12],
-  [0, "#21407a", "#a46e88", "#ff8442", 1, "#201b1b", "#e8a070", 14, 14],
-  [4, "#2f579a", "#dc9e86", "#ffae6a", 0.85, "#29241f", "#f2b060", 8, 16],
-  [10, "#3a6ab2", "#b6c8e0", "#ffdcaa", 0.55, "#302c28", "#f0c060", 0, 20],
-  [25, "#3a6ec4", "#a6c6ec", "#f4f6ff", 0.4, "#33302c", "#f0c060", 0, 22],
+  // height, overhead, horizon, glow, glow's strength, tint, tint %, ambient %
+  [-18, "#020308", "#070a16", "#070a16", 0, "#6f80b8", 40, 6],
+  [-12, "#04071a", "#111a38", "#232650", 0.35, "#7586bd", 36, 8],
+  [-6, "#0a1534", "#2c3362", "#8a4660", 0.7, "#8a8cc0", 28, 10],
+  [-2, "#142553", "#5b4a7c", "#e2643c", 0.9, "#c49a92", 18, 12],
+  [0, "#21407a", "#a46e88", "#ff8442", 1, "#e8a070", 14, 14],
+  [4, "#2f579a", "#dc9e86", "#ffae6a", 0.85, "#f2b060", 8, 16],
+  [10, "#3a6ab2", "#b6c8e0", "#ffdcaa", 0.55, "#f0c060", 0, 20],
+  [25, "#3a6ec4", "#a6c6ec", "#f4f6ff", 0.4, "#f0c060", 0, 22],
 ];
 // The sun's own colour by its height: red at the horizon, white high up
 const SUN = [[-1, "#ff5a2a"], [2, "#ff7a3a"], [6, "#ffb070"], [15, "#fff1d0"], [30, "#fffaf0"]];
@@ -75,6 +75,6 @@ function lerp(table, e) {
 }
 export function skyFor(e) {
   const h = Math.max(-18, Math.min(30, e)); // past the tables' ends, their ends
-  const [top, horizon, glow, glowA, ground, tint, tintK, ambK] = lerp(GRADE, h);
-  return { top, horizon, glow, glowA, ground, tint, tintK, ambK, sun: lerp(SUN, h)[0] };
+  const [top, horizon, glow, glowA, tint, tintK, ambK] = lerp(GRADE, h);
+  return { top, horizon, glow, glowA, tint, tintK, ambK, sun: lerp(SUN, h)[0] };
 }

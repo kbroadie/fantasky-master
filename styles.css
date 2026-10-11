@@ -822,7 +822,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    the garage's red door, dark glass, yellow porthole rings, orange lifebuoys, the conifer's and the hedge's greens. Each
    is lit by the time of day (main.js): as bright as the light allows (--illum) and tinted by the sky (--amb, --ambk) */
 .house { --lit: #fff1d0; --sho: .2; --sha: .7; --amb: #0a0e1e; --ambk: 8%; --illum: 10%; }
-.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut) {
+.house .ln :is(.o, .m, .buoy, .d.red, .frame, .strut), .house > .ground {
   --mc: color-mix(in srgb, color-mix(in srgb, var(--m, #6a6a6a) calc(100% - var(--ambk)), var(--amb)) var(--illum), var(--bg));
 }
 .house .ln .m { stroke: none; fill: var(--mc); }
@@ -840,6 +840,15 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .hedge { --m: #3e5e34; }
 .house .tyre { --m: #222; }
 .house .floor { --m: #4a7ab4; }
+/* The caravan as it is on the show: cream over a pale sage band, its door tan with a painted flower over green, a brown
+   window frame, and the red mailbox in front */
+.house .cream { --m: #ece8da; }
+.house .sage { --m: #b4ccbc; }
+.house .tan { --m: #c89a5c; }
+.house .teal { --m: #2e6a5e; }
+.house .flower { --m: #d8463a; }
+/* The drive: resin-bound gravel, tan, as in the photo */
+.house > .ground { --m: #ab947b; }
 /* Light and shade across them (main.js sets which way, and how strong: --sho, --sha): lighter on the side facing the sun
    or moon, in its colour (--lit), darker on the other; and shadows across the drive, under the eaves and at the ducks'
    feet, away from the light */
@@ -849,7 +858,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .l2 { stop-color: #000; stop-opacity: calc(var(--sho) * 1.4); }
 .house .cast { fill: #000; opacity: var(--sha); filter: url(#h-blur); }
 .house .ln .sh { stroke: none; fill: url(#h-eave); opacity: var(--sha); }
-.house .feet { stroke: none; fill: #000; opacity: calc(var(--sha) * .9); }
+.house .feet { stroke: none; fill: #000; opacity: calc(var(--sha) * .8); }
 .house .lt > * { opacity: 0; }
 /* The time of day (data-time, main.js, from the device's clock): the sun crosses the sky from 6:00 to 20:00 and the moon
    from 20:00 to 6:00 (their places set each minute), passing behind the buildings' solid shapes; the lines are a
@@ -867,7 +876,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .show-day.up .house .lt > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
 @keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
 .smoke {
-  position: absolute; left: 46.7%; bottom: 80.3%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
+  position: absolute; left: 47%; bottom: 80.3%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
   fill: none; stroke: #e9dcc0; stroke-width: 1.5; stroke-linecap: round;
 }
 .show-day.go .smoke { animation: h-smoke 4s 2s linear infinite; }
