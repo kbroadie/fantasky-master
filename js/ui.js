@@ -58,8 +58,8 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 
 // The Taskmaster house behind them (normal view), from a photo of its front: the bungalow's Dutch gable facing the drive
 // (the arched door with its fanlight and sidelights, a round porthole each side with a lifebuoy under it, steps), the
 // chimney behind its shoulder and the lower tiled wing running right to a narrow curved end; the garage with its
-// up-and-over door, the tall conifer behind, the clear geodesic dome on the drive, the caravan beyond it, and a pond for
-// the ducks. Gold lines over solid shapes, so the sun and moon pass behind them; at 80%, standing a little above the
+// up-and-over door, the tall conifer behind, the clear geodesic dome on the drive, the caravan beyond it, and the
+// ducks on the drive in front, a shadow at each one's feet. Gold lines over solid shapes, so the sun and moon pass behind them; at 80%, standing a little above the
 // ducks, so there's sky above. The sky follows the device's clock (main.js: the sun and moon's places, the time of day);
 // its lights (.lt, --i their order) come up on show days (styles.css), and the chimney smokes
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
@@ -112,8 +112,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
   </g></g>
   <g class="ln">
     <path d="M8 86H382" opacity=".35"/>
-    <path d="M100 100Q195 92 290 100Q195 112 100 100Z" opacity=".8"/>
-    <path d="M140 106q12 2 24 0M214 106q14 2 28 0" opacity=".45"/>
+    <g class="feet"><ellipse cx="120" cy="99" rx="8" ry="1.6"/><ellipse cx="145" cy="99" rx="8" ry="1.6"/><ellipse cx="170" cy="99" rx="8" ry="1.6"/><ellipse cx="195" cy="99" rx="8" ry="1.6"/><ellipse cx="220" cy="99" rx="8" ry="1.6"/><ellipse cx="245" cy="99" rx="8" ry="1.6"/><ellipse cx="270" cy="99" rx="8" ry="1.6"/></g>
   </g></svg>
   <svg class="smoke" viewBox="0 0 20 24"><path d="M7 23c-4-5 3-8-1-13s3-7 0-10"/><path d="M13 23c-4-5 3-8-1-13"/></svg>
 </div>`;
