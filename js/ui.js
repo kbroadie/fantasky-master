@@ -74,7 +74,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
   <rect class="sky" x="0" y="0" width="390" height="86" fill="url(#h-sky)"/>
   <g class="stars">${STARS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".9"/>`).join("")}</g>
   <g clip-path="url(#h-above)">
-    <g class="moon"><circle r="16" fill="url(#h-halo)"/><path d="M-2-8a9 9 0 1 0 6 16a7 7 0 1 1-6-16z"/></g>
+    <g class="moon"><circle r="16" fill="url(#h-halo)"/><path class="cres" d="M-1-8.94A9 9 0 1 1-1 8.94A11 11 0 0 0-1-8.94Z"/></g>
     <g class="sun"><circle r="16" fill="url(#h-halo)"/><circle r="6"/><path d="M0-10v-3M0 10v3M-10 0h-3M10 0h3M7-7l2-2M-7 7l-2 2M7 7l2 2M-7-7l-2-2"/></g>
   </g>
   <g transform="matrix(.8 0 0 .8 39 9.2)">

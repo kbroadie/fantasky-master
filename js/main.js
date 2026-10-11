@@ -667,7 +667,13 @@ function showDay() {
     const up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
     el.setAttribute("transform", `translate(${(20 + 350 * t).toFixed(1)} ${(104 - 84 * up).toFixed(1)})`);
   }
+  // The crescent turned as London's evening crescent stands that week: lit towards the sun, down the ecliptic, whose angle
+  // to the horizon at sunset at 51.5°N is steepest in late March (62°: lit from below, a smile) and shallowest in late
+  // September (15°: lit from the side, an upright ")"). Drawn as ")", turned clockwise by that angle
+  const week = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / 6048e5) + 1;
+  house.querySelector(".cres").setAttribute("transform", `rotate(${moonAngle(week).toFixed(1)})`);
 }
+const moonAngle = (week) => 38.5 + 23.5 * Math.cos((2 * Math.PI * (week - 12)) / 52);
 setInterval(showDay, 60000);
 const houseSeen = new IntersectionObserver((es) => {
   const e = es.at(-1);
