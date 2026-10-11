@@ -223,7 +223,14 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .st-hero { text-align: center; padding-block: 18px 16px; } /* the same as .ep-head */
 .st-hero .ep-title { margin-bottom: 0; }
 .st-hero .ep-sub { margin-top: 6px; }
-.st-leaders { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; margin-top: 6px; font-size: 14px; color: var(--t2); text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
+/* A fixed two lines, whoever leads, in both views (so the Slam pictures the board at one height): the Show's leader over
+   the League's, or one line between them when the same player leads both */
+.st-leaders {
+  display: flex; flex-direction: column; justify-content: center; align-items: center; height: 34px; margin-top: 6px;
+  font-size: 14px; line-height: 16px; color: var(--t2); text-shadow: 0 1px 8px rgba(0, 0, 0, .7);
+}
+.st-leaders > span { white-space: nowrap; }
+.st-leaders > span:only-child { white-space: normal; text-align: center; text-wrap: balance; } /* a tie can take both lines */
 .st-leaders b { font-family: var(--ff-name); font-weight: 800; color: var(--gold2); }
 .st-leaders .st-show { color: var(--show-hi); }
 .st-leaders .st-league { color: var(--league-hi); }
@@ -1073,7 +1080,7 @@ html.fz .card.board::after { background: radial-gradient(55% 110% at 78% 0%, rgb
 html.fz .hero::after, html.fz .ep-head::after { height: 1.5px; background: var(--rainbow); opacity: .8; -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
 html.fz .strip-tab.on { border-bottom-color: #ff8fd2; background: linear-gradient(180deg, rgba(255, 79, 195, .32), rgba(255, 79, 195, .06)); text-shadow: 0 0 8px rgba(255, 140, 220, .45); }
 html.fz .st-leaders b { text-shadow: 0 0 8px rgba(255, 225, 77, .3), 0 1px 6px rgba(0, 0, 0, .7); }
-html.fz .st-leaders b::after { content: "👑"; margin-left: .2em; font-size: .85em; line-height: 1; text-shadow: none; }
+html.fz .st-leaders b::after { content: "\2060👑"; margin-left: .2em; font-size: .85em; line-height: 1; text-shadow: none; }
 @media (prefers-reduced-motion: no-preference) {
   html.fz .fz-word.glint::after { animation: fz-glint .9s ease-in-out; }
   html.fz .tab-ind::before { animation: fz-slide 6s linear infinite; }
