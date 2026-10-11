@@ -1,7 +1,7 @@
 // Wiring: data, render, tabs, swipers, bar, countdown. Routes: #/22/episodes/4, #/22/cast/Nina.
 import { loadText, parseCSV, buildSeries } from "./csv.js";
 import { initEdit } from "./edit.js";
-import { derive, currentSeriesKey } from "./league.js";
+import { derive, currentSeriesKey, airInstant } from "./league.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
@@ -44,7 +44,8 @@ function loadSeries(key) {
   btn.setAttribute("aria-label", `Series ${key}. Tap to switch series`);
   renderStandings(d);
   renderSlides(d);
-  if (!$("#foot").children.length) $("#foot").innerHTML = footer();
+  if (!$("#foot").children.length) { $("#foot").innerHTML = footer(); houseSeen.observe($("#foot")); }
+  showDay();
   if (!$("#dq").children.length) $("#dq").innerHTML = EMBRACE;
   countdown();
 }
@@ -650,6 +651,18 @@ const footSeen = new IntersectionObserver((es) => {
   $("#foot").classList.toggle("run", e.isIntersecting);
 });
 footSeen.observe($(".fz-waves"));
+// The house (ui.js) lights up on show days: the day, on this device, that any episode airs. Checked each minute, so it
+// comes on at midnight. Its lights come up the first time it's seen (.up), and its chimney smokes while it's on screen
+function showDay() {
+  const today = new Date().toDateString();
+  $("#foot").classList.toggle("show-day", Object.values(SERIES).some((s) => s.episodes.some((e) => airInstant(e.date).toDateString() === today)));
+}
+setInterval(showDay, 60000);
+const houseSeen = new IntersectionObserver((es) => {
+  const e = es.at(-1);
+  if (e.isIntersecting) e.target.classList.add("up");
+  e.target.classList.toggle("go", e.isIntersecting);
+});
 // The ducks ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
 // with them, so each duck's bob starts where the wave under it is
 function ducksOnWaves() {

@@ -55,9 +55,54 @@ export function perEpisodeStats(series) {
 
 const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 9.4H11A3.6 3.6 0 1 1 15.6 6L19.2 5.7Q19.6 8.2 15.3 8.1A3.6 3.6 0 0 1 14.2 9.5Q16.6 10.2 16.6 12.2Q16.6 15 12 15H6Q2.6 15 2 11.9Q1.6 9.8 1.8 7.6Z M13.6 4.4A.75 .75 0 1 0 13.61 4.4Z" fill-rule="evenodd"/></symbol>`;
 
+// The Taskmaster house behind them (normal view): the bungalow's front, a curved Dutch gable at each end (the arched door
+// with its fanlight between round windows; the clock over tall windows) and the tiled roof and chimney between, the
+// conifer behind, the caravan beside it and a pond for the ducks, in gold lines. Its lights (.lt, --i their order) come
+// up on show days (styles.css, main.js), and the chimney smokes
+const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
+const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
+  <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
+    <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient></defs>
+  <g class="lt">
+    ${glass(`<circle cx="36" cy="24" r="22" fill="url(#h-halo)"/>`, 0)}
+    ${glass(`<ellipse cx="180" cy="66" rx="130" ry="44" fill="url(#h-halo)"/>`, 7)}
+    ${glass(`<path d="M93 94V57q0-9 7-9t7 9V94z" fill="url(#h-win)"/>`, 0)}
+    ${glass(`<circle cx="79" cy="63" r="4.5" fill="url(#h-win)"/>`, 1)}
+    ${glass(`<circle cx="121" cy="63" r="4.5" fill="url(#h-win)"/>`, 2)}
+    ${glass(`<rect x="262" y="55" width="6" height="30" rx="1" fill="url(#h-win)"/>`, 3)}
+    ${glass(`<rect x="280" y="55" width="6" height="30" rx="1" fill="url(#h-win)"/>`, 4)}
+    ${glass(`<circle cx="274" cy="40" r="5.5" fill="url(#h-win)"/>`, 5)}
+    ${glass(`<rect x="317" y="72" width="16" height="8" rx="2" fill="url(#h-win)"/>`, 6)}
+  </g>
+  <g class="ln">
+    <path d="M40 18a9 9 0 1 0 6 16a7 7 0 1 1-6-16z"/>
+    <path d="M206 42q-4-14 8-22q4-14 16-10q12-4 16 8q12 6 6 20" opacity=".55"/>
+    <path d="M20 94q-4-18 8-26q6-12 20-6q12 8 8 32" opacity=".55"/>
+    <path d="M64 94V50q0-6 6-8q6-2 6-10q0-16 24-18q24 2 24 18q0 8 6 10q6 2 6 8V94"/>
+    <path d="M93 94V57q0-9 7-9t7 9V94M93 59h14M100 59v-10M100 59l-5-6M100 59l5-6"/>
+    <circle cx="79" cy="63" r="4.5"/><circle cx="79" cy="63" r="7" opacity=".5"/>
+    <circle cx="121" cy="63" r="4.5"/><circle cx="121" cy="63" r="7" opacity=".5"/>
+    <path d="M88 94h24M90 91h20" opacity=".7"/>
+    <path d="M136 62h114M150 42h86M136 62l14-20M250 62l-14-20"/>
+    <path d="M187 42V27h11v15M185 27h15"/>
+    <path d="M142 64V94M244 64V94M136 94H250M160 80l76 8" opacity=".6"/>
+    <path d="M250 94V54q0-6 5-8q5-2 5-9q0-14 14-16q14 2 14 16q0 7 5 9q5 2 5 8V94"/>
+    <circle cx="274" cy="40" r="5.5"/><path d="M274 40v-3.5M274 40l2.5 1.5"/>
+    <rect x="262" y="55" width="6" height="30" rx="1"/><rect x="280" y="55" width="6" height="30" rx="1"/>
+    <path d="M306 92V74q0-8 8-8h40q10 0 12 10l2 16zM368 90h8"/>
+    <rect x="317" y="72" width="16" height="8" rx="2"/>
+    <path d="M344 92V73h11v19"/>
+    <circle cx="322" cy="94" r="4"/>
+    <path d="M14 96H376" opacity=".35"/>
+    <path d="M100 100Q195 92 290 100Q195 112 100 100Z" opacity=".8"/>
+    <path d="M140 106q12 2 24 0M214 106q14 2 28 0" opacity=".45"/>
+  </g></svg>
+  <svg class="smoke" viewBox="0 0 20 24"><path d="M7 23c-4-5 3-8-1-13s3-7 0-10"/><path d="M13 23c-4-5 3-8-1-13"/></svg>
+</div>`;
+
 export function footer() {
   const ducks = Array.from({ length: 7 }, () => `<span class="dk"><svg class="duck"><use href="#duck"/></svg></span>`).join("");
-  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}</svg>
+  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}</svg>${HOUSE}
     <div class="ducks" aria-hidden="true">${ducks}</div>`;
 }
 

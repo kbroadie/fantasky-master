@@ -784,9 +784,34 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .ducks { position: absolute; left: var(--px); right: var(--px); bottom: 27px; display: flex; align-items: center; justify-content: center; }
 /* Each duck's span is its tap target */
 .dk { display: flex; padding: 10px 3.5px; cursor: default; -webkit-tap-highlight-color: transparent; }
-.ducks::before, .ducks::after { content: ""; flex: 1; height: 1px; max-width: 120px; }
-.ducks::before { background: linear-gradient(90deg, transparent, var(--b-gold)); margin-right: 7.5px; }
-.ducks::after { background: linear-gradient(90deg, var(--b-gold), transparent); margin-left: 7.5px; }
+/* The Taskmaster house behind them (ui.js), its drawing 390 × 136 at most, from the band's bottom: gold lines, dim. On show
+   days (.show-day, main.js) the lines glow, and as it comes into view (.up, once) its lights come up one by one; the
+   chimney smokes while it's on screen (.go). Only opacity and transform move; nothing at all on other days */
+.house { position: absolute; left: 50%; bottom: 0; width: min(390px, 100%); aspect-ratio: 390 / 136; translate: -50% 0; pointer-events: none; }
+.house > svg:first-child { display: block; width: 100%; height: 100%; }
+.house .ln { fill: none; stroke: var(--gold2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: .38; }
+.house .lt > * { opacity: 0; }
+.show-day .house .ln { opacity: .9; filter: drop-shadow(0 0 3px rgba(236, 192, 64, .4)); }
+.show-day.up .house .lt > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
+@keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
+.smoke {
+  position: absolute; left: 46.2%; bottom: 79.5%; width: 5.2%; height: auto; opacity: 0; overflow: visible;
+  fill: none; stroke: #e9dcc0; stroke-width: 1.5; stroke-linecap: round;
+}
+.show-day.go .smoke { animation: h-smoke 4s 2s linear infinite; }
+@keyframes h-smoke { 0% { opacity: 0; transform: translateY(4px); } 30% { opacity: .4; } 100% { opacity: 0; transform: translateY(-10px); } }
+html.fz .house { display: none; }
+/* Footer card off, or reduced motion: lit on show days, still */
+html.no-sea .show-day .house .lt > * { animation: none; opacity: .95; }
+html.no-sea .smoke { display: none; }
+@media (prefers-reduced-motion: reduce) { .show-day .house .lt > * { animation: none; opacity: .95; } .smoke { display: none; } }
+.ducks { z-index: 1; }
+/* Under 390px the house's drawing scales down, and the ducks with it, so they keep their places on its pond (not in
+   Fantasy Land, where they ride the sea, which doesn't scale) */
+.foot { container-type: inline-size; }
+html:not(.fz) .ducks { bottom: min(27px, 6.923cqw); }
+html:not(.fz) .dk { padding: min(10px, 2.564cqw) min(3.5px, .897cqw); }
+html:not(.fz) .duck { width: min(18px, 4.615cqw); height: min(14px, 3.59cqw); }
 .duck { width: 18px; height: 14px; fill: var(--gold2); opacity: .8; }
 .dk.lit .duck, .editing .duck { fill: var(--gold3); opacity: 1; filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .dk .duck { transition: transform .15s var(--ease); }
@@ -1102,7 +1127,6 @@ html.no-howlight .how-card { animation: none !important; }
 /* In the dream the ducks float on the dolphins' sea, riding its waves: main.js starts each one's bob where the wave under it is.
    The sea moves a wavelength in 5s; its crests and troughs are parabolas, so each quarter is a quadratic ease, ±5px */
 html.fz #foot { position: relative; height: 0; margin: 0; }
-html.fz .ducks::before, html.fz .ducks::after { display: none; }
 html.fz #foot.run .dk { animation: fz-bob 5s infinite; }
 @media (prefers-reduced-motion: reduce) { html.fz #foot.run .dk { animation-play-state: paused; } } /* still, where the still sea is */
 @keyframes fz-bob {
