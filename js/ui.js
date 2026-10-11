@@ -109,14 +109,14 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <radialGradient id="h-spill" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".3"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
     <filter id="h-blur" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
     <filter id="h-dblur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation=".7"/></filter>
-    <g id="h-mass">${mass("tree", "hedge", "garage", "chimney", "wing", "end", "gable")}</g><g id="h-van">${mass("van")}<circle cx="343" cy="95" r="3.5"/></g></defs>
+    <g id="h-mass">${mass("tree", "hedge", "garage", "chimney", "wing", "end", "gable")}</g><g id="h-van">${mass("van")}<circle cx="343" cy="95" r="3.5"/></g><path id="h-dome" d="M276 99a24 24 0 0 1 48 0a24 3 0 0 1-48 0Z"/></defs>
   <g clip-path="url(#h-above)">
     <g class="moon"><circle r="16" fill="url(#h-moonhalo)"/><circle class="disc" r="9"/><path class="lit" d=""/></g>
     <g class="sun"><circle class="disc" r="9"/></g>
   </g>
   <g class="b" transform="matrix(.8 0 0 .8 39 9.2)">
-  <g class="cast"><use href="#h-mass"/><use href="#h-van"/></g>
-  <g class="contact"><use href="#h-mass" transform="matrix(1 0 0 -.07 0 102.72)"/><use href="#h-van" transform="matrix(1 0 0 -.07 0 105.4)"/></g>
+  <g class="cast"><use href="#h-mass"/><use href="#h-van"/><use class="see" href="#h-dome"/></g>
+  <g class="contact"><use href="#h-mass" transform="matrix(1 0 0 -.07 0 102.72)"/><use href="#h-van" transform="matrix(1 0 0 -.07 0 105.4)"/><ellipse cx="300" cy="99.8" rx="25.5" ry="3.4"/></g>
   <g class="ln">
     ${solid("tree", "tree")}
     ${solid("hedge", "hedge")}
@@ -136,7 +136,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     ${glass(`<path d="M137 70a13 13 0 0 1 26 0ZM137 70h5v22h-5ZM158 70h5v22h-5Z" fill="url(#h-win)"/>`, 0)}
     ${glass(`<circle cx="124" cy="72" r="5.5" fill="url(#h-win)"/>`, 1)}
     ${glass(`<circle cx="176" cy="72" r="5.5" fill="url(#h-win)"/>`, 2)}
-    ${glass(`<path d="M276 96a24 24 0 0 1 48 0Z" fill="url(#h-glow)"/>`, 3)}
+    ${glass(`<path d="M276 99a24 24 0 0 1 48 0Z" fill="url(#h-glow)"/>`, 3)}
     ${glass(`<rect x="337" y="76" width="13" height="6" rx="1.5" fill="url(#h-win)"/>`, 4)}
   </g>
   <g class="ln">
@@ -148,8 +148,8 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <circle class="d" cx="124" cy="72" r="8"/><circle class="d" cx="176" cy="72" r="8"/>
     <circle class="buoy" cx="124" cy="86" r="4.5"/><circle class="buoy" cx="176" cy="86" r="4.5"/><circle class="m brick" cx="124" cy="86" r="2.2"/><circle class="m brick" cx="176" cy="86" r="2.2"/>
     <path class="d frame" d="M125.56 84.44l1.62-1.62M122.44 84.44l-1.62-1.62M125.56 87.56l1.62 1.62M122.44 87.56l-1.62 1.62M177.56 84.44l1.62-1.62M174.44 84.44l-1.62-1.62M177.56 87.56l1.62 1.62M174.44 87.56l-1.62 1.62"/>
-    <path class="strut" d="M276 96a24 24 0 0 1 48 0"/><ellipse class="m floor" cx="300" cy="95" rx="22" ry="1.5"/>
-    <path class="d strut" d="M279.2 84Q300 80 320.8 84M288.4 75Q300 72.5 311.6 75M276 96L286 83L294 96L300 82.5L306 96L314 83L324 96M286 83L293 75L300 82.5L307 75L314 83M293 75L300 72L307 75"/>
+    <ellipse class="m floor" cx="300" cy="99" rx="23.6" ry="2.8"/><path class="m pane" d="M276 99a24 24 0 0 1 48 0a24 3 0 0 1-48 0Z"/><ellipse class="d" cx="300" cy="99" rx="24" ry="3"/><path class="strut" d="M276 99a24 24 0 0 1 48 0"/>
+    <path class="d strut" transform="translate(0 3)" d="M279.2 84Q300 80 320.8 84M288.4 75Q300 72.5 311.6 75M276 96L286 83L294 96L300 82.5L306 96L314 83L324 96M286 83L293 75L300 82.5L307 75L314 83M293 75L300 72L307 75"/>
     <rect class="d frame" style="--m: #6a4a38" x="337" y="76" width="13" height="6" rx="1.5"/><path class="d" d="M361 94V78h9v16"/><circle class="m flower" cx="365.5" cy="81.5" r="1.6"/>
     <path class="m red" d="M352.6 89h1.2v8h-1.2ZM349.5 85.5h7.4v3.5h-7.4Z"/><circle class="o tyre" cx="343" cy="95" r="3.5"/>
     <path class="d" d="M330 86H382M368 87h1.5M382 92l7 2M348 72v-2h6v2M344 95a1 1 0 1 1-2 0a1 1 0 1 1 2 0"/>

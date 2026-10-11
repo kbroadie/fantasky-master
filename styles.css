@@ -843,6 +843,10 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .hedge { --m: #3e5e34; }
 .house .tyre { --m: #222; }
 .house .floor { --m: #4a7ab4; }
+/* The clear dome on the drive: its floor an ellipse in perspective with a dark base ring, a faint tint in its glass so
+   it reads as a volume, and its shadow fainter than a solid's (the light passes through; its frame's shade) */
+.house .ln .pane { --m: #dfeaf4; opacity: .16; }
+.house .cast .see { opacity: .4; }
 /* The caravan as it is on the show: cream over a pale sage band, its door tan with a painted flower over green, a brown
    window frame, and the red mailbox in front */
 .house .cream { --m: #ece8da; }

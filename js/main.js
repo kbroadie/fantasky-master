@@ -728,9 +728,10 @@ function shade() {
     for (const [a, v] of [["x1", 0.5 + 0.5 * vx], ["y1", 0.5 + 0.5 * vy], ["x2", 0.5 - 0.5 * vx], ["y2", 0.5 - 0.5 * vy]]) g.setAttribute(a, v.toFixed(3));
   // Each point h above the ground (at y = b) falls h·sx across and h·sy down: the caravan stands nearer, on its wheels
   const cast = (b) => `matrix(1 0 ${(-sx).toFixed(3)} ${(-sy).toFixed(3)} ${(b * sx).toFixed(2)} ${(b * (1 + sy)).toFixed(2)})`;
-  const [m, v] = house.querySelectorAll(".cast use");
+  const [m, v, g] = house.querySelectorAll(".cast use");
   m.setAttribute("transform", cast(96));
   v.setAttribute("transform", cast(98.5));
+  g.setAttribute("transform", cast(99)); // the dome stands a little nearer, on the drive
   // The ducks' own: each one's silhouette (14 high, its feet at y 98.1) cast the same way; the soft contact shadows under
   // their feet stay put
   house.querySelectorAll(".dcast path").forEach((el, i) => el.setAttribute("transform", `${cast(98.1)} translate(${111.25 + 25 * i} 85) scale(.875)`));
