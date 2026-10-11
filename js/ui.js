@@ -61,8 +61,9 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="M1.8 7.6Q3 9.4 6.5 
 // up-and-over door, the tall conifer behind, the clear geodesic dome on the drive, the caravan beyond it, and the
 // ducks on the drive in front. Gold lines over solid shapes, drawn back to front, so nearer things hide what's behind
 // them and the sun and moon pass behind them; at 80%, standing a little above the ducks, so there's sky above. The sky
-// follows the device's clock (main.js: the sun and moon's places, the time of day), and so does the light: the shapes
-// shaded from the side it's on, eaves and everything on the drive casting shadows away from it; its lights (.lt, --i
+// follows the device's clock (main.js: the sun and moon's places, the sky's colours and the scene's grade, from the sun's
+// height, twilight included; the sky and the drive are boxes behind the drawing, the screen's width), and so does the
+// light: the shapes shaded from the side it's on, eaves and everything on the drive casting shadows away from it; its lights (.lt, --i
 // their order) come up on show days (styles.css), the door's spilling onto the drive, and the chimney smokes
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
 // The solid shapes, back to front: each drawn under its outline, and all cast as shadows on the drive (main.js)
@@ -77,26 +78,24 @@ const MASS = {
   van: "M330 94V79q0-7 7-7h33q8 0 10 8l2 14Z",
 };
 const mass = (...ks) => ks.map((k) => `<path d="${MASS[k]}"/>`).join("");
-const HOUSE = `<div class="house" aria-hidden="true"><svg viewBox="0 0 390 136">
+const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div class="ground"></div><svg viewBox="0 0 390 136">
   <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
     <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
+    <radialGradient id="h-corona" cx=".5" cy=".5" r=".5"><stop class="c0" offset="0"/><stop class="c1" offset=".35"/><stop class="c2" offset="1"/></radialGradient>
+    <radialGradient id="h-moonhalo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#dfe6ff" stop-opacity=".16"/><stop offset="1" stop-color="#dfe6ff" stop-opacity="0"/></radialGradient>
     <radialGradient id="h-glow" cx=".5" cy=".7" r=".6"><stop offset="0" stop-color="#fff1b8" stop-opacity=".75"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
-    <linearGradient id="h-sky" x1="0" y1="1" x2="0" y2="0"><stop class="s0" offset="0"/><stop class="s1" offset="1"/></linearGradient>
     <linearGradient id="h-moonlit" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a39478"/><stop offset=".5" stop-color="#e6d9bb"/><stop offset="1" stop-color="#fff7e2"/></linearGradient>
     <radialGradient id="h-earth" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#b7ab92" stop-opacity=".16"/><stop offset="1" stop-color="#b7ab92" stop-opacity=".07"/></radialGradient>
     <filter id="h-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".35"/></filter>
     <clipPath id="h-above"><rect width="390" height="86"/></clipPath>
     <linearGradient id="h-shade" x1="0" y1="0" x2="1" y2="0"><stop class="l0" offset="0"/><stop class="l1" offset="1"/></linearGradient>
-    <radialGradient id="h-ground" gradientUnits="userSpaceOnUse" cx="195" cy="86" r="195" gradientTransform="translate(195 86) scale(1 .3) translate(-195 -86)"><stop class="g0" offset="0"/><stop class="g1" offset=".6"/><stop class="g2" offset="1"/></radialGradient>
     <linearGradient id="h-eave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
     <radialGradient id="h-spill" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".3"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
     <filter id="h-blur" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
     <g id="h-mass">${mass("tree", "hedge", "garage", "chimney", "wing", "end", "gable")}</g><g id="h-van">${mass("van")}<circle cx="343" cy="95" r="3.5"/></g></defs>
-  <rect class="sky" x="0" y="0" width="390" height="86" fill="url(#h-sky)"/>
-  <rect class="ground" x="0" y="86" width="390" height="50" fill="url(#h-ground)"/>
   <g clip-path="url(#h-above)">
-    <g class="moon"><circle r="16" fill="url(#h-halo)"/><circle class="disc" r="9"/><path class="lit" d=""/></g>
-    <g class="sun"><circle r="16" fill="url(#h-halo)"/><circle r="6"/><path d="M0-10v-3M0 10v3M-10 0h-3M10 0h3M7-7l2-2M-7 7l-2 2M7 7l2 2M-7-7l-2-2"/></g>
+    <g class="moon"><circle r="16" fill="url(#h-moonhalo)"/><circle class="disc" r="9"/><path class="lit" d=""/></g>
+    <g class="sun"><circle r="22" fill="url(#h-corona)"/><circle class="disc" r="5.5"/></g>
   </g>
   <g transform="matrix(.8 0 0 .8 39 9.2)">
   <g class="cast"><use href="#h-mass"/><use href="#h-van"/></g>

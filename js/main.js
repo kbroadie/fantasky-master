@@ -2,7 +2,7 @@
 import { loadText, parseCSV, buildSeries } from "./csv.js";
 import { initEdit } from "./edit.js";
 import { derive, currentSeriesKey, airInstant } from "./league.js";
-import { moonAt, moonPath } from "./sky.js";
+import { moonAt, moonPath, skyFor } from "./sky.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
@@ -665,12 +665,16 @@ function showDay() {
   if (!house) return;
   const h = now.getHours() + now.getMinutes() / 60, sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
   house.dataset.time = h < 5 || h >= 21 ? "night" : h < 8 ? "dawn" : h < 17.5 ? "day" : "dusk";
-  for (const [el, t] of [[house.querySelector(".sun"), sun], [house.querySelector(".moon"), moon]]) {
+  const at = {};
+  for (const [k, t] of [["sun", sun], ["moon", moon]]) {
+    const el = house.querySelector(`.${k}`), up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
+    at[k] = [20 + 350 * Math.max(0, Math.min(1, t)), t >= 0 && t <= 1 ? 104 - 84 * up : 86];
     el.style.display = t >= 0 && t <= 1 ? "" : "none";
-    const up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
-    el.setAttribute("transform", `translate(${(20 + 350 * t).toFixed(1)} ${(104 - 84 * up).toFixed(1)})`);
+    el.setAttribute("transform", `translate(${at[k][0].toFixed(1)} ${at[k][1].toFixed(1)})`);
   }
-  light = sun >= 0 && sun <= 1 ? { t: sun, sun: true } : { t: moon, sun: false };
+  // The sun's height (degrees): up to 55° at midday, and below the horizon by night, through twilight to -40° at 1:00
+  const day = sun >= 0 && sun <= 1;
+  light = { t: day ? sun : moon, sun: day, at, height: day ? 55 * Math.sin(Math.PI * sun) : -40 * Math.sin(Math.PI * moon) };
   airMoon();
   shade();
 }
@@ -685,10 +689,34 @@ function shade() {
   const e = (sun ? 55 : 45) * Math.sin(Math.PI * t) * deg, az = (t - 0.5) * 160 * deg;
   const reach = Math.min(2.5, 1 / Math.tan(Math.max(e, 0.01))), low = Math.min(1, e / (8 * deg));
   const sx = Math.max(-1.6, Math.min(1.6, -Math.sin(az) * reach)), sy = 0.45 * Math.cos(az) * reach;
-  const k = sun ? low : moonLit * low;
-  house.style.setProperty("--sha", (0.85 * k).toFixed(3));
-  house.style.setProperty("--shm", `${(sun ? 13 : 3 + 7 * moonLit).toFixed(1)}%`);
-  house.style.setProperty("--gra", (sun ? 0.06 + 0.12 * Math.min(1, e / (15 * deg)) : 0.03 + 0.07 * moonLit).toFixed(3));
+  const k = sun ? low : moonLit * low, sky = skyFor(light.height);
+  const props = {
+    "--sha": (0.85 * k).toFixed(3),
+    "--shm": `${(sun ? 13 : 3 + 7 * moonLit).toFixed(1)}%`,
+    "--lit": sun ? sky.sun : "#c4d0ff",
+    "--sun": sky.sun,
+    "--amb": sky.horizon,
+    "--ambk": `${sky.ambK.toFixed(1)}%`,
+    "--tint": sky.tint,
+    "--tintk": `${sky.tintK.toFixed(1)}%`,
+  };
+  for (const p in props) house.style.setProperty(p, props[p]);
+  // The sky: overhead to the horizon, a glow around the sun (wide and low near the horizon, where it lingers after
+  // sunset), and by night a faint one around the moon; the drive in the same light. In the drawing's units from its middle
+  const u = (n) => `calc(${n.toFixed(1)} * var(--u))`, x = (n) => `calc(50% + ${(n - 195).toFixed(1)} * var(--u))`;
+  const [gx, gy] = light.at.sun, hi = Math.max(0, Math.min(1, light.height / 25));
+  const glow = (c, a) => `color-mix(in srgb, ${c} ${(a * 100).toFixed(0)}%, transparent)`;
+  const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${u(light.at.moon[1])}, ${glow("#c8d2ff", 0.1 * moonLit)}, transparent)`];
+  house.querySelector(".sky").style.background = [...moonGlow,
+    `radial-gradient(${u(220 - 100 * hi)} ${u(60 + 20 * hi)} at ${x(gx)} ${u(gy)}, ${glow(sky.glow, sky.glowA)}, transparent)`,
+    `linear-gradient(${sky.top}, ${sky.horizon})`].join(",");
+  house.querySelector(".ground").style.background = [
+    `radial-gradient(${u(200)} ${u(30)} at ${x(gx)} 0, ${glow(sky.glow, sky.glowA * 0.3)}, transparent)`,
+    `linear-gradient(${sky.ground}, color-mix(in srgb, ${sky.ground} 45%, var(--bg)))`].join(",");
+  // The ducks in the same light: dimmer and cooler in twilight and by night
+  const dim = Math.max(0.7, Math.min(1, 1 + light.height / 40)), ducks = $("#foot .ducks");
+  const f = dim < 1 ? `brightness(${dim.toFixed(2)}) saturate(${dim.toFixed(2)})` : "";
+  if (ducks && ducks.style.filter !== f) ducks.style.filter = f;
   // The shaded shapes' gradient runs from the side facing the light to the other
   let vx = Math.sin(az) * Math.cos(e), vy = -Math.sin(e);
   const n = Math.hypot(vx, vy) || 1;

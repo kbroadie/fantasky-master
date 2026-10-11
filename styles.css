@@ -788,49 +788,55 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    days (.show-day, main.js) the lines glow, and as it comes into view (.up, once) its lights come up one by one; the
    chimney smokes while it's on screen (.go). Only opacity and transform move; nothing at all on other days */
 .house { position: absolute; left: 50%; bottom: 0; width: min(390px, 100%); aspect-ratio: 390 / 136; translate: -50% 0; pointer-events: none; }
-.house > svg:first-child { display: block; width: 100%; height: 100%; }
-/* Dimmed by the strokes' opacity (--lna), not the group's, so the solid shapes stay solid */
-.house { --lna: .38; }
-.house .ln { fill: none; stroke: var(--gold2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-opacity: var(--lna); }
+.house > svg:first-of-type { position: relative; display: block; width: 100%; height: 100%; }
+/* The sky and the drive behind the drawing, the footer's whole width (--u: one unit of the drawing); main.js paints them
+   from the sun's height each minute. The sky fades into the page above it */
+.house > .sky, .house > .ground { position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); }
+/* Wider than the drawing, the sides fade out too, over the outer part of the extra width */
+.house > .sky, .house > .ground {
+  --sides: linear-gradient(90deg, transparent, #000 calc((100% - 390px) * .4), #000 calc(100% - (100% - 390px) * .4), transparent);
+  -webkit-mask-image: var(--sides); mask-image: var(--sides);
+}
+.house > .sky {
+  top: 0; height: calc(86 * var(--u));
+  -webkit-mask-image: linear-gradient(transparent, #000 75%), var(--sides); -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(transparent, #000 75%), var(--sides); mask-composite: intersect;
+}
+.house > .ground { top: calc(86 * var(--u)); bottom: 0; }
+/* Dimmed by the strokes' opacity (--lna), not the group's, so the solid shapes stay solid; tinted with the light (--tint,
+   --tintk: cool and grey by night, warm at sunrise and sunset), but for show days' gold */
+.house { --lna: .38; --lnc: color-mix(in srgb, var(--tint, var(--gold2)) var(--tintk, 0%), var(--gold2)); }
+.house .ln { fill: none; stroke: var(--lnc); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-opacity: var(--lna); }
 .house .ln * { vector-effect: non-scaling-stroke; }
 /* Details in a finer, fainter line than the outlines */
 .house .ln .d { stroke-width: 1; stroke-opacity: calc(var(--lna) * .7); }
 .house .ln .faint { stroke-opacity: calc(var(--lna) * .5); }
-/* Light and shade (main.js sets which way, and how strong: --shm, --gra, --sha): the solid shapes lit on the side facing
-   the sun or moon, in its colour (--lit), the drive lit in front of them, and shadows across it, under the eaves and at
-   the ducks' feet, away from the light */
-.house { --lit: #fff1d0; --shm: 8%; --gra: .08; --sha: .7; }
-.house .l0 { stop-color: color-mix(in srgb, var(--lit) var(--shm), var(--bg)); }
-.house .l1 { stop-color: var(--bg); }
-.house .g0 { stop-color: var(--lit); stop-opacity: var(--gra); }
-.house .g1 { stop-color: var(--lit); stop-opacity: calc(var(--gra) * .5); }
-.house .g2 { stop-color: var(--lit); stop-opacity: 0; }
+/* Light and shade (main.js sets which way, and how strong: --shm, --sha): the solid shapes lit on the side facing the sun
+   or moon, in its colour (--lit), their shaded side in the sky's light (--amb, --ambk), and shadows across the drive,
+   under the eaves and at the ducks' feet, away from the light */
+.house { --lit: #fff1d0; --shm: 8%; --sha: .7; --amb: #0a0e1e; --ambk: 8%; --base: color-mix(in srgb, var(--amb) var(--ambk), var(--bg)); }
+.house .l0 { stop-color: color-mix(in srgb, var(--lit) var(--shm), var(--base)); }
+.house .l1 { stop-color: var(--base); }
 .house .cast { fill: #000; opacity: var(--sha); filter: url(#h-blur); }
 .house .ln .sh { stroke: none; fill: url(#h-eave); opacity: var(--sha); }
 .house .feet { stroke: none; fill: #000; opacity: calc(var(--sha) * .9); }
 .house .lt > * { opacity: 0; }
 /* The time of day (data-time, main.js, from the device's clock): the sun crosses the sky from 6:00 to 20:00 and the moon
-   from 20:00 to 6:00 (their places set each minute), passing behind the buildings' solid shapes; the
-   horizon warms at dawn and dusk and pales by day; the lines are a little brighter by day */
+   from 20:00 to 6:00 (their places set each minute), passing behind the buildings' solid shapes; the lines are a
+   little brighter by day */
 .house .ln .o { fill: url(#h-shade); }
-.house .sky { opacity: 0; }
-.house .s0 { stop-color: var(--sky, #ecc040); stop-opacity: .16; }
-.house .s1 { stop-color: var(--sky, #ecc040); stop-opacity: 0; }
 /* The moon as it looks: no outline; the lit part a pale gradient, brightest at its edge and dimming to the terminator,
    softened a little; the dark part a faint earthshine */
 .house .moon .disc { fill: url(#h-earth); }
 .house .moon .lit { fill: url(#h-moonlit); filter: url(#h-soft); }
-.house .sun > circle:nth-of-type(2) { fill: none; stroke: var(--sun, var(--gold3)); stroke-width: 1.5; }
-.house .sun path { fill: none; stroke: var(--sun, var(--gold3)); stroke-width: 1.5; stroke-linecap: round; }
-.house[data-time="dawn"] { --sky: #ff9a7a; --sun: #ffc48a; --lit: #ffb48c; }
-.house[data-time="day"] { --sky: #8fb8ff; }
-.house[data-time="dusk"] { --sky: #ff7a3d; --sun: #ffb070; --lit: #ffa060; }
-.house[data-time="night"] { --lit: #c4d0ff; }
-.house:is([data-time="dawn"], [data-time="dusk"]) .sky { opacity: 1; }
-.house[data-time="day"] .sky { opacity: 1; }
+/* The sun a bright disc in its glow, white high up and redder as it nears the horizon (--sun) */
+.house .sun .disc { fill: color-mix(in srgb, var(--sun, #fff6e0) 55%, #fff); filter: url(#h-soft); }
+.house .c0 { stop-color: var(--sun, #fff6e0); stop-opacity: .75; }
+.house .c1 { stop-color: var(--sun, #fff6e0); stop-opacity: .22; }
+.house .c2 { stop-color: var(--sun, #fff6e0); stop-opacity: 0; }
 .house[data-time="day"] { --lna: .55; }
 .house:is([data-time="dawn"], [data-time="dusk"]) { --lna: .46; }
-.show-day .house { --lna: .9; }
+.show-day .house { --lna: .9; --lnc: var(--gold2); }
 .show-day .house .ln { filter: drop-shadow(0 0 3px rgba(236, 192, 64, .4)); }
 .show-day.up .house .lt > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
 @keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
@@ -853,6 +859,9 @@ html:not(.fz) .ducks { bottom: min(27px, 6.923cqw); }
 html:not(.fz) .dk { padding: min(10px, 2.564cqw) min(3.5px, .897cqw); }
 html:not(.fz) .duck { width: min(18px, 4.615cqw); height: min(14px, 3.59cqw); }
 .duck { width: 18px; height: 14px; fill: var(--gold2); opacity: .8; }
+/* In the normal view the ducks take the light too, dimmer and cooler in twilight and by night (their filter, set by
+   main.js); not on the sea */
+html.fz #foot .ducks { filter: none !important; }
 .dk.lit .duck, .editing .duck { fill: var(--gold3); opacity: 1; filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .dk .duck { transition: transform .15s var(--ease); }
 .dk.lit .duck { transform: scale(1.18); }
