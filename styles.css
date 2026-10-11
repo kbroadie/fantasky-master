@@ -1215,7 +1215,7 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-range:focus-visible { outline: none; }
 .sw-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--gold-glow); }
 .sw-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--gold-glow); }
-.sw-reset { padding: 6px 10px; }
+.sw-reset, .sw-reload { padding: 6px 10px; }
 /* A small fixed set on a Moss card: segmented buttons, like the top tabs; four to a row when there are many */
 .sw-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 3px; border: 1px solid var(--b-gold); border-radius: 10px; background: var(--s1); }
 .sw-seg.grid { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 12px 12px; }
