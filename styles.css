@@ -313,8 +313,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    plate (Cinzel, engraved), asks in a cartoon speech bubble (Chewy), "Embrace failure" on a rainbow; in the mode,
    "Embrace success" on the normal view's gold. The plate and frame are real gold in both views */
 /* Patatas takes the house's light (main.js: #dq-light), in the normal view, where he stands before its sky; his bubble
-   takes the sky's shape and colours (data-sky, below) */
-html:not(.fz) #dq.lit .em-who { filter: url(#dq-light); }
+   takes the sky's shape and colours (data-sky, below), and by night his light too, so it's no brighter than he is */
+html:not(.fz) #dq.lit .em-who, html:not(.fz) #dq.lit[data-sky="night"] .em-say { filter: url(#dq-light); }
 #dq { position: relative; z-index: 1; padding: 16px var(--px) 0; text-align: center; } /* over the house's sky, which rises behind the page */
 .embrace {
   display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 0; background: none; color: inherit;
@@ -835,19 +835,14 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house { position: absolute; left: 50%; bottom: 0; width: min(390px, 100%); aspect-ratio: 390 / 136; translate: -50% 0; pointer-events: none; }
 .house > svg:first-of-type { position: relative; display: block; width: 100%; height: 100%; overflow: visible; } /* the conifer's tip may rise past the band, into the sky */
 /* The sky and the drive behind the drawing, the footer's whole width (--u: one unit of the drawing); main.js paints them
-   from the sun's height each minute. The sky fades into the page above it */
+   from the sun's height each minute, out to the screen's edges (not feathered at the sides, on request). The sky fades
+   into the page above it */
 .house > .sky, .house > .ground { position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); }
-/* Wider than the drawing, the sides fade out too, over the outer part of the extra width */
-.house > .sky, .house > .ground {
-  --sides: linear-gradient(90deg, transparent, #000 calc((100% - 390px) * .4), #000 calc(100% - (100% - 390px) * .4), transparent);
-  -webkit-mask-image: var(--sides); mask-image: var(--sides);
-}
 /* The sky rises well above the footer, behind the page (the slides are above the footer; Patatas's block is lifted above
    it, #dq), fading out as it goes up */
 .house > .sky {
   bottom: calc(58 * var(--u)); height: calc(78 * var(--u) + 360px); will-change: transform; /* its own layer: big and masked, it isn't repainted as the page scrolls */
-  -webkit-mask-image: linear-gradient(transparent, #000 70%), var(--sides); -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(transparent, #000 70%), var(--sides); mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(transparent, #000 70%); mask-image: linear-gradient(transparent, #000 70%);
 }
 /* The ground runs back to y 69 (raised with the structures, leaving the ducks room on the drive), the lawn behind everything (the conifer's foot, the caravan's), the drive coming up to
    the structures' fronts; both start above the feet standing on them, tucked under, as browsers that round an SVG's
