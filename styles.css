@@ -794,7 +794,10 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house > .sky {
   bottom: calc(58 * var(--u)); height: calc(78 * var(--u) + 360px); will-change: transform; /* its own layer: big and masked, it isn't repainted as the page scrolls */
   -webkit-mask-image: linear-gradient(transparent, #000 70%); mask-image: linear-gradient(transparent, #000 70%);
+  animation: none linear both; animation-timeline: scroll(root); /* peek (main.js): held at the screen's bottom */
 }
+@property --pk { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@keyframes peek { from { transform: translateY(var(--pk)); } to { transform: none; } }
 /* The ground runs back to y 69 (raised with the structures, leaving the ducks room on the drive), the lawn behind everything (the conifer's foot, the caravan's), the drive coming up to
    the structures' fronts; both start above the feet standing on them, tucked under, as browsers that round an SVG's
    edge and a box's edge to the device's pixels differently (Safari) showed a pixel of sky where they met exactly */
