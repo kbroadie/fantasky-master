@@ -604,7 +604,7 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 }
 
 .swiper {
-  position: relative; z-index: 1; /* over the quote and ducks when a swipe brings them under a taller slide */
+  position: relative; z-index: 2; /* over Patatas (#dq, 1, over the house's sky) and the ducks when a swipe brings them under a taller slide */
   display: flex; align-items: flex-start; overflow-x: auto; overflow-y: hidden;
   scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none;
 }
