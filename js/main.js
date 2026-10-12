@@ -51,7 +51,10 @@ function loadSeries(key) {
   countdown();
 }
 
+// The view each page was last drawn in (state.fantasy): a switch draws the page on show at once and the others after
+const drawn = {};
 function renderStandings(d) {
+  drawn.standings = !!state.fantasy;
   $("#st-tabs").innerHTML = weekTabs(d);
   $("#st-body").innerHTML = standingsSlides(d);
   for (const s of $("#st-body").children) { sizes.observe(s); syncOpen(s); }
@@ -61,14 +64,24 @@ function renderStandings(d) {
 }
 
 function renderSlides(d) {
+  renderEpisodes(d);
+  renderCast(d);
+}
+function renderEpisodes(d) {
+  drawn.episodes = !!state.fantasy;
   $("#ep-tabs").innerHTML = epTabs(d);
   $("#ep-body").innerHTML = epSlides(d);
   mountPodiumFx($("#ep-body"));
+  for (const s of $("#ep-body").children) sizes.observe(s);
+  fitTitles();
+}
+function renderCast(d) {
+  drawn.cast = !!state.fantasy;
   $("#cast-tabs").innerHTML = castTabs(d);
   $("#cast-body").innerHTML = castSlides(d);
   mountPodiumFx($("#cast-body"));
   revision();
-  for (const id of ["#ep-body", "#cast-body"]) for (const s of $(id).children) sizes.observe(s);
+  for (const s of $("#cast-body").children) sizes.observe(s);
   fitTitles();
 }
 
@@ -102,6 +115,7 @@ function refresh(text) {
 }
 
 function show(page) {
+  catchUp(page); // drawn in the other view: drawn now, before it shows
   state.page = page;
   const i = PAGES.indexOf(page);
   $(".tabs").style.setProperty("--i", i);
@@ -129,22 +143,43 @@ function topIn(el) {
   for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
   return y;
 }
+// The view switched (flip.js): the page on show is drawn in it at once, inside the transition, which can't start until
+// it's drawn (each page took ~130–210ms at a 4× throttled CPU, all three ~400–630ms); the others after, one at a time
+// when the page is idle (later), or at once if shown first (show)
+const SWIPER = { standings: ST, episodes: EP, cast: CAST };
+function drawPage(page) {
+  if (page === "standings") renderStandings(state.d);
+  if (page === "episodes") renderEpisodes(state.d);
+  if (page === "cast") { // the same contestant, in the other view's order
+    const key = $("#cast-tabs .on")?.textContent;
+    renderCast(state.d);
+    const i = castOrder(state.d).findIndex((c) => c.key === key);
+    if (i >= 0) state.cast = i;
+  }
+  const sw = SWIPER[page];
+  if ($(sw.body).offsetParent) jump(sw, sw.get()); else mark(sw, sw.get(), false);
+}
+const stale = (page) => drawn[page] !== !!state.fantasy;
+function catchUp(...pages) { for (const page of pages.length ? pages : PAGES) if (stale(page)) drawPage(page); }
+const idle = (f) => (window.requestIdleCallback ? requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 50));
+function later() {
+  const page = PAGES.find(stale);
+  if (page) idle(() => { catchUp(page); later(); });
+}
 function redraw() {
-  const key = $("#cast-tabs .on")?.textContent;
   const waves = $(".fz-waves");
   footSeen.unobserve(waves);
   footSeen.observe(waves);
-  renderStandings(state.d);
-  renderSlides(state.d);
-  const i = castOrder(state.d).findIndex((c) => c.key === key);
-  if (i >= 0) state.cast = i;
+  drawPage(state.page);
   // The slides on show are laid out now, not at their placeholder size (content-visibility), so what was tapped can
   // be kept in place (flip.js) and the swiper fitted to their real height. They go back to auto only after a frame has
   // recorded that height: sooner, they fell back to the placeholder for a frame and the scroll was clamped to it
-  const shown = [ST, EP, CAST].map((sw) => $(sw.body).children[sw.get()]).filter(Boolean);
-  for (const s of shown) s.style.contentVisibility = "visible";
-  requestAnimationFrame(() => requestAnimationFrame(() => { for (const s of shown) s.style.contentVisibility = ""; }));
-  for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); else mark(sw, sw.get(), false);
+  const shown = $(SWIPER[state.page].body).children[SWIPER[state.page].get()];
+  if (shown) {
+    shown.style.contentVisibility = "visible";
+    requestAnimationFrame(() => requestAnimationFrame(() => { shown.style.contentVisibility = ""; }));
+    jump(SWIPER[state.page], SWIPER[state.page].get());
+  }
   writeHash();
 }
 const feet = () => [$("#dq"), $(".fz-foot"), $("#foot")];
@@ -977,6 +1012,7 @@ addEventListener("resize", () => { ducksOnWaves(); for (const sw of [ST, EP, CAS
 addEventListener("hashchange", () => {
   const h = readHash();
   if (h.key !== state.key) loadSeries(h.key);
+  else catchUp(); // the cast's order and index are the view's
   applyArg(h.page, h.arg);
   show(h.page);
 });
@@ -1005,7 +1041,7 @@ try {
   try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
   $("#welcome").innerHTML = welcomeCard();
   $("#welcome").hidden = !welcome;
-  initFlip({ redraw });
+  initFlip({ redraw, later });
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);
