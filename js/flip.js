@@ -43,12 +43,14 @@ function set(show, anchor, tap) {
   const before = how === "slam" ? slamBefore() : null;
   let fx = null;
   const vt = document.startViewTransition(() => { swap(); name(); if (before) fx = slamAfter(before); });
-  vt.ready.then(() => {
-    // Where the screen is in the pictures' space, now that it's set up: the places written above move with it
-    const o = snapOffset();
+  if (PLACED.has(how)) vt.ready.then(() => {
+    // Where the screen is in the pictures' space, now that it's set up: the places written above move with it. One look
+    // through the page's animations (in the dream, the sea's and the dolphins' too) finds the probe's and Slam's clock
+    const all = document.getAnimations(), pick = (pe) => all.find((a) => a.effect?.pseudoElement === pe);
+    const o = snapOffset(pick("::view-transition-group(vt-probe)"));
     if (o && (o.x !== snapOff.x || o.y !== snapOff.y)) { snapOff = o; writeStage(); }
     // Slam's effects keep the transition's time: the camera's animation is their clock
-    fx?.start(document.getAnimations().find((a) => a.effect?.pseudoElement === "::view-transition"));
+    fx?.start(pick("::view-transition"));
   }).catch(() => {});
   vt.finished.finally(() => {
     hooks.later();
@@ -191,8 +193,9 @@ let stageCss = null, staged = null, slamText = null;
 // set up, and everything written in screen places is moved by it; kept for the next, so it's usually right from the start
 let snapOff = { x: 0, y: 0 };
 const probe = document.body.appendChild(Object.assign(document.createElement("i"), { className: "vt-probe" }));
-function snapOffset() {
-  const a = document.getAnimations().find((x) => x.effect?.pseudoElement === "::view-transition-group(vt-probe)");
+// The transitions that write screen places (styles.css names the probe only in these)
+const PLACED = new Set(["iris", "zoom", "vertigo", "slam"]);
+function snapOffset(a) {
   const m = a?.effect.getKeyframes()[0]?.transform?.match(/matrix\(([^)]+)\)/);
   if (!m) return null;
   const v = m[1].split(",").map(Number), r = probe.getBoundingClientRect();
