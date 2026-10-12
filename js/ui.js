@@ -75,7 +75,8 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="${DUCK_BODY}"/>
 // follows the device's clock (main.js: the sun and moon's places, the sky's colours and the scene's grade, from the sun's
 // height, twilight included; the sky and the drive are boxes behind the drawing, the screen's width), and so does the
 // light: the shapes shaded from the side it's on, eaves and everything on the drive casting shadows away from it; its lights (.lt, --i
-// their order) come up on show days (styles.css), the door's spilling onto the drive, and the chimney smokes
+// their order) are on at night and come up on show days (styles.css), the door's spilling onto the drive, and the chimney
+// smokes. By night the door's light lies across the drive (.pool), each duck's shadow cast away from it (.lamp-sh, its mask)
 const glass = (el, i) => el.replace("/>", ` style="--i:${i}"/>`);
 // The ducks' shadows: each one's outline, as plain paths (not <use> copies, which the minute's custom
 // properties on .house would restyle), and a soft contact shadow under each; the ducks stand 25 apart from x 120
@@ -139,7 +140,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <linearGradient id="h-moonlit" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a39478"/><stop offset=".5" stop-color="#e6d9bb"/><stop offset="1" stop-color="#fff7e2"/></linearGradient>
     <radialGradient id="h-earth" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#b7ab92" stop-opacity=".16"/><stop offset="1" stop-color="#b7ab92" stop-opacity=".07"/></radialGradient>
     <filter id="h-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".35"/></filter>
-    <clipPath id="h-above"><rect width="390" height="69"/></clipPath>
+    <clipPath id="h-above"><rect y="-400" width="390" height="469"/></clipPath>
     <linearGradient id="h-shade" x1="0" y1="0" x2="1" y2="0"><stop class="l0" offset="0"/><stop class="l1" offset=".45"/><stop class="l2" offset="1"/></linearGradient>
     <linearGradient id="h-rim" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
     <mask id="h-rim-mask" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#h-rim)"/></mask>
@@ -149,6 +150,9 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     ${Object.keys(MASS).map((k) => `<clipPath id="c-${k}"><path d="${MASS[k]}"/></clipPath>`).join("")}
     <linearGradient id="h-eave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
     <radialGradient id="h-spill" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".3"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
+    <radialGradient id="h-pool" gradientUnits="userSpaceOnUse" cx="150" cy="${96 + DY.gable}" r="1" gradientTransform="translate(150 ${96 + DY.gable}) scale(190 70) translate(-150 ${-(96 + DY.gable)})"><stop offset="0" stop-color="#ffd27a" stop-opacity=".34"/><stop offset=".5" stop-color="#ecb040" stop-opacity=".13"/><stop offset="1" stop-color="#ecb040" stop-opacity="0"/></radialGradient>
+    <linearGradient id="h-pool-fade" gradientUnits="userSpaceOnUse" x1="0" y1="93" x2="0" y2="98"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient>
+    <mask id="h-pool-mask" maskUnits="userSpaceOnUse" x="-100" y="80" width="600" height="160"><rect x="-100" y="80" width="600" height="160" fill="url(#h-pool-fade)"/><g class="lamp-sh" transform="matrix(1.25 0 0 1.25 -48.75 -1.5)">${seven(() => `<path d="${DUCK_BODY}"/>`)}</g></mask>
     <filter id="h-blur" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
     <filter id="h-dblur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation=".7"/></filter>
     ${KEYS.map((k) => `<path id="m-${k}" d="${MASS[k]}"/>`).join("")}<g id="m-van"><path d="${MASS.van}"/><circle cx="343" cy="95" r="3.5"/></g><path id="m-dome" d="${DOME}"/></defs>
@@ -159,6 +163,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
   <g class="b" transform="matrix(.8 0 0 .8 39 1.2)">
   <g class="cast">${KEYS.map((k) => castOf(k, `#m-${k}`, k === "garage" ? 40 : 0, k === "garage" ? 4 : 0)).join("")}${castOf("van", "#m-van", 8, 3)}${castOf("dome", "#m-dome").replace("<use ", '<use class="see" ')}${KEYS.map((k) => behind(k, `#m-${k}`)).join("")}${behind("van", "#m-van")}</g>
   <g class="contact">${KEYS.map((k) => contact(k, `#m-${k}`)).join("")}${contact("van", "#m-van")}${at("dome", `<ellipse cx="300" cy="99.8" rx="25.5" ry="3.4"/>`)}${KEYS.map((k) => behind(k, `#m-${k}`)).join("")}${behind("van", "#m-van")}</g>
+  <rect class="pool" x="-100" y="80" width="600" height="160" fill="url(#h-pool)" mask="url(#h-pool-mask)"/>
   <g class="ln">
     ${at("tree", solid("tree", "tree", "", true))}
     ${at("van", `${sweep("van", 8, "cream", 8, "ls")}${solid("van", "cream", `<path class="m sage" d="M330 86H380.9L382 94H330Z"/><path class="m tan" d="M361 78h9v8h-9Z"/><path class="m teal" d="M361 86h9v8h-9Z"/>`)}<rect class="m glass" x="337" y="76" width="13" height="6" rx="1.5"/>`)}
