@@ -316,6 +316,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    takes the sky's shape and colours (data-sky, below), and by night his light too, so it's no brighter than he is */
 html:not(.fz) #dq.lit .em-who, html:not(.fz) #dq.lit[data-sky="night"] .em-say { filter: url(#dq-light); }
 #dq { position: relative; z-index: 1; padding: 16px var(--px) 0; text-align: center; } /* over the house's sky, which rises behind the page */
+/* The footer's areas swipe the slides (main.js, footSwipe): sideways drags are the page's, up and down the browser's */
+#dq, #foot, .fz-foot { touch-action: pan-y pinch-zoom; }
 .embrace {
   display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 0; background: none; color: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;

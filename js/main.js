@@ -281,11 +281,76 @@ function bindSwiper(sw, onEdge, ends) {
     const b = e.target.closest("[data-slide]");
     if (b) body.scrollTo({ left: b.dataset.slide * body.clientWidth, behavior: reducedMotion ? "auto" : "smooth" });
   });
-  edgeNav(body, {
+  const can = {
     prev: () => ends.prev && body.scrollLeft <= 2,
     next: () => ends.next && body.scrollLeft >= body.scrollWidth - body.clientWidth - 2,
-  }, onEdge);
+  };
+  edgeNav(body, can, onEdge);
+  EDGES.set(body, { can, onEdge });
 }
+const EDGES = new Map();
+
+// The footer's areas (Patatas, the house and its ducks, the dolphins) swipe the page's slides too (on request): a sideways
+// drag there moves the swiper on show with the finger (touch-action: pan-y leaves up and down to the page), and lets go
+// to the nearer slide, or on to the next on a flick; past an end, to the neighbouring tab, as on the slides. Snapping is
+// off while the finger moves it, as each scroll would snap, and back once it settles. A drag isn't a tap
+let dragged = 0, settling = null;
+function footSwipe(area) {
+  let id = null, x0 = 0, y0 = 0, s0 = 0, body = null, on = false, trail = [];
+  area.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "touch" || id != null) return;
+    body = $(`#p-${state.page} .swiper`);
+    if (!body?.clientWidth) return;
+    [id, x0, y0, s0, on, trail] = [e.pointerId, e.clientX, e.clientY, body.scrollLeft, false, []];
+  });
+  area.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== id) return;
+    if (!on) {
+      if (Math.abs(e.clientX - x0) < 8 || Math.abs(e.clientX - x0) < Math.abs(e.clientY - y0)) return;
+      on = true;
+      x0 = e.clientX;
+      settling?.abort(); // a last drag's slide still settling: this one takes over
+      body.style.scrollSnapType = "none";
+      for (const b of $$("#dq .embrace.down")) b.classList.remove("down"); // not pressing Patatas
+    }
+    body.scrollLeft = s0 - (e.clientX - x0);
+    trail.push([e.timeStamp, e.clientX]);
+    while (trail.length > 2 && e.timeStamp - trail[0][0] > 100) trail.shift();
+  });
+  const end = (e) => {
+    if (e.pointerId !== id) return;
+    id = null;
+    if (!on) return;
+    dragged = performance.now();
+    const w = body.clientWidth, n = body.children.length, dx = e.clientX - x0, f = body.scrollLeft / w;
+    const [t0, xa] = trail[0] || [e.timeStamp, e.clientX], v = (e.clientX - xa) / Math.max(1, e.timeStamp - t0); // px a ms
+    // On to the next slide on a flick or a quarter of the way, else back to the nearer
+    const go = Math.abs(v) > 0.2 ? v : Math.abs(dx) > w / 4 ? dx : 0;
+    const i = Math.max(0, Math.min(n - 1, go < 0 ? Math.ceil(f) : go > 0 ? Math.floor(f) : Math.round(f)));
+    // Snapping back on once it's there (the drag's own scrolls end too, before it's moved off)
+    const b = body, ac = new AbortController(), restore = (force) => {
+      if (force !== true && Math.abs(b.scrollLeft - i * w) > 1) return;
+      ac.abort();
+      b.style.scrollSnapType = "";
+    };
+    settling = ac;
+    b.scrollTo({ left: i * w, behavior: reducedMotion ? "auto" : "smooth" });
+    b.addEventListener("scrollend", restore, { signal: ac.signal });
+    b.addEventListener("scroll", restore, { signal: ac.signal, passive: true }); // where there's no scrollend
+    const t = setTimeout(() => restore(true), 1200);
+    ac.signal.addEventListener("abort", () => clearTimeout(t));
+    // Past an end: the neighbouring tab
+    const edge = EDGES.get(b);
+    if (edge && Math.abs(dx) >= 60) {
+      if (dx > 0 && s0 <= 2 && edge.can.prev()) edge.onEdge(-1);
+      if (dx < 0 && s0 >= b.scrollWidth - w - 2 && edge.can.next()) edge.onEdge(1);
+    }
+  };
+  area.addEventListener("pointerup", end);
+  area.addEventListener("pointercancel", end);
+  area.addEventListener("click", (e) => { if (performance.now() - dragged < 400) { e.stopPropagation(); e.preventDefault(); } }, true);
+}
+for (const el of [$("#dq"), $("#foot"), $(".fz-foot")]) if (el) footSwipe(el);
 
 let timer = 0;
 
