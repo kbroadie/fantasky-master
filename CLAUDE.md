@@ -55,6 +55,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
   - `--px` side insets (16px, 20px from 600px up).
   - The last card's 12px plus the body's 24px below.
   - Every card has the same hairline border, with no gold left edges.
+  - A slide ends 12px below its last card's margin (`.slide` padding), so the cards' shadows fade out before the slide's edge clips them; `#dq`'s top padding is 12px less to keep the gap.
 - **Performance** (each rule was measured; NOTES.md has the numbers):
   - Animate transforms and opacity only. The sticky strips, row opening and footer lift are all transform-based; keep them so.
   - Standings rows must not be compositing layers (iOS dropped their text).

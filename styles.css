@@ -259,7 +259,7 @@ main { padding-top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top))
 /* Patatas takes the house's light (main.js: #dq-light), in the normal view, where he stands before its sky; his bubble
    takes the sky's shape and colours (data-sky, below), and by night his light too, so it's no brighter than he is */
 html:not(.fz) #dq.lit .em-who, html:not(.fz) #dq.lit[data-sky="night"] .em-say { filter: url(#dq-light); }
-#dq { position: relative; z-index: 1; padding: 16px var(--px) 0; text-align: center; } /* over the house's sky, which rises behind the page */
+#dq { position: relative; z-index: 1; padding: 4px var(--px) 0; text-align: center; } /* over the house's sky, which rises behind the page */
 /* The footer's areas swipe the slides (main.js, footSwipe): sideways drags are the page's, up and down the browser's */
 #dq, #foot, .fz-foot { touch-action: pan-y pinch-zoom; }
 .embrace {
@@ -554,7 +554,9 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
   scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none;
 }
 .swiper::-webkit-scrollbar { display: none; }
-.slide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+.slide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; padding-bottom: 12px; }
+/* (a slide is clipped at its edges, by its containment and the swiper: the 12px under its last card's own 12px give the
+   cards' shadows, 18px deep and 24px in the dream, room to fade out; Patatas sits 12px nearer to keep the same gap) */
 /* Off-screen slides skip rendering. Nothing inside a .slide may be position: fixed. */
 .slide { content-visibility: auto; contain-intrinsic-size: auto 390px auto 1200px; }
 
