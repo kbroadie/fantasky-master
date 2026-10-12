@@ -81,7 +81,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
   - When the pick-every-contestant rule binds, a red "Must pick" line shows in the opened row (`pickStatus`).
   - A welcome card (the host's words; keep their jokes) shows until it's closed.
 - **Episodes:**
-  - Per episode: a head (kicker, title, who called the winner), portraits in studio seat order, and the dense task table.
+  - Per episode: a head (kicker, title, who called the winner), portraits in studio seat order, and the dense task table (each task by the Taskmaster Wiki's name for it, on request; two lines, a tap for the rest).
   - The winner gets canvas gold light. Last place gets stink gas only if 5 or more behind the next lowest.
   - **The race so far** shows each contestant's gap to the leader, ending at the episode on show; tap a line to follow it.
   - An unscored episode is just its head.
