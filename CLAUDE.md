@@ -80,6 +80,7 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
   - Tap a board's head to open its race chart above the rows (`boardChart`, `raceSvg` with `exact`). Every player has their own colour (`playerColor`).
   - When the pick-every-contestant rule binds, a red "Must pick" line shows in the opened row (`pickStatus`).
   - A welcome card (the host's words; keep their jokes) shows until it's closed.
+- **Headlines** (`h2.ep-title`, on every tab): one line in a box of constant height; a long one shrinks to fit (`--fit`, `fitTitles` in `main.js`, measured only near the screen).
 - **Episodes:**
   - Per episode: a head (kicker, title, who called the winner), portraits in studio seat order, and the dense task table (each task by the Taskmaster Wiki's name for it, on request; two lines, a tap for the rest).
   - The winner gets canvas gold light. Last place gets stink gas only if 5 or more behind the next lowest.

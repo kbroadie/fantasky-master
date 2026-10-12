@@ -85,18 +85,22 @@ function renderCast(d) {
   fitTitles();
 }
 
-// Fantasy titles: sparkles flank .ep-w, which is sized to its widest line so they hug the words.
-// Only the titles near the screen are measured, in the slides on show and either side of them: measuring one in a slide
-// off screen lays out that whole slide (content-visibility), and all of them took ~280ms at a 4× throttled CPU each
-// time the dream began. The rest are fitted as they come near (mark), and all again when the width changes
+// Headlines on one line: a title wider than its box (less the sparkles in the dream) shrinks to fit (--fit on .ep-w;
+// styles.css). Only the titles near the screen are measured, in the slides on show and either side of them: measuring
+// one in a slide off screen lays out that whole slide (content-visibility), and all of them took ~280ms at a 4× throttled
+// CPU. The rest are fitted as they come near (mark), and all again when the width changes. Reads, then writes
 function fitTitles() {
-  if (!state.fantasy) return;
   const near = [ST, EP, CAST].filter((sw) => $(sw.body).offsetParent).flatMap((sw) => { const k = $(sw.body).children, i = sw.get(); return [k[i - 1], k[i], k[i + 1]]; });
-  const ts = near.filter(Boolean).flatMap((s) => [...s.querySelectorAll(".ep-title .ep-w")]).filter((t) => t.dataset.fit !== String(pageW));
+  const key = `${pageW} ${state.fantasy ? 1 : 0}`;
+  const ts = near.filter(Boolean).flatMap((s) => [...s.querySelectorAll("h2.ep-title .ep-w")]).filter((t) => t.dataset.fit !== key);
   if (!ts.length) return;
-  for (const t of ts) t.style.width = "";
-  const ws = ts.map((t) => (t.firstElementChild.getClientRects().length > 1 ? t.firstElementChild.offsetWidth + 1 : 0));
-  ts.forEach((t, i) => { if (ws[i]) t.style.width = `${ws[i]}px`; t.dataset.fit = pageW; });
+  for (const t of ts) t.style.removeProperty("--fit");
+  const fit = ts.map((t) => (t.scrollWidth > t.clientWidth ? (t.clientWidth - 1) / t.scrollWidth : 1));
+  const set = (t, f) => t.style.setProperty("--fit", (Math.floor(f * 1000) / 1000).toString());
+  ts.forEach((t, i) => { if (fit[i] < 1) set(t, fit[i]); t.dataset.fit = key; });
+  // A smaller size isn't quite in proportion (the glyphs' spacing rounds), so any still over are taken down the rest
+  const over = ts.filter((t, i) => fit[i] < 1 && t.scrollWidth > t.clientWidth).map((t) => [t, t.clientWidth, t.scrollWidth]);
+  for (const [t, cw, sw] of over) set(t, +t.style.getPropertyValue("--fit") * (cw - 1) / sw);
 }
 // Titles refit when main's width changes
 let pageW = 0;

@@ -627,6 +627,10 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 
 /* ── Episodes */
 .ep-title { font-family: var(--ff-head); font-weight: 400; font-size: clamp(20px, 5.6vw, 27px); line-height: 1.08; text-transform: uppercase; letter-spacing: .01em; margin-bottom: 6px; text-wrap: balance; }
+/* A headline is one line at one height, whatever its length (on request): a long one's words shrink to fit
+   (--fit, from fitTitles in main.js), centred in a box of the full size's line */
+h2.ep-title { display: flex; align-items: center; justify-content: center; height: 1.08em; white-space: nowrap; }
+h2.ep-title .ep-w { min-width: 0; font-size: calc(1em * var(--fit, 1)); line-height: 1; }
 .ep-body { padding: 12px var(--px) 0; } /* 12px to the first card; the last card's 12px + body's 24px below */
 .pod {
   display: flex; align-items: flex-end; gap: 6px; padding: 12px 8px 10px; margin-bottom: 12px;
@@ -1070,9 +1074,7 @@ html.fz .tab[aria-selected="true"] span { font-weight: 500; }
 html.fz .kicker { color: var(--show-hi); }
 /* Words carry the rainbow and glow (.ep-t); sparkles outside, so they don't re-render a filter */
 html.fz .ep-title .ep-t { color: var(--t1); text-shadow: 0 1px 0 rgba(42, 8, 69, .9), 0 0 6px rgba(255, 90, 210, .3); }
-/* Sparkles flank the whole title; each line centred (.ep-w sized by fitTitles) */
-html.fz .ep-title { display: flex; align-items: center; justify-content: center; }
-html.fz .ep-title .ep-w { min-width: 0; }
+/* Sparkles flank the title */
 html.fz .ep-title::before, html.fz .ep-title::after { content: "✨"; flex: none; margin: 0 .3em; font-size: .62em; }
 html.fz .ep-title::after { animation-delay: -1.1s; }
 html.fz .st-how { color: var(--gold2); text-shadow: 0 0 8px rgba(255, 225, 77, .3); }
