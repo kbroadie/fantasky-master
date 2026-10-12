@@ -2,7 +2,7 @@
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
-import { cardsShown, changed, autoUsed, get, val, tuned, shown } from "../switches.js";
+import { cardsShown, changed, autoUsed, get, val, tuned, shown, hourOf } from "../switches.js";
 import { PR } from "../version.js";
 
 // Fantasy: lowest total first
@@ -29,14 +29,16 @@ const toggle = (it, name) => `<button type="button" class="sw-toggle" role="swit
 const segs = (it, name, grid = false) => `<div class="sw-seg${grid ? " grid" : ""}" role="radiogroup" aria-label="${esc(name)}">${it.options.map(([v, label]) =>
   `<button type="button" role="radio" aria-checked="${val(it.key) === v}" data-sw="${it.key}" data-v="${v}">${esc(label)}</button>`).join("")}</div>`;
 // A strength: a slider (--v, how far along, for its gold fill) and its value, gold once changed; a tap on it resets it
-const range = (it, name) => `<input type="range" class="sw-range" data-sw="${it.key}" aria-label="${esc(name)}" min="${it.min}" max="${it.max}" step="${it.step}" value="${get(it.key)}" style="--v:${fill(it)}">`;
-export const fill = (it, v = get(it.key)) => `${(((v - it.min) / (it.max - it.min)) * 100).toFixed(1)}%`;
+const range = (it, name) => `<input type="range" class="sw-range" data-sw="${it.key}" aria-label="${esc(name)}" min="${it.min}" max="${it.max}" step="${it.step}" value="${at(it)}" style="--v:${fill(it)}">`;
+// Where a slider stands: its value, or a time's hour (the clock's now, when it follows the clock)
+export const at = (it, v = get(it.key)) => (it.type === "time" ? hourOf(v) : v);
+export const fill = (it, v = get(it.key)) => `${(((at(it, v) - it.min) / (it.max - it.min)) * 100).toFixed(1)}%`;
 const value = (it, name) => `<button type="button" class="sw-val${get(it.key) !== it.def ? " on" : ""}" data-reset="${it.key}" aria-label="${esc(name)}: reset">${shown(it, get(it.key))}</button>`;
 const control = (it) => (it.type === "steps"
   ? `<div class="sw-row sw-steps"><span>${esc(it.label)}${tuned(it.key) ? ' <b class="sw-auto">Auto</b>' : ""}</span>${segs(it, it.label)}</div>`
   : `<div class="sw-row sw-slide"><span>${esc(it.label)}</span>${range(it, it.label)}${value(it, it.label)}</div>`);
 // Tiles: a lone switch or slider is a small tile, an effect with settings spans the row. Only the cards for the view on show
-const tiled = (c) => c.items.length === 1 && c.items[0].type !== "choice";
+const tiled = (c) => c.items.length === 1 && !["choice", "time"].includes(c.items[0].type);
 const switchCard = (c) => {
   const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
   if (c.fz) { // Fantasy Land: its switch, and the transition it plays, so a pick is tried at once
@@ -44,6 +46,12 @@ const switchCard = (c) => {
     return `
     <div class="card sw-card wide"><div class="card-head"><span>${esc(c.title)}</span><button type="button" class="sw-toggle" role="switch" aria-checked="${!!state.fantasy}" aria-label="${esc(c.title)}" data-fz></button></div>
       <div class="sw-sub">${esc(it.label)}</div>${segs(it, it.label, true)}</div>`;
+  }
+  if (!main && rest.length === 1 && rest[0].type === "time") { // a time: its slider, the time in the head, and the times of day
+    const it = rest[0];
+    return `
+    <div class="card sw-card wide"><div class="card-head"><span>${esc(c.title)}</span>${value(it, c.title)}</div>
+      <div class="sw-one">${range(it, c.title)}</div>${segs(it, c.title, true)}</div>`;
   }
   if (!main && rest.length === 1 && rest[0].type === "choice") { // a lone choice: its buttons across the card
     const it = rest[0];

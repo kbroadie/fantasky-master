@@ -6,8 +6,8 @@ import { moonAt, moonPath, skyFor } from "./sky.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
-import { castOrder, castTabs, castSlides, castSlide, fill, changedSay, resettable } from "./views/cast.js";
-import { get, set, item, shown, resetAll, changed, pin, onSwitch } from "./switches.js";
+import { castOrder, castTabs, castSlides, castSlide, fill, at as sliderAt, changedSay, resettable } from "./views/cast.js";
+import { get, set, item, shown, hourOf, resetAll, changed, pin, onSwitch } from "./switches.js";
 import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay, reloadFresh } from "./version.js";
@@ -537,16 +537,20 @@ $("#cast-body").addEventListener("click", (e) => {
     opt.closest(".sw-row")?.querySelector(".sw-auto")?.remove();
     set(it.key, it.type === "steps" ? +opt.dataset.v : opt.dataset.v);
     for (const b of opt.parentElement.children) b.setAttribute("aria-checked", b === opt);
+    if (it.type === "time") timeCard(opt.closest(".sw-card"), it);
     return counted(slide);
   }
   const val = e.target.closest(".sw-val[data-reset]");
   if (val) { // a slider's value: back to the design
     const it = item(val.dataset.reset), r = slide.querySelector(`.sw-range[data-sw="${it.key}"]`);
     set(it.key, it.def);
-    r.value = it.def;
-    r.style.setProperty("--v", fill(it));
-    val.textContent = shown(it, it.def);
-    val.classList.remove("on");
+    if (it.type === "time") timeCard(val.closest(".sw-card"), it);
+    else {
+      r.value = it.def;
+      r.style.setProperty("--v", fill(it));
+      val.textContent = shown(it, it.def);
+      val.classList.remove("on");
+    }
     return counted(slide);
   }
   const sw = e.target.closest(".sw-toggle");
@@ -581,11 +585,26 @@ function revision() {
     for (const b of $$("#cast-body .sw-reload")) b.classList.toggle("gold", n > PR); // gold when there's a newer one to get
   });
 }
+// The Time of day card shows its setting three ways: the slider's place, the time in its head (gold once chosen) and
+// the time of day's button, if it's one of them
+function timeCard(card, it) {
+  const v = get(it.key), r = card.querySelector(".sw-range"), val = card.querySelector(".sw-val");
+  r.value = sliderAt(it);
+  r.style.setProperty("--v", fill(it));
+  val.textContent = shown(it, v);
+  val.classList.toggle("on", v !== it.def);
+  for (const b of card.querySelectorAll(".sw-seg [data-v]")) b.setAttribute("aria-checked", b.dataset.v === v);
+}
 // A Moss card's slider: the setting follows as it moves
 $("#cast-body").addEventListener("input", (e) => {
   const r = e.target.closest(".sw-range");
   if (!r) return;
   const it = item(r.dataset.sw), v = +r.value, val = r.closest(".sw-slide, .sw-card").querySelector(".sw-val");
+  if (it.type === "time") {
+    set(it.key, String(v));
+    timeCard(r.closest(".sw-card"), it);
+    return counted(r.closest(".slide"));
+  }
   set(it.key, v);
   r.style.setProperty("--v", fill(it));
   val.textContent = shown(it, v);
@@ -673,7 +692,10 @@ function showDay() {
   const house = $("#foot .house");
   if (!house) return;
   // (or at the time chosen on Moss's Time of day card)
-  const pick = get("houseTime"), h = pick === "clock" ? now.getHours() + now.getMinutes() / 60 : +pick, sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
+  const pick = get("houseTime"), h = hourOf(pick), sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
+  // (the Time of day card, while it follows the clock, moves with it)
+  const tc = pick === "clock" && $("#cast-body .sw-range[data-sw=houseTime]")?.closest(".sw-card");
+  if (tc) timeCard(tc, item("houseTime"));
   const at = {};
   for (const [k, t] of [["sun", sun], ["moon", moon]]) {
     const el = house.querySelector(`.${k}`), x = 20 + 350 * Math.max(0, Math.min(1, t));

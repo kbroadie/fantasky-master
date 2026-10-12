@@ -28,14 +28,6 @@ export const CARDS = [
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
       { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
     ] },
-  // The footers: Fantasy Land's rolling sea, the ducks bobbing on it and the leaping dolphins; upright, the house's lights
-  // coming up on show days and its chimney's smoke. Off, still (the dolphins hidden, the house lit at once)
-  { title: "Footer",
-    items: [{ key: "fzSea", type: "toggle", def: true, main: true, cls: "no-sea" }] },
-  // The house's scene at a chosen time of day, or by the device's clock (main.js); the normal view only, where it is
-  { title: "Time of day", view: "up",
-    items: [{ key: "houseTime", type: "choice", label: "Time of day", def: "clock", options: [["5.5", "Dawn"], ["7", "Sunrise"], ["10", "Morning"],
-      ["13", "Midday"], ["16.5", "Afternoon"], ["19.5", "Sunset"], ["20.5", "Dusk"], ["23", "Night"], ["clock", "Clock"]] }] },
   // The rest of its motion: the sparkles' twinkle, the glint on Fantasy and the sliding tab rainbow. Off, all there, still
   { title: "Decorations", view: "fz",
     items: [{ key: "fzDeco", type: "toggle", def: false, main: true, cls: "no-deco" }] },
@@ -50,13 +42,30 @@ export const CARDS = [
     ] },
   { title: "Scoring cards",
     items: [{ key: "howLight", type: "toggle", def: false, main: true, cls: "no-howlight" }] },
+  // The cards that change the footer's scene, last. The footers: Fantasy Land's rolling sea, the ducks bobbing on it and the
+  // leaping dolphins; upright, the house's lights coming up on show days and its chimney's smoke. Off, still (the dolphins
+  // hidden, the house lit at once)
+  { title: "Footer",
+    items: [{ key: "fzSea", type: "toggle", def: true, main: true, cls: "no-sea" }] },
+  // The house's scene at a chosen time, or by the device's clock (main.js); the normal view only, where it is. A time: a
+  // slider through the day (any quarter hour, kept as its hour, "13.25") over the times of day as buttons
+  { title: "Time of day", view: "up",
+    items: [{ key: "houseTime", type: "time", label: "Time of day", def: "clock", min: 0, max: 23.75, step: 0.25, options: [["5.5", "Dawn"], ["7", "Sunrise"],
+      ["10", "Morning"], ["13", "Midday"], ["16.5", "Afternoon"], ["19.5", "Sunset"], ["20.5", "Dusk"], ["23", "Night"], ["clock", "Clock"]] }] },
 ];
 // A card for one view only (view: "fz", Fantasy Land; "up", the normal view) shows only there
 export const cardsShown = (fantasy) => CARDS.filter((c) => !c.view || (c.view === "fz") === fantasy);
 const ITEMS = Object.fromEntries(CARDS.flatMap((c) => c.items.map((it) => [it.key, it])));
 const id = (k) => `fm-sw-${k}`;
 export const item = (k) => ITEMS[k];
-export const shown = (it, v) => (it.pct ? `${Math.round(v * 100)}%` : `${+v.toFixed(2)}${it.unit}`);
+// A time's hour: the one chosen, or the clock's now
+export const hourOf = (v) => {
+  if (v !== "clock") return +v;
+  const now = new Date();
+  return now.getHours() + now.getMinutes() / 60;
+};
+const clock = (h) => `${Math.floor(h)}:${String(Math.floor((h % 1) * 60)).padStart(2, "0")}`;
+export const shown = (it, v) => (it.type === "time" ? clock(hourOf(v)) : it.pct ? `${Math.round(v * 100)}%` : `${+v.toFixed(2)}${it.unit}`);
 
 // Read once; settings that no longer exist are forgotten
 const values = {};
@@ -64,9 +73,10 @@ try { for (const k of Object.keys(localStorage)) if (k.startsWith("fm-sw-") && !
 for (const [k, it] of Object.entries(ITEMS)) {
   let v = null;
   try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
-  const read = it.type === "toggle" ? v === "1" : it.type === "choice" ? v : +v;
-  // A value no longer offered (an old slider's in-between step) is the default
-  values[k] = v == null || (it.options && !it.options.some(([o]) => o === read)) ? it.def : read;
+  const read = it.type === "toggle" ? v === "1" : it.type === "choice" || it.type === "time" ? v : +v;
+  // A value no longer offered (an old slider's in-between step) is the default; a time is any hour of the day
+  const ok = it.type === "time" ? read === "clock" || (read !== "" && +read >= 0 && +read < 24) : !it.options || it.options.some(([o]) => o === read);
+  values[k] = v == null || !ok ? it.def : read;
 }
 export const get = (k) => values[k];
 const tell = (k, v) => dispatchEvent(new CustomEvent("fm-switch", { detail: { key: k, value: v } }));
