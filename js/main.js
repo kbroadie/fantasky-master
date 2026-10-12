@@ -104,7 +104,7 @@ function fitTitles() {
 }
 // Titles refit when main's width changes
 let pageW = 0;
-new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== pageW) { pageW = w; fitTitles(); } }).observe($("main"));
+new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== pageW) { pageW = w; fitTitles(); } peek(); }).observe($("main"));
 
 // Edit mode: re-render from the new CSV text, keeping slide and open player.
 function refresh(text) {
@@ -194,9 +194,9 @@ const SDA = CSS.supports("animation-timeline: scroll()");
 const lifted = [$("#dq"), $("#foot"), $(".fz-bow"), $(".fz-waves")].filter(Boolean); // cached: a class lookup per frame was the main cost
 let pair = null;
 function lift(p, t) {
-  if (!p) { for (const el of lifted) { el.style.translate = ""; el.style.animationName = ""; } document.body.classList.remove("lifting"); return; }
+  if (!p) { for (const el of lifted) { el.style.translate = ""; el.style.animationName = ""; } document.body.classList.remove("lifting"); peek(); return; }
   if (!p.sda) for (const el of lifted) el.style.animationName = "";
-  document.body.classList.add("lifting");
+  if (!document.body.classList.contains("lifting")) { document.body.classList.add("lifting"); peek(); }
   if (p.sda) {
     for (const el of lifted) {
       const st = el.style;
@@ -208,6 +208,29 @@ function lift(p, t) {
   const v = `0 ${Math.round(p.a + (p.b - p.a) * t)}px`;
   if (p.v !== v) { p.v = v; for (const el of lifted) el.style.translate = v; }
 }
+// The house's sky peeks up from the screen's bottom (on request): while Patatas's block is below the screen, the sky is held
+// where a swipe holds it (as if the block began at the screen's edge), and rises with the footer once that comes up.
+// Scroll-driven where supported, so it keeps pace with the scroll, else per frame; off while a swipe lifts the footer
+let skyEl = null, skyR = null, praf = 0;
+function peek() {
+  praf = 0;
+  if (!skyEl?.isConnected) { skyEl = $("#foot .house > .sky"); skyR = null; }
+  if (!skyEl) return;
+  let r = -innerHeight;
+  for (let el = $("#dq"); el; el = el.offsetParent) r += el.offsetTop; // its place in the page, as laid out (no lift)
+  r = document.body.classList.contains("lifting") ? 0 : Math.max(0, Math.round(r));
+  const st = skyEl.style;
+  if (SDA) {
+    if (r === skyR) return;
+    skyR = r;
+    if (r) { st.setProperty("--pk", `${-r}px`); st.animationRange = `0px ${r}px`; st.animationName = "peek"; } else st.animationName = "";
+  } else {
+    skyR = r;
+    const v = r > scrollY ? `translateY(${Math.round(scrollY - r)}px)` : "";
+    if (st.transform !== v) st.transform = v;
+  }
+}
+const queuePeek = () => { if (!praf) praf = requestAnimationFrame(peek); };
 // Room a slide's swiper leaves for it at the least: down to the screen's bottom, less the footer
 const roomIn = (body) => innerHeight - topIn(body) - (parseFloat(getComputedStyle(document.body).paddingBottom) || 0) - feetH();
 // The footer's parts glide when the page's height jumps (a row opening or closing, a card changing), in step with the
@@ -981,8 +1004,9 @@ function cardLight() {
 }
 const queueLight = () => { if (!lraf) lraf = requestAnimationFrame(cardLight); };
 addEventListener("scroll", queueLight, { passive: true });
+if (!SDA) addEventListener("scroll", queuePeek, { passive: true });
 
-addEventListener("resize", () => { ducksOnWaves(); for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); queueLight(); edges(); for (const r of $$("#st-body .pc.open")) placeLine(r); if (state.stView) syncBoards(true); });
+addEventListener("resize", () => { peek(); ducksOnWaves(); for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); queueLight(); edges(); for (const r of $$("#st-body .pc.open")) placeLine(r); if (state.stView) syncBoards(true); });
 
 addEventListener("hashchange", () => {
   const h = readHash();
