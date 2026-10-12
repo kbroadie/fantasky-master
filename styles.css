@@ -312,7 +312,7 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 /* The way into the low-scores-win mode (flip.js), under every tab: Patatas, gold-framed like the cast with a brass name
    plate (Cinzel, engraved), asks in a cartoon speech bubble (Chewy), "Embrace failure" on a rainbow; in the mode,
    "Embrace success" on the normal view's gold. The plate and frame are real gold in both views */
-#dq { padding: 16px var(--px) 0; text-align: center; }
+#dq { position: relative; z-index: 1; padding: 16px var(--px) 0; text-align: center; } /* over the house's sky, which rises behind the page */
 .embrace {
   display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 0; background: none; color: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -795,7 +795,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    days (.show-day, main.js) the lines glow, and as it comes into view (.up, once) its lights come up one by one; the
    chimney smokes while it's on screen (.go). Only opacity and transform move; nothing at all on other days */
 .house { position: absolute; left: 50%; bottom: 0; width: min(390px, 100%); aspect-ratio: 390 / 136; translate: -50% 0; pointer-events: none; }
-.house > svg:first-of-type { position: relative; display: block; width: 100%; height: 100%; }
+.house > svg:first-of-type { position: relative; display: block; width: 100%; height: 100%; overflow: visible; } /* the conifer's tip may rise past the band, into the sky */
 /* The sky and the drive behind the drawing, the footer's whole width (--u: one unit of the drawing); main.js paints them
    from the sun's height each minute. The sky fades into the page above it */
 .house > .sky, .house > .ground { position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); }
@@ -804,15 +804,17 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
   --sides: linear-gradient(90deg, transparent, #000 calc((100% - 390px) * .4), #000 calc(100% - (100% - 390px) * .4), transparent);
   -webkit-mask-image: var(--sides); mask-image: var(--sides);
 }
+/* The sky rises well above the footer, behind the page (the slides are above the footer; Patatas's block is lifted above
+   it, #dq), fading out as it goes up */
 .house > .sky {
-  top: 0; height: calc(86 * var(--u));
-  -webkit-mask-image: linear-gradient(transparent, #000 75%), var(--sides); -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(transparent, #000 75%), var(--sides); mask-composite: intersect;
+  bottom: calc(58 * var(--u)); height: calc(78 * var(--u) + 360px); will-change: transform; /* its own layer: big and masked, it isn't repainted as the page scrolls */
+  -webkit-mask-image: linear-gradient(transparent, #000 70%), var(--sides); -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(transparent, #000 70%), var(--sides); mask-composite: intersect;
 }
-/* The ground runs back to y 77, the lawn behind everything (the conifer's foot, the caravan's), the drive coming up to
+/* The ground runs back to y 69 (raised with the structures, leaving the ducks room on the drive), the lawn behind everything (the conifer's foot, the caravan's), the drive coming up to
    the structures' fronts; both start above the feet standing on them, tucked under, as browsers that round an SVG's
    edge and a box's edge to the device's pixels differently (Safari) showed a pixel of sky where they met exactly */
-.house > .ground { top: calc(77 * var(--u)); bottom: 0; }
+.house > .ground { top: calc(69 * var(--u)); bottom: 0; }
 .house .ln { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .house .ln * { vector-effect: non-scaling-stroke; }
 /* Details in a finer line */
@@ -915,7 +917,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .show-day.up .house .lt > g > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
 @keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
 .smoke {
-  position: absolute; left: 47%; bottom: 81.9%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
+  position: absolute; left: 47%; bottom: 87.8%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
   fill: none; stroke: #e9dcc0; stroke-width: 1.5; stroke-linecap: round;
 }
 .show-day.go .smoke { animation: h-smoke 4s 2s linear infinite; }

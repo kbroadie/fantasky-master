@@ -723,11 +723,12 @@ function shade() {
   // after sunset; none around the sun itself), and by night a faint one around the moon; the drive in its gravel (styles.css), lit the same way. In
   // the drawing's units from its middle
   const u = (n) => `calc(${n.toFixed(1)} * var(--u))`, x = (n) => `calc(50% + ${(n - 195).toFixed(1)} * var(--u))`;
-  const [gx] = light.at.sun, gy = 77, hi = Math.max(0, Math.min(1, light.height / 25));
+  const y = (n) => `calc(100% - ${(78 - n).toFixed(1)} * var(--u))`; // the sky box ends at y 78 and rises behind the page
+  const [gx] = light.at.sun, gy = 69, hi = Math.max(0, Math.min(1, light.height / 25));
   const glow = (c, a) => `color-mix(in srgb, ${c} ${(a * 100).toFixed(0)}%, transparent)`;
-  const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${u(light.at.moon[1])}, ${glow("#c8d2ff", 0.1 * moonLit)}, transparent)`];
+  const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${y(light.at.moon[1])}, ${glow("#c8d2ff", 0.1 * moonLit)}, transparent)`];
   house.querySelector(".sky").style.background = [...moonGlow,
-    `radial-gradient(${u(220 - 100 * hi)} ${u(60 + 20 * hi)} at ${x(gx)} ${u(gy)}, ${glow(sky.glow, sky.glowA)}, transparent)`,
+    `radial-gradient(${u(220 - 100 * hi)} ${u(60 + 20 * hi)} at ${x(gx)} ${y(gy)}, ${glow(sky.glow, sky.glowA)}, transparent)`,
     `linear-gradient(${sky.top}, ${sky.horizon})`].join(",");
   house.querySelector(".ground").style.background = [
     `radial-gradient(${u(200)} ${u(30)} at ${x(gx)} 0, ${glow(sky.glow, sky.glowA * 0.3)}, transparent)`,
@@ -757,7 +758,7 @@ function shade() {
   // The ducks' own: each one's silhouette (14 high, its feet at y 98.1) cast the same way; the soft contact shadows under
   // their feet stay put
   house.querySelectorAll(".dcast path").forEach((el, i) => el.setAttribute("transform", `${cast(98.1)} translate(${111.25 + 25 * i} 85) scale(.875)`));
-  // And the house's shadow on them: from points up each duck's height (in the buildings' units: its feet at y 111.1,
+  // And the house's shadow on them: from points up each duck's height (in the buildings' units: its feet at y 121.1,
   // 17.5 high), back along the light to the structure that would cast it; each duck darkens by the share of it in shade
   // (each structure in its own frame, before its depth's dy)
   const solids = $$(".b .ln .o", house).map((el) => [el, +(el.closest("[data-dy]")?.dataset.dy ?? 0)]), pt = house.querySelector("svg").createSVGPoint();
@@ -768,7 +769,7 @@ function shade() {
     return el.isPointInFill?.(pt);
   });
   $$("#foot .dk").forEach((dk, i) => {
-    const gx = (81 + 25 * i) / 0.8, gy = 111.1;
+    const gx = (81 + 25 * i) / 0.8, gy = 121.1; // its feet at y 98.1, in the buildings' units
     let n = 0;
     for (let up = 1; up < 18; up += 3) if (shaded(gx, gy, up)) n++;
     // The sky still lights them in shade; darkened, yellow turns olive, so their shade is warmed a little toward amber
