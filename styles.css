@@ -312,6 +312,8 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 /* The way into the low-scores-win mode (flip.js), under every tab: Patatas, gold-framed like the cast with a brass name
    plate (Cinzel, engraved), asks in a cartoon speech bubble (Chewy), "Embrace failure" on a rainbow; in the mode,
    "Embrace success" on the normal view's gold. The plate and frame are real gold in both views */
+/* Patatas and his bubble take the house's light (main.js: #dq-light), in the normal view, where they stand before its sky */
+html:not(.fz) #dq.lit { filter: url(#dq-light); }
 #dq { position: relative; z-index: 1; padding: 16px var(--px) 0; text-align: center; } /* over the house's sky, which rises behind the page */
 .embrace {
   display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 0; background: none; color: inherit;

@@ -205,7 +205,7 @@ export function footer() {
   const ducks = Array.from({ length: 7 }, () => `<span class="dk"><svg class="duck"><use href="#duck"/></svg></span>`).join("");
   // The ducks' shading in the house's light (main.js turns it): pale lemon on the side facing it, deepening to a dark
   // mustard away from it
-  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}<defs><linearGradient id="dk-shade" x1=".3" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fff69a"/><stop offset=".45" stop-color="#f6e24d"/><stop offset="1" stop-color="#b39304"/></linearGradient></defs></svg>${HOUSE}
+  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}<defs><filter id="dq-light" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0"/></filter><linearGradient id="dk-shade" x1=".3" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fff69a"/><stop offset=".45" stop-color="#f6e24d"/><stop offset="1" stop-color="#b39304"/></linearGradient></defs></svg>${HOUSE}
     <div class="ducks" aria-hidden="true">${ducks}</div>`;
 }
 

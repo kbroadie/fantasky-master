@@ -705,7 +705,8 @@ function shade() {
     // The edges facing the light catch it most when it's low and raking
     "--rim": (sun ? low * (0.5 + 0.35 * (1 - Math.min(1, e / (40 * deg)))) : 0.35 * moonLit).toFixed(3),
     // How brightly the structures' own colours show: full daylight, falling through twilight to what the moon gives
-    "--illum": `${Math.max(6 + 8 * moonLit, light.height >= 0 ? 45 + 50 * Math.min(1, light.height / 20) : 45 + 3 * light.height).toFixed(1)}%`,
+    // (by night the moon's light, a full moon's lighting the scene to near a third of daylight)
+    "--illum": `${Math.max(7 + 23 * moonLit, light.height >= 0 ? 45 + 50 * Math.min(1, light.height / 20) : 45 + 3 * light.height).toFixed(1)}%`,
     "--lit": sun ? sky.sun : "#c4d0ff",
     "--sun": sky.sun,
     "--amb": sky.horizon,
@@ -726,7 +727,7 @@ function shade() {
   const y = (n) => `calc(100% - ${(78 - n).toFixed(1)} * var(--u))`; // the sky box ends at y 78 and rises behind the page
   const [gx] = light.at.sun, gy = 69, hi = Math.max(0, Math.min(1, light.height / 25));
   const glow = (c, a) => `color-mix(in srgb, ${c} ${(a * 100).toFixed(0)}%, transparent)`;
-  const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${y(light.at.moon[1])}, ${glow("#c8d2ff", 0.1 * moonLit)}, transparent)`];
+  const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${y(light.at.moon[1])}, ${glow("#c8d2ff", 0.18 * moonLit)}, transparent)`];
   house.querySelector(".sky").style.background = [...moonGlow,
     `radial-gradient(${u(220 - 100 * hi)} ${u(60 + 20 * hi)} at ${x(gx)} ${y(gy)}, ${glow(sky.glow, sky.glowA)}, transparent)`,
     `linear-gradient(${sky.top}, ${sky.horizon})`].join(",");
@@ -737,6 +738,20 @@ function shade() {
   const dim = Math.max(0.7, Math.min(1, 1 + light.height / 40)), ducks = $("#foot .ducks");
   const f = dim < 1 ? `brightness(${dim.toFixed(2)}) saturate(${dim.toFixed(2)})` : "";
   if (ducks && ducks.style.filter !== f) ducks.style.filter = f;
+  // Patatas and his speech bubble in the same light (#dq-light, a colour matrix): their colours times the light's, warm
+  // from a low sun, cool and greyer from the moon, dimmer in twilight and by night (brighter under a fuller moon); by day,
+  // as they are
+  const dq = $("#dq"), cm = $("#dq-light fecolormatrix") ?? $("#dq-light feColorMatrix");
+  if (dq && cm) {
+    const hgt = light.height, night = Math.max(0, Math.min(1, -hgt / 10)); // 0 by day and at sunset, 1 by full night
+    const lum = hgt >= 12 ? 1 : hgt >= 0 ? 0.9 + 0.1 * (hgt / 12) : 0.9 - night * (0.9 - (0.6 + 0.2 * moonLit));
+    const tint = hgt >= 0 ? 0.4 * Math.max(0, 1 - hgt / 15) : 0.4 + 0.05 * night, sat = 1 - 0.25 * night;
+    const c = (sun || night < 0.5 ? sky.sun : "#c4d0ff").match(/\w\w/g).map((v) => parseInt(v, 16) / 255);
+    const row = (i) => [0.2126, 0.7152, 0.0722].map((w, j) => (w * (1 - sat) + (i === j ? sat : 0)) * lum * (1 - tint + tint * c[i]));
+    const plain = lum > 0.995 && tint < 0.01;
+    if (!plain) cm.setAttribute("values", [0, 1, 2].map((i) => [...row(i), 0, 0].map((v) => +v.toFixed(3)).join(" ")).join(" ") + " 0 0 0 1 0");
+    dq.classList.toggle("lit", !plain);
+  }
   // The shaded shapes' gradient, and their edge highlights', run from the side facing the light to the other
   let vx = Math.sin(az) * Math.cos(e), vy = -Math.sin(e);
   const n = Math.hypot(vx, vy) || 1;
