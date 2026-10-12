@@ -743,36 +743,7 @@ $("#st-body").addEventListener("click", raceTap);
 
 $("#ep-body").addEventListener("click", (e) => e.target.closest(".tname")?.classList.toggle("full"));
 
-// Bar: compacts over the first 50px (CSS scroll-driven; --p fallback), hides on scroll down past 120px (12px down, 8px up), ignores overscroll bounce.
-const bar = $(".topbar");
-const linked = CSS.supports("animation-timeline: scroll()");
-let hraf = 0, lastY = scrollY, down = 0, up = 0;
-function setHidden(on) {
-  bar.classList.toggle("hidden", on);
-  document.body.classList.toggle("bar-hidden", on);
-}
-let barPNow = "";
-function barP(y) {
-  // --p where CSS doesn't follow the scroll (no scroll-driven animations); written only on change
-  const p = linked ? "0" : String(Math.min(1, y / 50));
-  if (p === barPNow) return;
-  barPNow = p;
-  for (const el of [bar, ...$$(".page > .strip")]) el.style.setProperty("--p", p);
-}
-function barScroll() {
-  if (!hraf) hraf = requestAnimationFrame(() => {
-    hraf = 0;
-    const max = document.documentElement.scrollHeight - innerHeight;
-    const y = Math.max(0, Math.min(scrollY, max)), dy = y - lastY;
-    lastY = y;
-    barP(y);
-    if (y < 120) { down = up = 0; return setHidden(false); }
-    if (dy > 0) { down += dy; up = 0; if (down > 12) setHidden(true); }
-    else if (dy < 0) { up -= dy; down = 0; if (up > 8) setHidden(false); }
-  });
-}
-addEventListener("scroll", barScroll, { passive: true });
-bar.addEventListener("focusin", () => setHidden(false));
+// The bar is always compact and always shown (styles.css): nothing to do as the page scrolls
 // Dolphins animate only on screen; the latest entry decides (batched entries come oldest first).
 // Watches the waves, not the footer: mid-swipe only they rise into view (lift)
 const footSeen = new IntersectionObserver((es) => {

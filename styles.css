@@ -22,7 +22,7 @@
   --fm: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --px: 16px;
-  /* Bar heights, open and compact; fixed over a spacer, so compacting never moves the page */
+  /* Bar heights, open (the layout its parts are drawn in) and compact (as it shows, always); fixed over a spacer */
   --hdr-h: 62px; --hdr-hc: 36px;
   --tabs-h: 58px; --tabs-hc: 40px;
   --tabs-m: 8px; --tabs-mc: 5px;
@@ -32,7 +32,6 @@
   --hdr-dy: calc(var(--hdr-hc) - var(--hdr-h));
   --tabs-dy: calc(var(--hdr-hc) + var(--tabs-mc) - var(--hdr-h) - var(--tabs-m));
   --strip-dy: calc(-1 * (var(--bar-d) + var(--strip-h) - var(--strip-hc)));
-  --tl: scroll(root); /* the timeline that compacts it: the page's scroll (main's, turned) */
   --ease: cubic-bezier(.22, 1, .36, 1);
 }
 
@@ -57,20 +56,11 @@ strong { color: var(--t1); font-weight: 700; }
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; margin: 0 auto; max-width: inherit; z-index: 5;
   display: flow-root; /* the tabs' margin mustn't collapse into the bar's */
-  transition: transform .3s var(--ease);
   pointer-events: none; /* boxes keep their open size; taps go by what shows */
 }
-/* Hidden on scroll down; a frosted band stays under a notch */
-.topbar.hidden { transform: translateY(calc(-1 * (var(--bar-h) - var(--bar-d)) - env(safe-area-inset-top))); }
 /* The backdrop's glow: a fixed layer the size of the screen, so it never stretches as the page grows (iOS ignores background-attachment: fixed) */
 body::after { content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; background: radial-gradient(ellipse at 50% 0%, rgba(80, 8, 8, .28) 0%, transparent 65%); }
-body::before {
-  content: ""; position: fixed; z-index: 6; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); pointer-events: none;
-  background: rgba(7, 5, 7, .7); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
-  opacity: 0; transition: opacity .3s var(--ease);
-}
-body.bar-hidden::before { opacity: 1; }
-main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
+main { padding-top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top)); } /* the compact bar's height */
 /* Glass: its own layer at the open height, slid up (never re-blurred at a new size) */
 .topbar::before {
   content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: calc(var(--bar-h) + env(safe-area-inset-top)); pointer-events: none;
@@ -95,16 +85,16 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 }
 .brand {
   display: flex; align-items: center; gap: .3em;
-  font-family: var(--ff-head); font-weight: 400; font-size: clamp(12px, 3.5vw, 21px); letter-spacing: 0; white-space: nowrap;
+  font-family: var(--ff-head); font-weight: 400; font-size: clamp(11px, 2.73vw, 16.4px); letter-spacing: 0; white-space: nowrap; /* compact; sized, not scaled, so it takes only its own room */
   text-shadow: 0 0 18px var(--red-glow), 0 1px 0 rgba(0, 0, 0, .7);
   transform-origin: left center;
 }
 .brand .g, .series { color: var(--gold3); text-shadow: 0 0 14px var(--gold-glow); }
 .series {
-  display: inline-flex; align-items: center; gap: 3px; min-height: 32px; padding: 2px 6px;
+  display: inline-flex; align-items: center; gap: 3px; min-height: 25px; padding: 2px 5px;
   font: inherit; border-radius: 8px; border: 1px solid rgba(236, 192, 64, .45); background: var(--gold-t);
 }
-.series .swap { display: none; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.series .swap { display: none; width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .series.multi .swap { display: block; }
 .series:active { opacity: .6; }
 .series.past { color: var(--t2); text-shadow: none; }
@@ -115,7 +105,6 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
   font-size: 14px; line-height: 1.15; color: var(--gold3); white-space: nowrap;
 }
 .cd-what { font-size: 12px; font-weight: 500; color: var(--t2); }
-/* Compact: just the gold time; the words fade where they stood */
 .cd-pill b { font-weight: 800; letter-spacing: -.01em; }
 .cd-pill small { font-family: var(--fm); font-size: 11px; color: var(--t2); margin-left: 1px; }
 .cd-tz { margin-left: 6px; font-family: var(--fm); font-size: 11px; color: var(--t3); } /* the device's time zone, after the countdown */
@@ -144,61 +133,23 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 .tab svg { width: 24px; height: 22px; flex-shrink: 0; fill: currentColor; }
 .tab span { font-family: var(--fm); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
 
-/* ── The bar compacts with the scroll */
-/* Over the first --bar-d (50px) every part moves with the scroll: scroll-driven animations on the compositor, else (and turned) --p from main.js with the fallback rules below. Squeezed boxes keep round corners (vertical radius r / k, a second animation). Open/compact sizes: pill 58 → 40, panel 46 → 28, labels up 20. */
-@keyframes bar-glass { to { transform: translateY(calc(-1 * var(--bar-d))); } }
-@keyframes bar-hdr { to { transform: translateY(var(--hdr-dy)); } }
-@keyframes bar-shade { to { opacity: 1; transform: translateY(var(--hdr-dy)); } }
-@keyframes bar-brand { to { transform: translateY(calc(var(--hdr-dy) / 2)) scale(.78); } }
-@keyframes bar-cd { to { transform: translateY(calc(var(--hdr-dy) / 2)); } }
-@keyframes bar-what { 50%, to { opacity: 0; } }
-@keyframes bar-tabs { to { translate: 0 var(--tabs-dy); } }
-@keyframes bar-pill { to { scale: 1 calc(40 / 58); } }
-@keyframes bar-ind { to { scale: 1 calc(28 / 46); } }
-@keyframes bar-icon { 60% { opacity: 0; } to { opacity: 0; transform: translateY(2px); } } /* transform, not translate: Chrome won't run an SVG's translate on the compositor */
-@keyframes bar-label { to { translate: 0 -20px; } }
-@keyframes bar-tab { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 18px 0); } } /* its hit area ends with the compact pill, clear of the strip */
-@keyframes bar-strip { to { translate: 0 var(--strip-dy); } }
-@keyframes bar-pill-r { 12.5% { border-radius: 18px / 18.73px; } 25% { border-radius: 18px / 19.51px; } 37.5% { border-radius: 18px / 20.37px; } 50% { border-radius: 18px / 21.31px; } 62.5% { border-radius: 18px / 22.33px; } 75% { border-radius: 18px / 23.46px; } 87.5% { border-radius: 18px / 24.71px; } 100% { border-radius: 18px / 26.10px; } }
-@keyframes bar-ind-r { 12.5% { border-radius: 13px / 13.67px; } 25% { border-radius: 13px / 14.41px; } 37.5% { border-radius: 13px / 15.24px; } 50% { border-radius: 13px / 16.16px; } 62.5% { border-radius: 13px / 17.21px; } 75% { border-radius: 13px / 18.40px; } 87.5% { border-radius: 13px / 19.77px; } 100% { border-radius: 13px / 21.36px; } }
-@supports (animation-timeline: scroll()) {
-  .topbar::before, .hdr::before, .hdr::after, .brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab svg, .tab span,
-  .page > .strip, .page > .strip .strip-tab > span {
-    animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both;
-    animation-timeline: var(--tl); animation-range: 0 var(--bar-d);
-  }
-  .topbar::before { animation-name: bar-glass; }
-  .hdr::before { animation-name: bar-hdr; }
-  .hdr::after { animation-name: bar-shade; }
-  .brand { animation-name: bar-brand; }
-  .cd { animation-name: bar-cd; }
-  #cd-what { animation-name: bar-what; }
-  .tabs { animation-name: bar-tabs; }
-  /* Squeeze by transform (compositor); corners a second animation */
-  .tabs-bg { animation-name: bar-pill, bar-pill-r; }
-  .tab-ind { animation-name: bar-ind, bar-ind-r; }
-  .tab { animation-name: bar-tab; }
-  .tab svg { animation-name: bar-icon; }
-  .tab span { animation-name: bar-label; }
-  .page > .strip { animation-name: bar-strip; }
-  .page > .strip .strip-tab > span { animation-name: bar-strip-label; }
-}
-/* From --p where there are no scroll-driven animations (after the base rules; an animation overrides) */
-.topbar::before { transform: translateY(calc(-1 * var(--bar-d) * var(--p, 0))); }
-.hdr::before { transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
-.hdr::after { opacity: var(--p, 0); transform: translateY(calc(var(--hdr-dy) * var(--p, 0))); }
-.brand { transform: translateY(calc(var(--hdr-dy) / 2 * var(--p, 0))) scale(calc(1 - .22 * var(--p, 0))); }
-.cd { transform: translateY(calc(var(--hdr-dy) / 2 * var(--p, 0))); }
-#cd-what { opacity: max(0, 1 - 2 * var(--p, 0)); }
-.tabs { translate: 0 calc(var(--tabs-dy) * var(--p, 0)); }
-.tabs-bg { --k: calc(1 - 18 / 58 * var(--p, 0)); scale: 1 var(--k); border-radius: 18px / calc(18px / var(--k)); }
-.tab-ind { --k: calc(1 - 18 / 46 * var(--p, 0)); scale: 1 var(--k); border-radius: 13px / calc(13px / var(--k)); }
-.tab { clip-path: inset(0 0 calc(18px * var(--p, 0)) 0); }
-.tab svg { opacity: max(0, 1 - var(--p, 0) / .6); transform: translateY(calc(2px * var(--p, 0))); }
-.tab span { translate: 0 calc(-20px * var(--p, 0)); }
-.page > .strip { translate: 0 calc(var(--strip-dy) * var(--p, 0)); }
-.page > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2 * var(--p, 0)); }
-@keyframes bar-strip-label { to { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2); } }
+/* ── The bar, always compact (on request): one thin line (the brand, the series, "Ep 5 airs in…") over label-only tabs.
+   Its boxes keep their open size and are moved and squeezed into the compact one by transforms (the open layout is the
+   one its parts are drawn in); taps go by what shows. Squeezed boxes keep round corners: pill 58 → 40, panel 46 → 28 */
+.topbar::before { transform: translateY(calc(-1 * var(--bar-d))); }
+.hdr::before { transform: translateY(var(--hdr-dy)); }
+.hdr::after { opacity: 1; transform: translateY(var(--hdr-dy)); }
+.brand { transform: translateY(calc(var(--hdr-dy) / 2)); }
+.cd { transform: translateY(calc(var(--hdr-dy) / 2)); }
+.tabs { translate: 0 var(--tabs-dy); }
+.tabs-bg { scale: 1 calc(40 / 58); border-radius: 18px / 26.1px; }
+.tab-ind { scale: 1 calc(28 / 46); border-radius: 13px / 21.36px; }
+.tab { clip-path: inset(0 0 18px 0); } /* its hit area ends with the compact pill, clear of the strip */
+.tab svg { opacity: 0; }
+.tab span { translate: 0 -20px; }
+/* The sub-tab strips tuck their top 12px under the bar, a 32px band; labels drop 6px */
+.page > .strip { translate: 0 calc(var(--strip-hc) - var(--strip-h)); }
+.page > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2); }
 
 /* ── Pages */
 .page { display: none; }
@@ -574,12 +525,8 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 
 /* ── Tab strips over swipers */
 .strip { display: flex; border-bottom: 1px solid var(--b-gold); background: linear-gradient(180deg, var(--s2), var(--s1)); }
-/* Sticky strips compact with the bar by transform only: slide up --bar-d + 12px to a 32px band; labels drop 6px */
-.page > .strip {
-  position: sticky; z-index: 4; top: calc(var(--bar-h) + env(safe-area-inset-top));
-  transition: transform .3s var(--ease);
-}
-.topbar.hidden ~ main .page > .strip { transform: translateY(calc(var(--bar-d) - var(--bar-h))); }
+/* Sticky under the compact bar */
+.page > .strip { position: sticky; z-index: 4; top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top)); }
 .strip-tab > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .strip.scroll { overflow-x: auto; scrollbar-width: none; }
 .strip.scroll::-webkit-scrollbar { display: none; }
@@ -1113,7 +1060,6 @@ html.fz .fz-word::after {
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 html.fz .series { min-height: 24px; padding: 0 5px; font-size: .82em; }
-html.fz #cd-what { display: none; }
 
 /* Over the top but readable; rainbows are still (shimmering repainted every frame) */
 /* Tab panel rainbow slides by transform, not a repainted background */
@@ -1399,10 +1345,7 @@ html.fz #foot.run .dk { animation: fz-bob 5s infinite; }
 @keyframes vt-tilt-in { 0%, 50% { transform: translateY(100%); } 100% { transform: none; } }
 @keyframes vt-vertigo-out { 55% { opacity: 1; } 100% { opacity: 0; transform: scale(1.7); filter: blur(3px); } }
 @keyframes vt-vertigo-in { 0%, 40% { opacity: 0; transform: scale(.6); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
-/* Slam pictures the bar open, not compacted by the scroll, so it comes down whole (flip.js) */
-html.vt-open .topbar::before, html.vt-open .hdr::before, html.vt-open .hdr::after,
-html.vt-open :is(.brand, .cd, #cd-what, .tabs, .tabs-bg, .tab-ind, .tab, .tab svg, .tab span, .page > .strip, .page > .strip .strip-tab > span) { animation: none !important; }
-html.vt-open :is(.topbar, .page > .strip) { --p: 0 !important; }
+/* Slam pictures the bar with its glass near solid (flip.js) */
 html.vt-glass:not(.fz) .topbar::before { background: #070507; }
 html.vt-glass.fz .topbar::before { background: linear-gradient(180deg, #3a0c60, #260844); }
 /* Slam's dust, sparks, smoke and shine (slam-fx.js): over everything, for the transition only */
