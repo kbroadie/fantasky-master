@@ -320,7 +320,7 @@ html:not(.fz) #dq.lit .em-who { filter: url(#dq-light); }
   display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 0; background: none; color: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.em-who { display: grid; justify-items: center; gap: 5px; width: 72px; transition: transform .25s var(--ease); }
+.em-who { display: grid; justify-items: center; gap: 5px; width: 72px; }
 .em-who img { display: block; width: 100%; height: auto; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
 .em-who b {
   padding: 2px 7px 1px; border-radius: 2px; font: 700 12px/1.3 var(--ff-plate); letter-spacing: .06em; color: #3a2500;
@@ -329,7 +329,7 @@ html:not(.fz) #dq.lit .em-who { filter: url(#dq-light); }
 .em-say {
   --ink: #1b0a2a; --pop: #ecc040;
   position: relative; margin: 0 0 18px 20px; padding: 13px 18px 15px 30px; color: var(--ink);
-  font: 400 21px/1.1 var(--ff-say); rotate: -3deg; transition: transform .25s var(--ease);
+  font: 400 21px/1.1 var(--ff-say); rotate: -3deg;
 }
 /* A comic bubble: a wobbly hand-drawn outline in ink, its tail curling to Patatas, a hard offset shadow in the other
    view's colour (gold here, pink there) */
@@ -370,21 +370,30 @@ html:not(.fz) #dq[data-sky="night"] .em-bub .s1 { stop-color: color-mix(in srgb,
 .em-bub stop:nth-child(4) { stop-color: #6dff9a; }
 .em-bub stop:nth-child(5) { stop-color: #4fd8ff; }
 .em-bub stop:nth-child(6) { stop-color: #b37bff; }
-.em-say > span { position: relative; }
-/* Pop lines off its top corner */
+/* The words at the bubble's middle: each shape's middle is a little lower than the box's (measured with the fonts) */
+.em-say > span { position: relative; top: var(--ty, 1.25px); }
+html:not(.fz) #dq[data-sky="day"] .em-say { --ty: 3.75px; }
+html:not(.fz) #dq[data-sky="golden"] .em-say { --ty: 2.25px; }
+html:not(.fz) #dq[data-sky="twilight"] .em-say { --ty: 3.25px; }
+html:not(.fz) #dq[data-sky="night"] .em-say { --ty: 4.25px; }
+/* An accent off its top corner, by the bubble: the comic bubble's pop lines (Fantasy Land), the sun's rays off the
+   sunset pill, the evening star by the twilight cloud, two small stars by the night's thought bubble; none by the day's
+   cloud */
 .em-pop {
   position: absolute; right: -16px; top: -16px; width: 22px; height: 22px; fill: none; stroke: var(--pop); stroke-width: 2.5; stroke-linecap: round;
-  transform-origin: 0 100%; transition: transform .25s var(--ease);
+  transform-origin: 0 100%;
 }
-/* Pressed (.down, main.js, held a moment so a quick tap shows it; :active too), subtly: the bubble settles 2px onto its
-   shadow, Patatas eases back a touch and the pop lines open a little; let go, they ease back */
-.embrace:is(.down, :active) :is(.em-say, .em-who, .em-pop) { transition-duration: .1s; }
-.embrace:is(.down, :active) .em-say { transform: translate(1.5px, 2px); }
+.em-pop :is(.p-star, .p-star2) { fill: var(--pop); stroke: none; display: none; }
+html:not(.fz) #dq[data-sky="day"] .em-pop { display: none; }
+html:not(.fz) #dq:is([data-sky="twilight"], [data-sky="night"]) .em-pop .p-lines { display: none; }
+html:not(.fz) #dq:is([data-sky="twilight"], [data-sky="night"]) .em-pop .p-star, html:not(.fz) #dq[data-sky="night"] .em-pop .p-star2 { display: inline; }
+/* Pressed (.down, main.js, held a moment so a quick tap shows it; :active too), subtly and as one: Patatas and his
+   bubble go down 2px and a touch smaller together, the bubble settling onto its shadow; let go, they ease back */
+.embrace { transition: transform .25s var(--ease); }
+.embrace:is(.down, :active) { transform: translateY(2px) scale(.985); transition-duration: .1s; }
 .embrace:is(.down, :active) .em-bub { filter: var(--bub-sh-down, drop-shadow(2.5px 3px 0 var(--pop))); }
-.embrace:is(.down, :active) .em-who { transform: scale(.97); }
-.embrace:is(.down, :active) .em-pop { transform: scale(1.12); }
 @media (hover: hover) and (pointer: fine) {
-  .embrace:hover:not(.down, :active) .em-say { transform: translateY(-1px); }
+  .embrace:hover:not(.down, :active) { transform: translateY(-1px); }
 }
 .em-win { display: none; }
 html.fz .em-fail { display: none; }
@@ -393,7 +402,7 @@ html.fz .em-say { --ink: #241400; --pop: #ff4fc3; }
 html.fz .em-bub stop:nth-child(odd) { stop-color: #d4a028; }
 html.fz .em-bub stop:nth-child(even) { stop-color: #f6d76a; }
 html.fz .em-bub stop:nth-child(3), html.fz .em-bub stop:nth-child(4) { stop-color: #fff1b8; }
-@media (prefers-reduced-motion: reduce) { .em-who, .em-say, .em-pop { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .embrace { transition: none; } }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 .card.board { position: relative; margin: 12px var(--px); }
 .card.board::before, .card.board::after { content: ""; position: absolute; inset: 0 0 auto; height: 90px; z-index: 0; pointer-events: none; }
