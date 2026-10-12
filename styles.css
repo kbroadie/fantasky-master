@@ -39,6 +39,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
 body {
   font-family: var(--ff); color: var(--t1); background: var(--bg);
   max-width: 680px; margin: 0 auto; min-height: 100vh;
+  min-height: 100svh; /* the screen with a phone's address bar showing: 100vh is without it, so a short page could scroll past its footer into empty background (fit fills the screen) */
   -webkit-font-smoothing: antialiased; font-synthesis: none;
   font-variant-numeric: tabular-nums;
 }
