@@ -49,7 +49,7 @@ function set(show, anchor, tap) {
     fx?.stop();
     delete html.dataset.vt; html.classList.remove("vt-in");
     if (how === "turn") nameMovers(true);
-    if (how === "slam") { slamNames("clear"); html.classList.remove("vt-open"); }
+    if (how === "slam") slamNames("clear");
     if (subject) $(subject)?.style.removeProperty("view-transition-name");
   });
 }
@@ -82,18 +82,13 @@ function slamNames(phase) {
 // shows it
 function slamScroll() {
   scrollTo(0, 0);
-  // The bar comes back now, as scrolling up brings it, and with the strip at once (styles.css): sliding back after the
-  // new picture was taken, they ended the transition a pixel off and jumped
-  $(".topbar").classList.remove("hidden");
-  document.body.classList.remove("bar-hidden");
   const r = slamRows()[0]?.getBoundingClientRect();
   if (r && r.bottom > innerHeight - 24) scrollBy(0, r.bottom - innerHeight + 24);
 }
-// The bar is pictured open (styles.css, .vt-open), though hidden above the screen, so it slides down whole in its old
-// style as the page scrolls up (compact, its lower part was see-through), and with its glass near solid (.vt-glass:
-// a picture has no blur behind it, so the rows showed through); the colour behind is the old view's too
+// The bar is pictured with its glass near solid (.vt-glass: a picture has no blur behind it, so the rows showed
+// through); the colour behind is the old view's too
 function slamBefore() {
-  document.documentElement.classList.add("vt-open", "vt-glass");
+  document.documentElement.classList.add("vt-glass");
   slamNames("old");
   return { from: slamRows().at(-1).getBoundingClientRect(), y: scrollY, bg: getComputedStyle(document.documentElement).getPropertyValue("--bg") };
 }
