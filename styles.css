@@ -24,14 +24,11 @@
   --px: 16px;
   /* Bar heights, open (the layout its parts are drawn in) and compact (as it shows, always); fixed over a spacer */
   --hdr-h: 62px; --hdr-hc: 36px;
-  --tabs-h: 58px; --tabs-hc: 40px;
-  --tabs-m: 8px; --tabs-mc: 5px;
+  --tabs-h: 58px; --tabs-m: 8px; /* the tabs: full height, icons over labels, always */
   --bar-h: calc(var(--hdr-h) + var(--tabs-h) + 2 * var(--tabs-m)); /* open, without the safe area */
-  --bar-d: calc(var(--hdr-h) - var(--hdr-hc) + var(--tabs-h) - var(--tabs-hc) + 2 * (var(--tabs-m) - var(--tabs-mc))); /* what compacting saves */
+  --bar-d: calc(var(--hdr-h) - var(--hdr-hc)); /* what the masthead's compact line saves */
   --strip-h: 44px; --strip-hc: 32px; /* the sub-tab strips, open and compact */
   --hdr-dy: calc(var(--hdr-hc) - var(--hdr-h));
-  --tabs-dy: calc(var(--hdr-hc) + var(--tabs-mc) - var(--hdr-h) - var(--tabs-m));
-  --strip-dy: calc(-1 * (var(--bar-d) + var(--strip-h) - var(--strip-hc)));
   --ease: cubic-bezier(.22, 1, .36, 1);
 }
 
@@ -60,7 +57,7 @@ strong { color: var(--t1); font-weight: 700; }
 }
 /* The backdrop's glow: a fixed layer the size of the screen, so it never stretches as the page grows (iOS ignores background-attachment: fixed) */
 body::after { content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; background: radial-gradient(ellipse at 50% 0%, rgba(80, 8, 8, .28) 0%, transparent 65%); }
-main { padding-top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top)); } /* the compact bar's height */
+main { padding-top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top)); } /* the bar's height as it shows */
 /* Glass: its own layer at the open height, slid up (never re-blurred at a new size) */
 .topbar::before {
   content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: calc(var(--bar-h) + env(safe-area-inset-top)); pointer-events: none;
@@ -133,20 +130,15 @@ main { padding-top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top))
 .tab svg { width: 24px; height: 22px; flex-shrink: 0; fill: currentColor; }
 .tab span { font-family: var(--fm); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
 
-/* ── The bar, always compact (on request): one thin line (the brand, the series, "Ep 5 airs in…") over label-only tabs.
-   Its boxes keep their open size and are moved and squeezed into the compact one by transforms (the open layout is the
-   one its parts are drawn in); taps go by what shows. Squeezed boxes keep round corners: pill 58 → 40, panel 46 → 28 */
+/* ── The bar, always its one size (on request): the masthead one thin line (the brand, the series, "Ep 5 airs in…"),
+   moved up into it by transforms from the open layout its parts are drawn in, and the tabs under it at their full
+   height, icons over labels, never contracting */
 .topbar::before { transform: translateY(calc(-1 * var(--bar-d))); }
 .hdr::before { transform: translateY(var(--hdr-dy)); }
 .hdr::after { opacity: 1; transform: translateY(var(--hdr-dy)); }
 .brand { transform: translateY(calc(var(--hdr-dy) / 2)); }
 .cd { transform: translateY(calc(var(--hdr-dy) / 2)); }
-.tabs { translate: 0 var(--tabs-dy); }
-.tabs-bg { scale: 1 calc(40 / 58); border-radius: 18px / 26.1px; }
-.tab-ind { scale: 1 calc(28 / 46); border-radius: 13px / 21.36px; }
-.tab { clip-path: inset(0 0 18px 0); } /* its hit area ends with the compact pill, clear of the strip */
-.tab svg { opacity: 0; }
-.tab span { translate: 0 -20px; }
+.tabs { translate: 0 var(--hdr-dy); }
 /* The sub-tab strips tuck their top 12px under the bar, a 32px band; labels drop 6px */
 .page > .strip { translate: 0 calc(var(--strip-hc) - var(--strip-h)); }
 .page > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2); }
