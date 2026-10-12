@@ -70,8 +70,8 @@ tools/                          check-data, sync-wiki, import-stats, screenshots
 
 - **Top bar** (fixed, frosted):
   - The brand; the series chip (tap it to switch series); a countdown line ("Ep 5 airs in 5d 18h PDT", gold numbers, the device's time zone, in every view); three segmented tabs with a sliding gold panel.
-  - Always compact and always shown (on request; it had compacted over the first 50px of scroll and hidden on scrolling down): one thin line (the brand sized to 11–16px, the series chip, "Ep 7 airs in 3d 5h PDT" in both views) over label-only tabs. Its parts keep their open layout and are moved and squeezed into the compact one by fixed transforms; `main`'s spacer and the strips' sticky top are the compact height.
-  - Under it, sticky sub-tab strips, their top 12px tucked under the bar. Sideways strips fade at hidden edges, and the next episode has a gold dot.
+  - One size, always shown (on request; it had compacted over the first 50px of scroll and hidden on scrolling down): the masthead one thin line (the brand sized to 11–16px, the series chip, "Ep 7 airs in 3d 5h PDT" in both views), moved up into it by fixed transforms from the open layout; under it the tabs at full height, icons over labels, never contracting (on request). `main`'s spacer and the strips' sticky top are the bar's height (110px plus the safe area).
+  - Under it, sticky sub-tab strips, their top 12px tucked under the bar (laid out there: `margin-top: -12px`, not a `translate`, or a gap opens under them). Sideways strips fade at hidden edges, and the next episode has a gold dot.
 - **Standings:**
   - A swiper of weeks (Ep 1–10). Each week has a hero ("Episode 4 Standings", the leaders line) and the "How scoring works" cards (the league's exact words: don't change them). Weeks not yet scored show only when they air, except in edit mode.
   - The leaders line is a fixed two lines (34px) in both views: the Show's leader over the League's, or one line between them when one player leads both (a tie may take both lines), so the boards sit at one height whatever the leaders.
