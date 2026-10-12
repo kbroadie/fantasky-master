@@ -831,6 +831,8 @@ function arcY(x) {
 // it, long and to the side when it's low and short when it's high (sx, sy: how far across and down the shadow of each unit
 // of height reaches); by the moon, as strong as it's full
 let light = null, moonLit = 0.5;
+// The sky's bands blend in a perceptual space, as light does, where supported: no grey between the blues and a sunset's rose
+const OKLAB = CSS.supports("background-image", "linear-gradient(in oklab, red, blue)") ? "in oklab " : "";
 function shade() {
   const house = $("#foot .house");
   if (!house || !light) return;
@@ -868,9 +870,13 @@ function shade() {
   const [gx] = light.at.sun, gy = 69, hi = Math.max(0, Math.min(1, light.height / 25));
   const glow = (c, a) => `color-mix(in srgb, ${c} ${(a * 100).toFixed(0)}%, transparent)`;
   const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${y(light.at.moon[1])}, ${glow("#c8d2ff", 0.18 * moonLit)}, transparent)`];
+  // Opposite the sun in twilight, the Belt of Venus over Earth's shadow; by full night, London's faint glow on the horizon
+  const belt = sky.beltA ? [`radial-gradient(${u(230)} ${u(44)} at ${x(390 - gx)} ${y(gy)}, ${glow(`color-mix(in srgb, ${sky.top} 55%, ${sky.horizon})`, sky.beltA)} 22%, ${glow(sky.belt, sky.beltA)} 48%, transparent)`] : [];
+  const city = light.height < -8 ? [`linear-gradient(to top, ${glow("#3a2c2a", 0.5 * Math.min(1, (-8 - light.height) / 8))}, transparent ${u(36)})`] : [];
   house.querySelector(".sky").style.background = [...moonGlow,
     `radial-gradient(${u(220 - 100 * hi)} ${u(60 + 20 * hi)} at ${x(gx)} ${y(gy)}, ${glow(sky.glow, sky.glowA)}, transparent)`,
-    `linear-gradient(${sky.top}, ${sky.horizon})`].join(",");
+    ...belt, ...city,
+    `linear-gradient(${OKLAB}to top, ${sky.horizon}, ${sky.low} ${u(30)}, ${sky.high} ${u(120)}, ${sky.top})`].join(",");
   house.querySelector(".ground").style.background = [
     `radial-gradient(${u(200)} ${u(30)} at ${x(gx)} 0, ${glow(sky.glow, sky.glowA * 0.3)}, transparent)`,
     "linear-gradient(var(--mc), color-mix(in srgb, var(--mc) 55%, var(--bg)))"].join(",");
