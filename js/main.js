@@ -751,6 +751,10 @@ function shade() {
     const plain = lum > 0.995 && tint < 0.01;
     if (!plain) cm.setAttribute("values", [0, 1, 2].map((i) => [...row(i), 0, 0].map((v) => +v.toFixed(3)).join(" ")).join(" ") + " 0 0 0 1 0");
     dq.classList.toggle("lit", !plain);
+    // His bubble's shape and colours by the sky: a cloud by day, a glowing pill while the sun is low, a soft cloud in
+    // twilight, a thought bubble by night (styles.css)
+    dq.dataset.sky = hgt >= 15 ? "day" : hgt >= -2 ? "golden" : hgt >= -12 ? "twilight" : "night";
+    for (const [k, v] of [["--s-top", sky.top], ["--s-hor", sky.horizon], ["--s-glow", sky.glow]]) dq.style.setProperty(k, v);
   }
   // The shaded shapes' gradient, and their edge highlights', run from the side facing the light to the other
   let vx = Math.sin(az) * Math.cos(e), vy = -Math.sin(e);
