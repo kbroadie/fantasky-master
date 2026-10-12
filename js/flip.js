@@ -192,6 +192,7 @@ function nameMovers(clear = false) {
   const seen = els.map((el) => { const r = el.getBoundingClientRect(); return el.dataset.p ? r.top >= top && r.bottom <= innerHeight : r.height > 0; });
   els.forEach((el, i) => {
     el.style.viewTransitionName = clear || !seen[i] ? "" : el.dataset.p ? `vt-${el.dataset.side}-${slug(el.dataset.p)}` : `vt-cast-${slug(el.textContent)}`;
+    if (!el.dataset.p) el.style.viewTransitionClass = clear || !seen[i] ? "" : "vt-tab"; // its top under the bar (styles.css)
   });
 }
 

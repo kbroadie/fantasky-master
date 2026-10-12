@@ -139,8 +139,8 @@ main { padding-top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top))
 .brand { transform: translateY(calc(var(--hdr-dy) / 2)); }
 .cd { transform: translateY(calc(var(--hdr-dy) / 2)); }
 .tabs { translate: 0 var(--hdr-dy); }
-/* The sub-tab strips tuck their top 12px under the bar, a 32px band; labels drop 6px */
-.page > .strip { translate: 0 calc(var(--strip-hc) - var(--strip-h)); }
+/* The sub-tab strips tuck their top 12px under the bar, a 32px band (laid out there too: drawn there only, they left
+   a 12px gap under them at the top of the page); labels drop 6px */
 .page > .strip .strip-tab > span { translate: 0 calc((var(--strip-h) - var(--strip-hc)) / 2); }
 
 /* ── Pages */
@@ -518,7 +518,10 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
 /* ── Tab strips over swipers */
 .strip { display: flex; border-bottom: 1px solid var(--b-gold); background: linear-gradient(180deg, var(--s2), var(--s1)); }
 /* Sticky under the compact bar */
-.page > .strip { position: sticky; z-index: 4; top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top)); }
+.page > .strip {
+  position: sticky; z-index: 4; top: calc(var(--bar-h) - var(--bar-d) - (var(--strip-h) - var(--strip-hc)) + env(safe-area-inset-top));
+  margin-top: calc(var(--strip-hc) - var(--strip-h));
+}
 .strip-tab > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .strip.scroll { overflow-x: auto; scrollbar-width: none; }
 .strip.scroll::-webkit-scrollbar { display: none; }
@@ -1312,6 +1315,8 @@ html.fz #foot.run .dk { animation: fz-bob 5s infinite; }
   /* Turn: the players' halves and the Cast tabs glide to their new places; the rest cross-fades */
   html[data-vt="turn"]::view-transition-group(*) { animation-duration: .8s; animation-timing-function: cubic-bezier(.33, 0, .67, 1); }
   html[data-vt="turn"]::view-transition-old(root), html[data-vt="turn"]::view-transition-new(root) { mix-blend-mode: plus-lighter; animation-duration: .5s; }
+  /* A Cast tab's picture is drawn over everything: its top, tucked under the bar, is cut off as the bar hides it */
+  html[data-vt="turn"]::view-transition-old(*.vt-tab), html[data-vt="turn"]::view-transition-new(*.vt-tab) { clip-path: inset(calc(var(--strip-h) - var(--strip-hc)) 0 0 0); }
 }
 @keyframes vt-swell { 50% { transform: scale(1.1); } }
 @keyframes vt-fade-out { to { opacity: 0; } }
