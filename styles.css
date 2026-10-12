@@ -944,6 +944,12 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .house .dcast { fill: #000; opacity: calc(var(--sha) * .75); filter: url(#h-dblur); }
 .house .feet { fill: #000; opacity: calc(.22 + var(--sha) * .3); filter: url(#h-dblur); }
 .house .lt > g > * { opacity: 0; }
+/* At night (.lamps, main.js: from dusk to dawn) the lights are on, and the door's light lies across the drive, the ducks'
+   shadows cut out of it, softly */
+#foot.lamps .house .lt > g > * { opacity: .95; }
+.house .pool { display: none; }
+#foot.lamps .house .pool { display: inline; }
+.house .lamp-sh { fill: #000; filter: url(#h-dblur); }
 /* The time of day (main.js, from the device's clock): the sun crosses the sky from 6:00 to 20:00 and the moon from 20:00
    to 6:00 (their places set each minute), passing behind the buildings' solid shapes */
 /* The moon as it looks: no outline; the lit part a pale gradient, brightest at its edge and dimming to the terminator,

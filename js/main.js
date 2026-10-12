@@ -676,8 +676,8 @@ function showDay() {
   const pick = get("houseTime"), h = pick === "clock" ? now.getHours() + now.getMinutes() / 60 : +pick, sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
   const at = {};
   for (const [k, t] of [["sun", sun], ["moon", moon]]) {
-    const el = house.querySelector(`.${k}`), up = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, Math.min(t, 1 - t)) / 0.25));
-    at[k] = [20 + 350 * Math.max(0, Math.min(1, t)), t >= 0 && t <= 1 ? 104 - 84 * up : 86];
+    const el = house.querySelector(`.${k}`), x = 20 + 350 * Math.max(0, Math.min(1, t));
+    at[k] = [x, arcY(x)];
     el.style.display = t >= 0 && t <= 1 ? "" : "none";
     el.setAttribute("transform", `translate(${at[k][0].toFixed(1)} ${at[k][1].toFixed(1)})`);
   }
@@ -686,6 +686,18 @@ function showDay() {
   light = { t: day ? sun : moon, sun: day, at, height: day ? 55 * Math.sin(Math.PI * sun) : -40 * Math.sin(Math.PI * moon) };
   airMoon();
   shade();
+}
+// The sun's and moon's path across the sky (the drawing's units: the house's tops at y 15 to 53, the footer's top at 0),
+// through the clear sky: rising at the left over the garage and the conifer's shoulder, under Patatas's name plate
+// (above the footer at y -12 to -31), over the conifer's tip, high in the sky under his bubble (its foot at y -41) and
+// down past the caravan; a curve through these points (Catmull-Rom), so it's never long behind the house or under him
+const ARC = [[0, 104], [20, 80], [38, 58], [60, 34], [85, 16], [105, 4], [119, -3], [132, -8], [150, -20], [175, -26], [215, -28],
+  [260, -27], [300, -22], [330, -8], [348, 18], [362, 48], [370, 80], [390, 104]];
+function arcY(x) {
+  const i = Math.max(1, Math.min(ARC.length - 3, ARC.findIndex(([px]) => px > x) - 1));
+  const [p0, p1, p2, p3] = [ARC[i - 1], ARC[i], ARC[i + 1], ARC[i + 2]], u = (x - p1[0]) / (p2[0] - p1[0]);
+  const m1 = ((p2[1] - p0[1]) / (p2[0] - p0[0])) * (p2[0] - p1[0]), m2 = ((p3[1] - p1[1]) / (p3[0] - p1[0])) * (p2[0] - p1[0]);
+  return (2 * u ** 3 - 3 * u ** 2 + 1) * p1[1] + (u ** 3 - 2 * u ** 2 + u) * m1 + (-2 * u ** 3 + 3 * u ** 2) * p2[1] + (u ** 3 - u ** 2) * m2;
 }
 // Light and shade from whichever is up: the buildings lit on its side, and shadows cast forward across the drive, away from
 // it, long and to the side when it's low and short when it's high (sx, sy: how far across and down the shadow of each unit
@@ -777,6 +789,15 @@ function shade() {
   // The ducks' own: each one's silhouette (14 high, its feet at y 98.1) cast the same way; the soft contact shadows under
   // their feet stay put
   house.querySelectorAll(".dcast path").forEach((el, i) => el.setAttribute("transform", `${cast(98.1)} translate(${111.25 + 25 * i} 85) scale(.875)`));
+  // The lights on at night (styles.css), from dusk to dawn: the door's light across the drive, and each duck's shadow cast
+  // away from it, radiating from the door's foot (x 159, y 79.5), longer the further the duck stands from it (its points
+  // h high fall h·k times the duck's distance on: the door's light about 26 high); cut out of the light (.lamp-sh, a mask)
+  const lamps = light.height < -3;
+  $("#foot").classList.toggle("lamps", lamps);
+  if (lamps) house.querySelectorAll(".lamp-sh path").forEach((el, i) => {
+    const k = 1 / 19, lx = (120 + 25 * i - 159) * k, ly = (98.1 - 79.5) * k;
+    el.setAttribute("transform", `matrix(1 0 ${(-lx).toFixed(3)} ${(-ly).toFixed(3)} ${(98.1 * lx).toFixed(2)} ${(98.1 * (1 + ly)).toFixed(2)}) translate(${111.25 + 25 * i} 85) scale(.875)`);
+  });
   // And the house's shadow on them: from points up each duck's height (in the buildings' units: its feet at y 121.1,
   // 17.5 high), back along the light to the structure that would cast it; each duck darkens by the share of it in shade
   // (each structure in its own frame, before its depth's dy)
