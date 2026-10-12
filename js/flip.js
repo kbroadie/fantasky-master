@@ -34,6 +34,7 @@ function set(show, anchor, tap) {
   // The browser pictures the page before and after and animates between the two (styles.css, html[data-vt])
   html.dataset.vt = how;
   html.classList.toggle("vt-in", show);
+  slamText = null;
   stage(tap ?? mid(at), show);
   const subject = how === "vertigo" ? (anchor === "#dq" ? "#dq .embrace" : anchor) : null;
   const name = () => { if (how === "turn") nameMovers(); if (subject) $(subject)?.style.setProperty("view-transition-name", "vt-subject"); };
@@ -42,8 +43,13 @@ function set(show, anchor, tap) {
   const before = how === "slam" ? slamBefore() : null;
   let fx = null;
   const vt = document.startViewTransition(() => { swap(); name(); if (before) fx = slamAfter(before); });
-  // Slam's effects keep the transition's time: the camera's animation is their clock
-  vt.ready.then(() => fx?.start(document.getAnimations().find((a) => a.effect?.pseudoElement === "::view-transition"))).catch(() => {});
+  vt.ready.then(() => {
+    // Where the screen is in the pictures' space, now that it's set up: the places written above move with it
+    const o = snapOffset();
+    if (o && (o.x !== snapOff.x || o.y !== snapOff.y)) { snapOff = o; writeStage(); }
+    // Slam's effects keep the transition's time: the camera's animation is their clock
+    fx?.start(document.getAnimations().find((a) => a.effect?.pseudoElement === "::view-transition"));
+  }).catch(() => {});
   vt.finished.finally(() => {
     hooks.later();
     fx?.stop();
@@ -104,26 +110,61 @@ function slamAfter({ from: o, y, bg }) {
   // frame). The row's motion ends by settling into the place the browser gives it (no last keyframe: the group's own transform),
   // not at a place measured here, which was a fraction of a pixel off, so it twitched as the page took over
   const ps = (t) => `${((t / (T + 0.12)) * 100).toFixed(2)}%`;
-  // Shaking loose: small jolts, growing, before it lifts
-  const shake = Array.from({ length: 7 }, (_, i) => {
-    const k = (i + 1) / 8, j = (i % 2 ? -1 : 1) * (0.6 + 1.6 * k);
-    return `${ps(SLAM.loose * k)} { transform: translate(${(o.left + j).toFixed(1)}px, ${(o.top - 0.6 * k * (i % 2)).toFixed(1)}px) rotate(${(j * 0.35).toFixed(2)}deg); animation-timing-function: linear; }`;
+  const L = SLAM.lift, M = L + move;
+  // Each row slides down a place with the table, then flips when the shockwave reaches it
+  const flips = rows.slice(1).map((r, i) => {
+    const b = r.getBoundingClientRect(), d = at(Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy));
+    return `html[data-vt="slam"]::view-transition-group(vt-row-${i}) { z-index: 1; animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
+html[data-vt="slam"]::view-transition-old(vt-row-${i}) { animation: vt-flip-out ${SLAM.flip}s ${d}s cubic-bezier(.55, 0, 1, .45) both; }
+html[data-vt="slam"]::view-transition-new(vt-row-${i}) { animation: vt-flip-in ${SLAM.flip}s ${(+d + SLAM.flip).toFixed(3)}s cubic-bezier(0, .55, .45, 1) both; }`;
   });
-  const L = SLAM.lift, M = L + move, ox = o.left + o.width / 2, oy = o.top + o.height / 2;
-  const css = [`
-html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; transform-origin: ${ox}px ${oy}px; background: ${bg}; }
+  // The blocks scroll with the table, and the wave restyles them as it spreads: a circle on each, from the impact, as fast
+  // as on the rest of the page (in each block's own space). The old picture loses the same circle (a hole cut in it), so
+  // where the new one is see-through the old doesn't show
+  const hole = (b, x, y, r) => `path(evenodd, "M-2 -2H${Math.ceil(b.width) + 2}V${Math.ceil(b.height) + 2}H-2Z M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z")`;
+  const waves = slamBlocks().map((el, i) => {
+    const b = el.getBoundingClientRect(), x = cx - b.left, y = cy - b.top;
+    const far = Math.hypot(Math.max(x, b.width - x), Math.max(y, b.height - y)), took = ((far / R) * SLAM.wave).toFixed(3);
+    return `html[data-vt="slam"]::view-transition-group(vt-block-${i}) { animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
+html[data-vt="slam"]::view-transition-old(vt-block-${i}) { animation: vt-hole-${i} ${took}s ${T}s linear both; mix-blend-mode: normal; }
+html[data-vt="slam"]::view-transition-new(vt-block-${i}) { animation: vt-wave-${i} ${took}s ${T}s linear both; mix-blend-mode: normal; }
+@keyframes vt-wave-${i} { from { clip-path: circle(0 at ${x}px ${y}px); } to { clip-path: circle(${Math.ceil(far)}px at ${x}px ${y}px); } }
+@keyframes vt-hole-${i} { from { clip-path: ${hole(b, x, y, 0)}; } to { clip-path: ${hole(b, x, y, Math.ceil(far))}; } }`;
+  });
+  // The bar and strip come down with the page, and change colour as the wave reaches them
+  const bars = [[".topbar", "vt-bar"], ["#st-tabs", "vt-strip"]].map(([sel, nm]) => {
+    const b = $(sel).getBoundingClientRect(), d = at(Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy));
+    return `html[data-vt="slam"]::view-transition-group(${nm}) { z-index: 2; animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
+html[data-vt="slam"]::view-transition-old(${nm}), html[data-vt="slam"]::view-transition-new(${nm}) { animation-delay: ${d}s; animation-duration: .2s; }`;
+  });
+  // Dust and smoke as it breaks loose, sparks and smoke where it lands, and a shine across it (slam-fx.js): a canvas
+  // over everything, the new view's only, drawn live
+  const fx = slamFx({ from: o, to: n, loose: SLAM.loose, lift: L, impact: T, end, fantasy: document.documentElement.classList.contains("fz") });
+  fx.canvas.style.viewTransitionName = "vt-fx";
+  document.body.append(fx.canvas);
+  // The places the camera, the row and the wave's front are written at: the screen's, moved by where the screen is in
+  // the pictures' space ({ x, y }: snapOff)
+  slamText = ({ x: X, y: Y }) => {
+    const ol = o.left + X, ot = o.top + Y, nl = n.left + X, nt = n.top + Y;
+    // Shaking loose: small jolts, growing, before it lifts
+    const shake = Array.from({ length: 7 }, (_, i) => {
+      const k = (i + 1) / 8, j = (i % 2 ? -1 : 1) * (0.6 + 1.6 * k);
+      return `${ps(SLAM.loose * k)} { transform: translate(${(ol + j).toFixed(1)}px, ${(ot - 0.6 * k * (i % 2)).toFixed(1)}px) rotate(${(j * 0.35).toFixed(2)}deg); animation-timing-function: linear; }`;
+    });
+    return [`
+html[data-vt="slam"]::view-transition { animation: vt-cam ${end}s linear both; transform-origin: ${ol + o.width / 2}px ${ot + o.height / 2}px; background: ${bg}; }
 @keyframes vt-cam {
   0% { transform: none; animation-timing-function: ${E}; } ${pc(L)} { transform: scale(1.18); animation-timing-function: ${E}; }
   ${pc(M)}, ${pc(T)} { transform: none; } ${pc(T + 0.04)} { transform: translateY(8px); } ${pc(T + 0.09)} { transform: translateY(-5px); }
   ${pc(T + 0.14)} { transform: translateY(3px); } ${pc(T + 0.2)} { transform: translateY(-1px); } ${pc(T + 0.26)}, 100% { transform: none; } }
 html[data-vt="slam"]::view-transition-group(vt-slam) { z-index: 3; animation: vt-slam ${T + 0.12}s linear backwards; }
 @keyframes vt-slam {
-  0% { transform: translate(${o.left}px, ${o.top}px); animation-timing-function: linear; }
+  0% { transform: translate(${ol}px, ${ot}px); animation-timing-function: linear; }
   ${shake.join("\n  ")}
-  ${ps(SLAM.loose)} { transform: translate(${o.left}px, ${o.top}px); animation-timing-function: ${E}; }
-  ${ps(L)} { transform: translate(${o.left}px, ${o.top - 8}px) scale(1.06); filter: drop-shadow(0 14px 16px rgba(0, 0, 0, .55)); animation-timing-function: ${E}; }
-  ${ps(M)} { transform: translate(${n.left}px, ${n.top - 64}px) scale(1.12); filter: drop-shadow(0 24px 20px rgba(0, 0, 0, .5)); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
-  ${ps(T)} { transform: translate(${n.left}px, ${n.top}px) scale(1.02, .9); filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0)); animation-timing-function: ${E}; } }
+  ${ps(SLAM.loose)} { transform: translate(${ol}px, ${ot}px); animation-timing-function: ${E}; }
+  ${ps(L)} { transform: translate(${ol}px, ${ot - 8}px) scale(1.06); filter: drop-shadow(0 14px 16px rgba(0, 0, 0, .55)); animation-timing-function: ${E}; }
+  ${ps(M)} { transform: translate(${nl}px, ${nt - 64}px) scale(1.12); filter: drop-shadow(0 24px 20px rgba(0, 0, 0, .5)); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  ${ps(T)} { transform: translate(${nl}px, ${nt}px) scale(1.02, .9); filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0)); animation-timing-function: ${E}; } }
 html[data-vt="slam"]::view-transition-old(vt-slam) { animation: vt-slam-out ${end}s linear both; }
 html[data-vt="slam"]::view-transition-new(vt-slam) { animation: vt-slam-in ${end}s linear both; }
 @keyframes vt-slam-out { ${pc(T - 0.02)} { opacity: 1; } ${pc(T + 0.06)}, 100% { opacity: 0; } }
@@ -131,54 +172,44 @@ html[data-vt="slam"]::view-transition-new(vt-slam) { animation: vt-slam-in ${end
 html[data-vt="slam"]::view-transition-old(root) { animation: vt-scroll ${move}s ${L}s ${E} both; }
 @keyframes vt-scroll { to { transform: translateY(${dy}px); } }
 html[data-vt="slam"]::view-transition-new(root) { animation: vt-radiate ${SLAM.wave}s ${T}s linear both; } /* one front at one speed, as the rows and blocks */
-@keyframes vt-radiate { from { clip-path: circle(0 at ${cx}px ${cy}px); } to { clip-path: circle(${Math.ceil(R)}px at ${cx}px ${cy}px); } }`];
-  // Each row slides down a place with the table, then flips when the shockwave reaches it
-  rows.slice(1).forEach((r, i) => {
-    const b = r.getBoundingClientRect(), d = at(Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy));
-    css.push(`html[data-vt="slam"]::view-transition-group(vt-row-${i}) { z-index: 1; animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
-html[data-vt="slam"]::view-transition-old(vt-row-${i}) { animation: vt-flip-out ${SLAM.flip}s ${d}s cubic-bezier(.55, 0, 1, .45) both; }
-html[data-vt="slam"]::view-transition-new(vt-row-${i}) { animation: vt-flip-in ${SLAM.flip}s ${(+d + SLAM.flip).toFixed(3)}s cubic-bezier(0, .55, .45, 1) both; }`);
-  });
-  // The blocks scroll with the table, and the wave restyles them as it spreads: a circle on each, from the impact, as fast
-  // as on the rest of the page
-  // The old picture loses the same circle (a hole cut in it), so where the new one is see-through the old doesn't show
-  const hole = (b, x, y, r) => `path(evenodd, "M-2 -2H${Math.ceil(b.width) + 2}V${Math.ceil(b.height) + 2}H-2Z M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z")`;
-  slamBlocks().forEach((el, i) => {
-    const b = el.getBoundingClientRect(), x = cx - b.left, y = cy - b.top;
-    const far = Math.hypot(Math.max(x, b.width - x), Math.max(y, b.height - y)), took = ((far / R) * SLAM.wave).toFixed(3);
-    css.push(`html[data-vt="slam"]::view-transition-group(vt-block-${i}) { animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
-html[data-vt="slam"]::view-transition-old(vt-block-${i}) { animation: vt-hole-${i} ${took}s ${T}s linear both; mix-blend-mode: normal; }
-html[data-vt="slam"]::view-transition-new(vt-block-${i}) { animation: vt-wave-${i} ${took}s ${T}s linear both; mix-blend-mode: normal; }
-@keyframes vt-wave-${i} { from { clip-path: circle(0 at ${x}px ${y}px); } to { clip-path: circle(${Math.ceil(far)}px at ${x}px ${y}px); } }
-@keyframes vt-hole-${i} { from { clip-path: ${hole(b, x, y, 0)}; } to { clip-path: ${hole(b, x, y, Math.ceil(far))}; } }`);
-  });
-  // The bar and strip come down with the page, and change colour as the wave reaches them
-  for (const [sel, n] of [[".topbar", "vt-bar"], ["#st-tabs", "vt-strip"]]) {
-    const b = $(sel).getBoundingClientRect(), d = at(Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy));
-    css.push(`html[data-vt="slam"]::view-transition-group(${n}) { z-index: 2; animation-delay: ${L}s; animation-duration: ${move}s; animation-timing-function: ${E}; animation-fill-mode: both; }
-html[data-vt="slam"]::view-transition-old(${n}), html[data-vt="slam"]::view-transition-new(${n}) { animation-delay: ${d}s; animation-duration: .2s; }`);
-  }
-  // Dust and smoke as it breaks loose, sparks and smoke where it lands, and a shine across it (slam-fx.js): a canvas
-  // over everything, the new view's only, drawn live
-  const fx = slamFx({ from: o, to: n, loose: SLAM.loose, lift: L, impact: T, end, fantasy: document.documentElement.classList.contains("fz") });
-  fx.canvas.style.viewTransitionName = "vt-fx";
-  document.body.append(fx.canvas);
-  css.push(`html[data-vt="slam"]::view-transition-group(vt-fx) { z-index: 4; animation: none; }
-html[data-vt="slam"]::view-transition-new(vt-fx) { animation: none; }`);
-  stageCss.textContent += css.join("\n");
+@keyframes vt-radiate { from { clip-path: circle(0 at ${cx + X}px ${cy + Y}px); } to { clip-path: circle(${Math.ceil(R)}px at ${cx + X}px ${cy + Y}px); } }`,
+      ...flips, ...waves, ...bars,
+      `html[data-vt="slam"]::view-transition-group(vt-fx) { z-index: 4; animation: none; }
+html[data-vt="slam"]::view-transition-new(vt-fx) { animation: none; }`].join("\n");
+  };
+  writeStage();
   return fx;
 }
 
 // What depends on the tap: Iris's circle, and the centre Zoom and Vertigo move about. Written here, as a custom
 // property on the root would restyle every duck and dolphin
 const mid = (r) => (r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: innerWidth / 2, y: innerHeight / 2 });
-let stageCss = null;
-function stage({ x, y }, show) {
-  const R = Math.ceil(Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)));
+let stageCss = null, staged = null, slamText = null;
+// The pictures' space (the snapshot containing block) can be larger than the screen: on a phone it takes in the address
+// bar, so a point on the screen lies lower in it by the bar's height, and a circle written at the tap opened above it.
+// Where the screen is in it is read from a 1px probe's place there (its group's first keyframe), once the transition is
+// set up, and everything written in screen places is moved by it; kept for the next, so it's usually right from the start
+let snapOff = { x: 0, y: 0 };
+const probe = document.body.appendChild(Object.assign(document.createElement("i"), { className: "vt-probe" }));
+function snapOffset() {
+  const a = document.getAnimations().find((x) => x.effect?.pseudoElement === "::view-transition-group(vt-probe)");
+  const m = a?.effect.getKeyframes()[0]?.transform?.match(/matrix\(([^)]+)\)/);
+  if (!m) return null;
+  const v = m[1].split(",").map(Number), r = probe.getBoundingClientRect();
+  return { x: Math.round(v[4] - r.left), y: Math.round(v[5] - r.top) };
+}
+function stage(at, show) {
+  staged = { ...at, show };
+  writeStage();
+}
+function writeStage() {
   stageCss ??= document.head.appendChild(document.createElement("style"));
+  const x = staged.x + snapOff.x, y = staged.y + snapOff.y, show = staged.show;
+  const R = Math.ceil(Math.hypot(Math.max(staged.x, innerWidth - staged.x), Math.max(staged.y, innerHeight - staged.y)) + Math.hypot(snapOff.x, snapOff.y));
   const small = `circle(0 at ${x}px ${y}px)`, big = `circle(${R}px at ${x}px ${y}px)`;
   stageCss.textContent = `@keyframes vt-iris { from { clip-path: ${show ? small : big}; } to { clip-path: ${show ? big : small}; } }
-:is(html[data-vt="zoom"], html[data-vt="vertigo"])::view-transition-old(root), :is(html[data-vt="zoom"], html[data-vt="vertigo"])::view-transition-new(root) { transform-origin: ${x}px ${y}px; }`;
+:is(html[data-vt="zoom"], html[data-vt="vertigo"])::view-transition-old(root), :is(html[data-vt="zoom"], html[data-vt="vertigo"])::view-transition-new(root) { transform-origin: ${x}px ${y}px; }
+${slamText ? slamText(snapOff) : ""}`;
 }
 // Turn: each player's half on the week on show, and each Cast tab, glides from its old place to its new one
 // (the order inverts). Only what's on screen under the bar and strip: a moving picture is drawn over everything, the bar
