@@ -70,7 +70,8 @@ const DUCK = `<symbol id="duck" viewBox="0 0 20 16"><path d="${DUCK_BODY}"/>
 // chimney behind its shoulder and the lower tiled wing running right to a narrow curved end; the garage with its
 // up-and-over door, the tall conifer behind, the clear geodesic dome on the drive, the caravan beyond it, and the
 // ducks on the drive in front. Solid shapes, drawn back to front, so nearer things hide what's behind
-// them and the sun and moon pass behind them; at 80%, standing a little above the ducks, so there's sky above. The sky
+// them and the sun and moon pass behind them; at 80%, standing well above the ducks (the drive between them), so there's
+// sky above. The sky
 // follows the device's clock (main.js: the sun and moon's places, the sky's colours and the scene's grade, from the sun's
 // height, twilight included; the sky and the drive are boxes behind the drawing, the screen's width), and so does the
 // light: the shapes shaded from the side it's on, eaves and everything on the drive casting shadows away from it; its lights (.lt, --i
@@ -138,7 +139,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <linearGradient id="h-moonlit" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a39478"/><stop offset=".5" stop-color="#e6d9bb"/><stop offset="1" stop-color="#fff7e2"/></linearGradient>
     <radialGradient id="h-earth" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#b7ab92" stop-opacity=".16"/><stop offset="1" stop-color="#b7ab92" stop-opacity=".07"/></radialGradient>
     <filter id="h-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".35"/></filter>
-    <clipPath id="h-above"><rect width="390" height="77"/></clipPath>
+    <clipPath id="h-above"><rect width="390" height="69"/></clipPath>
     <linearGradient id="h-shade" x1="0" y1="0" x2="1" y2="0"><stop class="l0" offset="0"/><stop class="l1" offset=".45"/><stop class="l2" offset="1"/></linearGradient>
     <linearGradient id="h-rim" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
     <mask id="h-rim-mask" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#h-rim)"/></mask>
@@ -155,7 +156,7 @@ const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"></div><div
     <g class="moon"><circle r="16" fill="url(#h-moonhalo)"/><circle class="disc" r="9"/><path class="lit" d=""/></g>
     <g class="sun"><circle class="disc" r="9"/></g>
   </g>
-  <g class="b" transform="matrix(.8 0 0 .8 39 9.2)">
+  <g class="b" transform="matrix(.8 0 0 .8 39 1.2)">
   <g class="cast">${KEYS.map((k) => castOf(k, `#m-${k}`, k === "garage" ? 40 : 0, k === "garage" ? 4 : 0)).join("")}${castOf("van", "#m-van", 8, 3)}${castOf("dome", "#m-dome").replace("<use ", '<use class="see" ')}${KEYS.map((k) => behind(k, `#m-${k}`)).join("")}${behind("van", "#m-van")}</g>
   <g class="contact">${KEYS.map((k) => contact(k, `#m-${k}`)).join("")}${contact("van", "#m-van")}${at("dome", `<ellipse cx="300" cy="99.8" rx="25.5" ry="3.4"/>`)}${KEYS.map((k) => behind(k, `#m-${k}`)).join("")}${behind("van", "#m-van")}</g>
   <g class="ln">
@@ -204,7 +205,7 @@ export function footer() {
   const ducks = Array.from({ length: 7 }, () => `<span class="dk"><svg class="duck"><use href="#duck"/></svg></span>`).join("");
   // The ducks' shading in the house's light (main.js turns it): pale lemon on the side facing it, deepening to a dark
   // mustard away from it
-  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}<defs><linearGradient id="dk-shade" x1=".3" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fff69a"/><stop offset=".45" stop-color="#f6e24d"/><stop offset="1" stop-color="#b39304"/></linearGradient></defs></svg>${HOUSE}
+  return `<svg width="0" height="0" aria-hidden="true" style="position:absolute">${DUCK}<defs><filter id="dq-light" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0"/></filter><linearGradient id="dk-shade" x1=".3" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fff69a"/><stop offset=".45" stop-color="#f6e24d"/><stop offset="1" stop-color="#b39304"/></linearGradient></defs></svg>${HOUSE}
     <div class="ducks" aria-hidden="true">${ducks}</div>`;
 }
 

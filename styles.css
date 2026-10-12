@@ -312,7 +312,10 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
 /* The way into the low-scores-win mode (flip.js), under every tab: Patatas, gold-framed like the cast with a brass name
    plate (Cinzel, engraved), asks in a cartoon speech bubble (Chewy), "Embrace failure" on a rainbow; in the mode,
    "Embrace success" on the normal view's gold. The plate and frame are real gold in both views */
-#dq { padding: 16px var(--px) 0; text-align: center; }
+/* Patatas takes the house's light (main.js: #dq-light), in the normal view, where he stands before its sky; his bubble
+   takes the sky's shape and colours (data-sky, below) */
+html:not(.fz) #dq.lit .em-who { filter: url(#dq-light); }
+#dq { position: relative; z-index: 1; padding: 16px var(--px) 0; text-align: center; } /* over the house's sky, which rises behind the page */
 .embrace {
   display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 0; background: none; color: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -332,9 +335,35 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    view's colour (gold here, pink there) */
 .em-bub {
   position: absolute; left: 0; top: -2px; width: calc(100% + 4px); height: calc(100% + 6px); z-index: -1; overflow: visible;
-  filter: drop-shadow(4px 5px 0 var(--pop));
+  filter: var(--bub-sh, drop-shadow(4px 5px 0 var(--pop)));
 }
-.em-bub path { fill: url(#em-fill); stroke: var(--ink); stroke-width: 3px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.em-bub :is(path, ellipse) { fill: url(#em-fill); stroke: var(--ink); stroke-width: 3px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+/* One shape at a time: the comic bubble, unless the sky has chosen another (the normal view only) */
+.em-bub :is([class^="k-"]:not(.k-comic)) { display: none; }
+html:not(.fz) #dq[data-sky] .em-bub .k-comic { display: none; }
+html:not(.fz) #dq[data-sky="day"] .em-bub .k-cloud, html:not(.fz) #dq[data-sky="golden"] .em-bub .k-pill,
+html:not(.fz) #dq[data-sky="twilight"] .em-bub .k-cloud, html:not(.fz) #dq[data-sky="night"] .em-bub :is(.k-thought, .k-dots) { display: inline; }
+/* In the sky's colours (--s-top overhead, --s-hor at the horizon, --s-glow round the sun; main.js) */
+html:not(.fz) #dq[data-sky] .em-bub :is(path, ellipse) { fill: url(#em-sky); }
+/* By day, a cumulus cloud: white, its underside in the sky's blue, a fine blue-grey edge and a soft shadow */
+html:not(.fz) #dq[data-sky="day"] .em-say { --ink: #1d2d55; --pop: #f2c230; --bub-sh: drop-shadow(0 4px 5px color-mix(in srgb, var(--s-top) 45%, transparent)); --bub-sh-down: drop-shadow(0 2px 3px color-mix(in srgb, var(--s-top) 45%, transparent)); }
+html:not(.fz) #dq[data-sky="day"] .em-bub :is(path, ellipse) { stroke: color-mix(in srgb, var(--s-top) 55%, #1d2d55); stroke-width: 2px; }
+html:not(.fz) #dq[data-sky="day"] .em-bub .s0 { stop-color: #fff; }
+html:not(.fz) #dq[data-sky="day"] .em-bub .s1 { stop-color: color-mix(in srgb, var(--s-hor) 45%, #fff); }
+/* At sunrise and sunset, a glowing pill: the sun's glow fading to the horizon's colour, a hard shadow in the deepening
+   sky overhead, like a sunset poster */
+html:not(.fz) #dq[data-sky="golden"] .em-say { --ink: #3a1630; --pop: var(--s-glow); --bub-sh: drop-shadow(4px 5px 0 var(--s-top)); --bub-sh-down: drop-shadow(2.5px 3px 0 var(--s-top)); }
+html:not(.fz) #dq[data-sky="golden"] .em-bub .s0 { stop-color: color-mix(in srgb, var(--s-glow) 70%, #fff); }
+html:not(.fz) #dq[data-sky="golden"] .em-bub .s1 { stop-color: var(--s-hor); }
+/* In twilight, a soft cloud in the blue hour's violets */
+html:not(.fz) #dq[data-sky="twilight"] .em-say { --ink: #22184a; --pop: color-mix(in srgb, var(--s-hor) 50%, #fff); --bub-sh: drop-shadow(3px 4px 0 var(--s-top)); --bub-sh-down: drop-shadow(2px 2.5px 0 var(--s-top)); }
+html:not(.fz) #dq[data-sky="twilight"] .em-bub .s0 { stop-color: color-mix(in srgb, var(--s-hor) 35%, #fff); }
+html:not(.fz) #dq[data-sky="twilight"] .em-bub .s1 { stop-color: color-mix(in srgb, var(--s-hor) 75%, #fff); }
+/* By night, a thought bubble, dreaming: the night sky's own dark blue, a moonlit edge and glow, pale words */
+html:not(.fz) #dq[data-sky="night"] .em-say { --ink: #eef1ff; --pop: #dfe6ff; --bub-sh: drop-shadow(0 0 6px rgba(200, 212, 255, .45)); --bub-sh-down: drop-shadow(0 0 3px rgba(200, 212, 255, .45)); }
+html:not(.fz) #dq[data-sky="night"] .em-bub :is(path, ellipse) { stroke: #c8d4ff; stroke-width: 2px; }
+html:not(.fz) #dq[data-sky="night"] .em-bub .s0 { stop-color: color-mix(in srgb, var(--s-top) 70%, #3a4a7a); }
+html:not(.fz) #dq[data-sky="night"] .em-bub .s1 { stop-color: color-mix(in srgb, var(--s-hor) 70%, #10162e); }
 .em-bub stop:nth-child(1) { stop-color: #ff4fc3; }
 .em-bub stop:nth-child(2) { stop-color: #ffa94d; }
 .em-bub stop:nth-child(3) { stop-color: #ffe14d; }
@@ -351,7 +380,7 @@ main { padding-top: calc(var(--bar-h) + env(safe-area-inset-top)); }
    shadow, Patatas eases back a touch and the pop lines open a little; let go, they ease back */
 .embrace:is(.down, :active) :is(.em-say, .em-who, .em-pop) { transition-duration: .1s; }
 .embrace:is(.down, :active) .em-say { transform: translate(1.5px, 2px); }
-.embrace:is(.down, :active) .em-bub { filter: drop-shadow(2.5px 3px 0 var(--pop)); }
+.embrace:is(.down, :active) .em-bub { filter: var(--bub-sh-down, drop-shadow(2.5px 3px 0 var(--pop))); }
 .embrace:is(.down, :active) .em-who { transform: scale(.97); }
 .embrace:is(.down, :active) .em-pop { transform: scale(1.12); }
 @media (hover: hover) and (pointer: fine) {
@@ -795,7 +824,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    days (.show-day, main.js) the lines glow, and as it comes into view (.up, once) its lights come up one by one; the
    chimney smokes while it's on screen (.go). Only opacity and transform move; nothing at all on other days */
 .house { position: absolute; left: 50%; bottom: 0; width: min(390px, 100%); aspect-ratio: 390 / 136; translate: -50% 0; pointer-events: none; }
-.house > svg:first-of-type { position: relative; display: block; width: 100%; height: 100%; }
+.house > svg:first-of-type { position: relative; display: block; width: 100%; height: 100%; overflow: visible; } /* the conifer's tip may rise past the band, into the sky */
 /* The sky and the drive behind the drawing, the footer's whole width (--u: one unit of the drawing); main.js paints them
    from the sun's height each minute. The sky fades into the page above it */
 .house > .sky, .house > .ground { position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); }
@@ -804,15 +833,17 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
   --sides: linear-gradient(90deg, transparent, #000 calc((100% - 390px) * .4), #000 calc(100% - (100% - 390px) * .4), transparent);
   -webkit-mask-image: var(--sides); mask-image: var(--sides);
 }
+/* The sky rises well above the footer, behind the page (the slides are above the footer; Patatas's block is lifted above
+   it, #dq), fading out as it goes up */
 .house > .sky {
-  top: 0; height: calc(86 * var(--u));
-  -webkit-mask-image: linear-gradient(transparent, #000 75%), var(--sides); -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(transparent, #000 75%), var(--sides); mask-composite: intersect;
+  bottom: calc(58 * var(--u)); height: calc(78 * var(--u) + 360px); will-change: transform; /* its own layer: big and masked, it isn't repainted as the page scrolls */
+  -webkit-mask-image: linear-gradient(transparent, #000 70%), var(--sides); -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(transparent, #000 70%), var(--sides); mask-composite: intersect;
 }
-/* The ground runs back to y 77, the lawn behind everything (the conifer's foot, the caravan's), the drive coming up to
+/* The ground runs back to y 69 (raised with the structures, leaving the ducks room on the drive), the lawn behind everything (the conifer's foot, the caravan's), the drive coming up to
    the structures' fronts; both start above the feet standing on them, tucked under, as browsers that round an SVG's
    edge and a box's edge to the device's pixels differently (Safari) showed a pixel of sky where they met exactly */
-.house > .ground { top: calc(77 * var(--u)); bottom: 0; }
+.house > .ground { top: calc(69 * var(--u)); bottom: 0; }
 .house .ln { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .house .ln * { vector-effect: non-scaling-stroke; }
 /* Details in a finer line */
@@ -915,7 +946,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 .show-day.up .house .lt > g > * { animation: h-on .7s var(--ease) calc(var(--i) * 220ms + 150ms) both; }
 @keyframes h-on { from { opacity: 0; } to { opacity: .95; } }
 .smoke {
-  position: absolute; left: 47%; bottom: 81.9%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
+  position: absolute; left: 47%; bottom: 87.8%; width: 4.2%; height: auto; opacity: 0; overflow: visible;
   fill: none; stroke: #e9dcc0; stroke-width: 1.5; stroke-linecap: round;
 }
 .show-day.go .smoke { animation: h-smoke 4s 2s linear infinite; }
