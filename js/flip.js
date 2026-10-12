@@ -7,7 +7,7 @@ import { fallFrames, watchPage } from "./tune.js";
 import { slamFx } from "./slam-fx.js";
 
 let on = false;
-let hooks = { redraw() {} };
+let hooks = { redraw() {}, later() {} };
 
 // anchor: what was tapped, kept where it is on the screen (the page re-renders around it); at: where the tap landed,
 // which the transitions open from (else the anchor's middle)
@@ -29,7 +29,8 @@ function set(show, anchor, tap) {
     if (how === "slam") slamScroll();
     if (show) { fall(); glints(); } else { stopFall(); clearInterval(glinter); }
   };
-  if (how === "off" || reducedMotion || !document.startViewTransition) return swap();
+  // Only the page on show is drawn in the switch; the others once it's over (main.js)
+  if (how === "off" || reducedMotion || !document.startViewTransition) { swap(); hooks.later(); return; }
   // The browser pictures the page before and after and animates between the two (styles.css, html[data-vt])
   html.dataset.vt = how;
   html.classList.toggle("vt-in", show);
@@ -44,6 +45,7 @@ function set(show, anchor, tap) {
   // Slam's effects keep the transition's time: the camera's animation is their clock
   vt.ready.then(() => fx?.start(document.getAnimations().find((a) => a.effect?.pseudoElement === "::view-transition"))).catch(() => {});
   vt.finished.finally(() => {
+    hooks.later();
     fx?.stop();
     delete html.dataset.vt; html.classList.remove("vt-in");
     if (how === "turn") nameMovers(true);
