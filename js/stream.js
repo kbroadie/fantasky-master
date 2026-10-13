@@ -1,17 +1,19 @@
 // Fantasy Land's lake and Alex's stream, on two canvases (main.js): the lake's, behind his rock, and the stream's, in
 // front of it. Shared by stream-worker.js and main.js's fallback; no DOM.
-// The lake: still water with a slow, faint swell, so what it mirrors (the rainbow about the horizon, his rock and the
-// stream about the waterline) is drawn row by row, each row shifted and sampled a little off by the waves, which shorten
-// toward the horizon as they recede; it mirrors more at a grazing angle, far off, than near. Ripples spread where the
-// water lands and bend what's mirrored in them.
-// The stream: water from his chest funnel while he's pressed, none otherwise. A clear jet that holds together most of the
-// way, swelling and pinching as it nears the end, where it breaks into drops that splash where they land. Its pressure
-// rises while he's held and the arc rises and reaches with it, at its fullest the circle round the rainbow's centre, as
-// the rainbow above. Each bit of water keeps the arc it left on, so a change runs out along the stream. It's clear: it
-// tints what's behind it a little, its edges and highlights take the light around it (the rainbow's colours where it
-// passes under it, the sky's lavender, the lake's blue underneath).
+// The lake: still water with a slow, faint swell, mirroring the rainbow about the horizon and his rock and the stream
+// about the water under them, more at a grazing angle, far off, than near. Ripples spread from where the water lands
+// across the whole lake, bending what's mirrored as they pass. Drawn by lake-gl.js where WebGL is there; else row by row
+// here, each row shifted by the swell, with ripples only near where it lands.
+// The stream: water from his chest funnel while he's pressed, none otherwise, as from a hose: thrown up and pulled down
+// by gravity, slowed across by the air, so it comes down more steeply than it rose, landing in front of his rock, toward
+// us and the middle. A clear jet that holds together for as long as water does (about 0.7s), swelling and pinching
+// before it breaks into drops, a little sooner or later each moment, that splash where they land. Its pressure rises
+// while he's held and it rises and reaches with it. Each bit of water keeps the arc it left on, so a change runs out
+// along the stream. It's clear: it tints what's behind it a little, its edges and highlights take the light around it
+// (the rainbow's colours where it passes under it, the sky's lavender, the lake's blue underneath).
+import { glLake } from "./lake-gl.js";
 
-const FPS = 30, CALM = 15; // drawn while there's water in the air; the lake alone, slower (it moves slowly)
+const FPS = 30, CALM = 15; // drawn while there's water in the air or ripples spreading; the lake alone, slower (it moves slowly)
 const RATE = 230; // drops a second
 const UP = 2.2, DOWN = 1.5; // how fast the pressure rises while pressed, and falls when let go (a second)
 const ON = 8, OFF = 5; // how fast the flow turns on when he's pressed, and off when he's let go (a second)
@@ -23,39 +25,40 @@ const BOW = [[0.46, 255, 240, 255, 0], [0.58, 255, 240, 255, 0.07], [0.61, 170, 
   [0.785, 255, 70, 110, 0], [0.84, 170, 110, 255, 0], [0.86, 170, 110, 255, 0.18], [0.88, 110, 100, 255, 0.18], [0.9, 80, 150, 255, 0.2],
   [0.92, 90, 230, 150, 0.22], [0.94, 255, 230, 90, 0.24], [0.96, 255, 160, 70, 0.22], [0.98, 255, 70, 110, 0.2], [1, 255, 70, 110, 0]];
 const SKY = [214, 204, 255]; // the light from the dream's sky, lavender
+const RIPPLE = 0.3, RIPPLES = 16, AGE = 5.6; // a ripple every 0.3s where it lands, as many at once, each spreading so long (the GPU's)
+const HOLD = 0.72; // seconds a jet of water holds together before it breaks into drops
 const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a.toFixed(3)})`;
 const mix = (a, b, f) => a.map((v, i) => v + (b[i] - v) * f);
 const canvas2 = (w, h) => (globalThis.OffscreenCanvas ? new OffscreenCanvas(w, h) : Object.assign(document.createElement("canvas"), { width: w, height: h }));
 
 export function streamer(jet, lake) {
-  const x = jet.getContext("2d"), y = lake.getContext("2d");
+  const x = jet.getContext("2d"), gpu = glLake(lake), y = gpu ? null : lake.getContext("2d");
   let g = null, k = 1, p = 0, want = 0, flow = 0, id = 0, last = 0, owed = 0, still = false, run = false, lastRing = 0;
-  let nodes = [], drops = [], bits = [], rings = [], rock = null, rockMir = null, bowS = null, glint = null, jetMir = null, wet = false;
+  let nodes = [], drops = [], bits = [], rings = [], rock = null, rockMir = null, bowS = null, glint = null, jetMir = null, jetBand = null, wet = false;
   let DX = null, DY = null, RF = null, SH = null, GX = null, RX0 = null, RX1 = null, ROX = null, ROY = null;
   const ease = (t) => t * t * (3 - 2 * t);
-  // The arc at a pressure (0 to 1) at s along it (0 at the spout, 1 at the water): from the resting curve (a low parabola)
-  // toward the rainbow's circle, round its centre through the spout, down to the water on the far side
+  // Where it lands at a pressure (0 to 1): just in front of his rock's foot, and as it rises toward us and the middle
+  const land = (e) => [g.sx - 70 + (g.cx - Math.min(0.2 * g.W, 110) - (g.sx - 70)) * e, g.wy + 6 + 10 * e];
+  // The arc at a pressure at s (0 leaving the spout, 1 at the water, in time): up from the hose and down under gravity (a
+  // parabola in time, rising h above the spout), slowed across by the air (so it falls more steeply than it rose)
   function at(e, s) {
-    const { sx, sy, wy, cx, cy } = g;
-    const u = 1 - s, ax = sx - 60, ay = sy - 72, bx = sx - 120, by = wy;
-    const rx = u * u * sx + 2 * u * s * ax + s * s * bx, ry = u * u * sy + 2 * u * s * ay + s * s * by;
-    if (!e) return [rx, ry];
-    const a = g.a0 + s * (g.a1 - g.a0), mx = cx + g.R * Math.cos(a), my = cy + g.R * Math.sin(a);
-    return [rx + (mx - rx) * e, ry + (my - ry) * e];
+    const [lx, ly] = land(e), h = 14 + 50 * e, D = ly - g.sy, a = 2 * h + 2 * Math.sqrt(h * h + h * D), DRAG = 1.4;
+    return [g.sx + ((lx - g.sx) * (1 - Math.exp(-DRAG * s))) / (1 - Math.exp(-DRAG)), g.sy - a * s + (a + D) * s * s];
   }
-  const span = (e) => 1 + 1.1 * e; // seconds from the spout to the water
-  const breakAt = (e) => 0.8 + 0.06 * e; // where the jet breaks into drops: near the end
+  const span = (e) => 0.75 + 0.85 * e; // seconds from the spout to the water
+  // Where it breaks into drops: when it's held together HOLD seconds, a little sooner or later each moment
+  const breakAt = (e) => Math.max(0.42, Math.min(0.88, HOLD / span(e) + (Math.random() - 0.5) * 0.1));
   // Water leaving the spout: a node of the jet each frame (its width as the flow was), and drops, hidden in the jet until
   // it breaks
-  const drop = (t0, e) => ({ t0, e, T: span(e) * (1 + (Math.random() - 0.5) * 0.04), off: (Math.random() + Math.random() + Math.random() - 1.5) * 1.15, r: 0.55 + Math.random() * 0.8, hide: Math.random() < 0.72 });
+  const drop = (t0, e, b) => ({ t0, e, b, T: span(e) * (1 + (Math.random() - 0.5) * 0.04), off: (Math.random() + Math.random() + Math.random() - 1.5) * 1.15, r: 0.55 + Math.random() * 0.8, hide: Math.random() < 0.72 });
   function emit(t, n) {
-    const e = ease(p);
-    if (flow > 0.01) nodes.push({ t0: t, e, w: flow, T: span(e) });
-    for (let i = 0; i < n; i++) drops.push(drop(t - Math.random() / FPS, e));
+    const e = ease(p), b = breakAt(e);
+    if (flow > 0.01) nodes.push({ t0: t, e, w: flow, T: span(e), b });
+    for (let i = 0; i < n; i++) drops.push(drop(t - Math.random() / FPS, e, b + (Math.random() - 0.5) * 0.04));
   }
-  function splash(px, t) {
-    if (Math.random() < 0.45) bits.push({ x: px + (Math.random() - 0.5) * 3, y: g.wy - 1, vx: (Math.random() - 0.5) * 40, vy: -(18 + Math.random() * 42), t0: t, r: 0.3 + Math.random() * 0.4 });
-    if (t - lastRing > 0.12) { lastRing = t; rings.push({ x: px, t0: t }); }
+  function splash([px, py], t) {
+    if (Math.random() < 0.45) bits.push({ x: px + (Math.random() - 0.5) * 3, y: py - 1, vx: (Math.random() - 0.5) * 40, vy: -(18 + Math.random() * 42), t0: t, r: 0.3 + Math.random() * 0.4 });
+    if (t - lastRing > RIPPLE) { lastRing = t; rings.push({ x: px, y: py, t0: t }); }
   }
   // The light around the stream: under the rainbow its colours, lightened, else the sky's; and below, toward the water,
   // the lake's blue (a gradient over the stream's canvas, round the rainbow's centre)
@@ -83,13 +86,14 @@ export function streamer(jet, lake) {
     // The jet: from the spout (while it flows) through its nodes to where it breaks, as a clear column with an outline
     // in the light around it, a bright streak along its top and the lake's blue underneath; swelling and pinching
     // toward the break
-    nodes = nodes.filter((n) => (t - n.t0) / n.T < breakAt(n.e) + 0.02);
+    nodes = nodes.filter((n) => (t - n.t0) / n.T < n.b + 0.02);
     const pts = [];
     if (flow > 0.01) pts.push([g.sx, g.sy, (2.8 + 1.2 * ease(p)) * flow, 0]);
     for (let i = nodes.length - 1; i >= 0; i--) {
-      const n = nodes[i], s = Math.min((t - n.t0) / n.T, breakAt(n.e)), f = s / breakAt(n.e);
-      const [px, py] = at(n.e, s), w = (3 + 1.2 * n.e) * n.w * (1 - 0.25 * f) * (1 + 0.28 * f ** 4 * Math.sin(s * 140 - t * 30));
+      const n = nodes[i], s0 = (t - n.t0) / n.T, s = Math.min(s0, n.b), f = s / n.b;
+      const [px, py] = at(n.e, s), w = (3 + 1.2 * n.e) * n.w * (1 - 0.25 * f) * (1 + 0.3 * f ** 3 * Math.sin(s * 90 - t * 30));
       pts.push([px, py, Math.max(0.3, w), f]);
+      if (s0 >= n.b) break; // broken from here on
     }
     if (pts.length > 1) {
       const L = [], R = [], T = [], C = [];
@@ -113,13 +117,13 @@ export function streamer(jet, lake) {
     // The drops, once it's broken: each a short bead along its way, lit like the jet
     x.beginPath();
     drops = drops.filter((d) => {
-      const s = (t - d.t0) / d.T, sb = breakAt(d.e);
-      if (s >= 1) { splash(at(d.e, 1)[0], t); return false; }
+      const s = (t - d.t0) / d.T, sb = d.b;
+      if (s >= 1) { splash(at(d.e, 1), t); return false; }
       if (s < sb - 0.01) return true;
       const [ax, ay] = at(d.e, s), [bx, by] = at(d.e, Math.min(1, s + 0.02));
       let tx = bx - ax, ty = by - ay; const n = Math.hypot(tx, ty) || 1; tx /= n; ty /= n;
       if (d.hide) return true; // the jet's water is in fewer, bigger drops than it's made of
-      const o = d.off * (0.15 + 8 * (s - sb)), px = ax - ty * o, py = ay + tx * o, rr = d.r * 0.9;
+      const o = d.off * (0.15 + 6 * (s - sb)), px = ax - ty * o, py = ay + tx * o, rr = d.r * 0.9;
       x.moveTo(px + tx * rr * 1.6, py + ty * rr * 1.6); x.ellipse(px, py, rr * 1.6, rr, Math.atan2(ty, tx), 0, Math.PI * 2);
       return true;
     });
@@ -128,16 +132,36 @@ export function streamer(jet, lake) {
     x.beginPath();
     bits = bits.filter((b) => {
       const a = t - b.t0, bx = b.x + b.vx * a, by = b.y + b.vy * a + 0.5 * 320 * a * a;
-      if (by > g.wy + 1) return false;
+      if (by > b.y + 2) return false;
       x.moveTo(bx + b.r, by); x.arc(bx, by, b.r, 0, Math.PI * 2);
       return true;
     });
     x.fillStyle = g.edge; x.fill();
     wet = nodes.length > 0 || drops.length > 0 || bits.length > 0;
   }
-  // The lake, from the horizon (0) down: the waves for each row of pixels, then what it mirrors, then its glints and
-  // ripples
+  // The lake on the GPU (lake-gl.js): the stream just above the water handed over while there's any, and the ripples as
+  // where each began on the lake's plane (its perspective: a point's distance is LH over its height below the horizon,
+  // and across, its offset over F at that distance), its age and strength
   function drawLake(t) {
+    if (!gpu) return lake2D(t);
+    if (!lake.width || !lake.height) return;
+    rings = rings.filter((r) => t - r.t0 < AGE).slice(-RIPPLES);
+    const R = new Float32Array(RIPPLES * 4), F = g.LH / 0.4;
+    rings.forEach((r, i) => { const Z = g.LH / (r.y - g.ly + 0.8); R.set([((r.x - g.cx) * Z) / F, Z, t - r.t0, 1], i * 4); });
+    if (wet) {
+      const c = jetBand.getContext("2d");
+      c.clearRect(0, 0, jetBand.width, jetBand.height);
+      c.drawImage(jet, 0, (g.ly + g.band[0]) * k, jetBand.width, jetBand.height, 0, 0, jetBand.width, jetBand.height);
+      gpu.tex("tJet", jetBand);
+    }
+    const [lx, lyy] = land(ease(p));
+    gpu.draw({ uSize: [lake.width, lake.height], uBowSize: [g.W + 2 * M, g.LH + 4], uK: k, uLH: g.LH, uCx: g.cx, uF: F, uT: t % 1000, uWl: g.wy - g.ly, uM: M,
+      uHasRock: rock ? 1 : 0, uHasJet: wet ? 1 : 0, uRock: [g.rock.x, g.rock.y - g.ly, g.rock.w, g.rock.h], uAxis: [g.sx, g.wy - g.ly, lx, lyy - g.ly],
+      uJet: [g.band[0], g.band[1] - g.band[0], 0, 0], uRings: R, uN: rings.length });
+  }
+  // The lake without the GPU, from the horizon (0) down: the waves for each row of pixels, then what it mirrors, then its
+  // glints and ripples (only near where it lands)
+  function lake2D(t) {
     const Wd = lake.width, Hd = lake.height, LH = g.LH, wl = g.wy - g.ly;
     if (!Wd || !Hd) return;
     for (let r = 0; r < Hd; r++) {
@@ -153,9 +177,9 @@ export function streamer(jet, lake) {
     RX1.fill(0);
     rings = rings.filter((g2) => (t - g2.t0) / 1.2 < 1);
     for (const g2 of rings) {
-      const a = (t - g2.t0) / 1.2, rx = 2 + 20 * a, ry = rx * 0.22, amp = 1.3 * (1 - a) * k;
-      for (let r = Math.max(0, Math.floor((wl - ry) * k)); r <= Math.min(Hd - 1, Math.ceil((wl + ry) * k)); r++) {
-        const v = (r / k - wl) / ry, c = rx * Math.sqrt(Math.max(0, 1 - v * v)) * k;
+      const a = (t - g2.t0) / 1.2, rx = 2 + 20 * a, ry = rx * 0.22, amp = 1.3 * (1 - a) * k, ry0 = g2.y - g.ly;
+      for (let r = Math.max(0, Math.floor((ry0 - ry) * k)); r <= Math.min(Hd - 1, Math.ceil((ry0 + ry) * k)); r++) {
+        const v = (r / k - ry0) / ry, c = rx * Math.sqrt(Math.max(0, 1 - v * v)) * k;
         if (c < 1 || (RX1[r] && Math.abs(ROX[r]) + Math.abs(ROY[r]) > amp)) continue;
         RX0[r] = g2.x * k - c; RX1[r] = g2.x * k + c; ROX[r] = amp * Math.sin(v * 3); ROY[r] = (v > 0 ? 0.5 : -0.5) * amp;
       }
@@ -201,11 +225,11 @@ export function streamer(jet, lake) {
     y.globalAlpha = 1;
     y.setTransform(k, 0, 0, k, 0, 0);
     for (const g2 of rings) {
-      const a = (t - g2.t0) / 1.2, rx = 2 + 20 * a, ry = rx * 0.22;
+      const a = (t - g2.t0) / 1.2, rx = 2 + 20 * a, ry = rx * 0.22, ry0 = g2.y - g.ly;
       y.lineWidth = 0.7;
-      y.beginPath(); y.ellipse(g2.x, wl, rx, ry, 0, Math.PI, Math.PI * 2); y.strokeStyle = rgba(SKY, 0.22 * (1 - a)); y.stroke();
-      y.beginPath(); y.ellipse(g2.x, wl + 0.6, rx, ry, 0, 0, Math.PI); y.strokeStyle = `rgba(4,6,20,${(0.28 * (1 - a)).toFixed(3)})`; y.stroke();
-      if (a > 0.25) { const ri = rx * 0.6; y.beginPath(); y.ellipse(g2.x, wl, ri, ri * 0.22, 0, Math.PI, Math.PI * 2); y.strokeStyle = rgba(SKY, 0.18 * (1 - a)); y.stroke(); }
+      y.beginPath(); y.ellipse(g2.x, ry0, rx, ry, 0, Math.PI, Math.PI * 2); y.strokeStyle = rgba(SKY, 0.22 * (1 - a)); y.stroke();
+      y.beginPath(); y.ellipse(g2.x, ry0 + 0.6, rx, ry, 0, 0, Math.PI); y.strokeStyle = `rgba(4,6,20,${(0.28 * (1 - a)).toFixed(3)})`; y.stroke();
+      if (a > 0.25) { const ri = rx * 0.6; y.beginPath(); y.ellipse(g2.x, ry0, ri, ri * 0.22, 0, Math.PI, Math.PI * 2); y.strokeStyle = rgba(SKY, 0.18 * (1 - a)); y.stroke(); }
     }
     y.setTransform(1, 0, 0, 1, 0, 0);
   }
@@ -261,9 +285,9 @@ export function streamer(jet, lake) {
     nodes = []; drops = []; bits = []; rings = [];
     flow = want; p = want;
     if (want) {
-      const e = ease(p), T = span(e), sb = breakAt(e);
-      for (let i = 60; i >= 0; i--) nodes.push({ t0: t - (i / 60) * T * sb, e, w: 1, T }); // oldest first, as they're made
-      for (let i = 0; i < 40; i++) { const d = drop(t, e); d.t0 = t - (sb + Math.random() * (1 - sb)) * d.T; drops.push(d); }
+      const e = ease(p), T = span(e), sb = HOLD / T;
+      for (let i = 60; i >= 0; i--) nodes.push({ t0: t - (i / 60) * T * sb, e, w: 1, T, b: sb }); // oldest first, as they're made
+      for (let i = 0; i < 220; i++) { const d = drop(t, e, sb); d.t0 = t - (sb + Math.random() * (1 - sb)) * d.T; drops.push(d); }
     }
     drawJet(t);
     drawLake(t);
@@ -273,7 +297,7 @@ export function streamer(jet, lake) {
   const unraf = globalThis.cancelAnimationFrame ?? clearTimeout;
   function step(now) {
     id = raf(step);
-    const water = want || flow || wet;
+    const water = want || flow || wet || (gpu && rings.length);
     if (last && now - last < 1000 / (water ? FPS : CALM) - 3) return;
     const dt = last ? Math.min(0.1, (now - last) / 1000) : 1 / FPS;
     last = now;
@@ -284,32 +308,39 @@ export function streamer(jet, lake) {
     const n = Math.floor(owed); owed -= n;
     const t = now / 1000;
     emit(t, n);
-    if (water) drawJet(t);
+    if (want || flow || wet) drawJet(t);
     drawLake(t);
   }
-  const ready = () => g && bowS && glint;
+  const ready = () => g && bowS;
   return {
     // The canvases' sizes and the places in them (CSS px, the stream's canvas; the lake's begins ly down it): the spout,
     // the water, the rainbow's centre and radius, his rock
     geom(m) {
       g = { ...m };
-      g.R = Math.hypot(g.sx - g.cx, g.sy - g.cy);
-      g.a0 = Math.atan2(g.sy - g.cy, g.sx - g.cx);
-      g.a1 = Math.atan2(g.wy - g.cy, -Math.sqrt(Math.max(0, g.R ** 2 - (g.wy - g.cy) ** 2)));
       g.R0 = 0.75 * g.W;
       g.ly = g.H - g.LH;
       k = m.res;
       jet.width = Math.round(g.W * k); jet.height = Math.round(g.H * k);
       lake.width = Math.round(g.W * k); lake.height = Math.round(g.LH * k);
-      [DX, DY, RF, SH, GX, RX0, RX1, ROX, ROY] = Array.from({ length: 9 }, () => new Float32Array(lake.height));
-      lights(); bowStrip(); glints(); rockStrip();
-      jetMir = canvas2(lake.width, Math.ceil((g.LH - (g.wy - g.ly) + 6) * k));
+      lights(); bowStrip();
+      if (gpu) {
+        // the stream that's mirrored: from as far above the water as its reflection reaches down, to where it lands
+        const wl = g.wy - g.ly;
+        g.band = [Math.floor(2 * wl - g.LH - 3), Math.ceil(land(1)[1] - g.ly + 3)];
+        jetBand = canvas2(jet.width, Math.ceil((g.band[1] - g.band[0]) * k));
+        gpu.tex("tBow", bowS);
+        if (rock) gpu.tex("tRock", rock);
+      } else {
+        [DX, DY, RF, SH, GX, RX0, RX1, ROX, ROY] = Array.from({ length: 9 }, () => new Float32Array(lake.height));
+        glints(); rockStrip();
+        jetMir = canvas2(lake.width, Math.ceil((g.LH - (g.wy - g.ly) + 6) * k));
+      }
       wet = false;
       still = m.still;
       if (still) stillFrame();
     },
     // His picture (an ImageBitmap in the worker), for his reflection
-    rock(img) { rock = img; rockStrip(); if (still && ready()) stillFrame(); },
+    rock(img) { rock = img; if (gpu) gpu.tex("tRock", img); else rockStrip(); if (still && ready()) stillFrame(); },
     press(on) { want = on ? 1 : 0; if (still) { if (ready()) stillFrame(); } else if (run && !id && ready()) { last = 0; id = raf(step); } },
     // Not landing all that was in the air when it stopped
     start() { run = true; if (!still && !id && ready()) { last = 0; nodes = []; drops = []; bits = []; rings = []; wet = false; flow = want; id = raf(step); } },
