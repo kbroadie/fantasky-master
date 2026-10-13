@@ -1,5 +1,5 @@
 // Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js), a card per effect, per device in
-// localStorage. Every effect is at its lowest quality by default, and off but for the podium effects, Fantasy Land's sea
+// localStorage. Every effect is at its lowest quality by default, and off but for the podium effects, Fantasy Land's footer
 // and its transition: frame pacing comes first, and the cards turn them on and up. Everything applies live (fm-switch events). Each kind of setting has
 // its control: an effect's on/off a switch in its card's head (main), a small fixed set segmented buttons (steps, choice),
 // a strength a slider (range)
@@ -27,6 +27,21 @@ export const CARDS = [
       { key: "fallFigures", type: "range", label: "Figures", def: 7, min: 0, max: 20, step: 1, unit: "" },
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
       { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
+    ] },
+  // The night sky behind it (night.js): an aurora, at its lowest quality to begin with, and a field of stars that a comet
+  // crosses now and then (comets a minute; still but for them)
+  { title: "Aurora", view: "fz",
+    items: [
+      { key: "aurora", type: "toggle", def: false, main: true, cls: "no-aurora" },
+      { key: "auroraRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
+      { key: "auroraFps", type: "steps", label: "Frame rate", def: 15, options: [[15, "15"], [20, "20"], [30, "30"], [60, "60 fps"]] },
+      { key: "auroraBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
+      { key: "auroraSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 3, step: 0.25, unit: "×" },
+    ] },
+  { title: "Stars", view: "fz",
+    items: [
+      { key: "stars", type: "toggle", def: false, main: true, cls: "no-stars" },
+      { key: "comets", type: "range", label: "Comets", def: 2, min: 0, max: 10, step: 1, unit: "/min" },
     ] },
   // The rest of its motion: the sparkles' twinkle, the glint on Fantasy and the sliding tab rainbow. Off, all there, still
   { title: "Decorations", view: "fz",

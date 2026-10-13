@@ -31,10 +31,10 @@ const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a.toFixed(3)}
 const mix = (a, b, f) => a.map((v, i) => v + (b[i] - v) * f);
 const canvas2 = (w, h) => (globalThis.OffscreenCanvas ? new OffscreenCanvas(w, h) : Object.assign(document.createElement("canvas"), { width: w, height: h }));
 
-export function streamer(jet, lake) {
+export function streamer(jet, lake, bg = {}) {
   const x = jet.getContext("2d"), gpu = glLake(lake), y = gpu ? null : lake.getContext("2d");
   let g = null, k = 1, p = 0, want = 0, flow = 0, id = 0, last = 0, owed = 0, still = false, run = false, lastRing = 0;
-  let nodes = [], drops = [], bits = [], rings = [], rock = null, rockMir = null, bowS = null, glint = null, jetMir = null, jetBand = null, wet = false;
+  let nodes = [], drops = [], bits = [], rings = [], rock = null, rockMir = null, bowS = null, glint = null, jetMir = null, jetBand = null, skyBand = null, wet = false;
   let DX = null, DY = null, RF = null, SH = null, GX = null, RX0 = null, RX1 = null, ROX = null, ROY = null;
   const ease = (t) => t * t * (3 - 2 * t);
   // Where it lands at a pressure (0 to 1): just in front of his rock's foot, and as it rises toward us and the middle
@@ -154,10 +154,22 @@ export function streamer(jet, lake) {
       c.drawImage(jet, 0, (g.ly + g.band[0]) * k, jetBand.width, jetBand.height, 0, 0, jetBand.width, jetBand.height);
       gpu.tex("tJet", jetBand);
     }
-    const [lx, lyy] = land(ease(p));
-    gpu.draw({ uSize: [lake.width, lake.height], uBowSize: [g.W + 2 * M, g.LH + 4], uK: k, uLH: g.LH, uCx: g.cx, uF: F, uT: t % 1000, uWl: g.wy - g.ly, uM: M,
+    const [lx, lyy] = land(ease(p)), sky = mirrorSky();
+    gpu.draw({ uHasSky: sky ? 1 : 0, uSize: [lake.width, lake.height], uBowSize: [g.W + 2 * M, g.LH + 4], uK: k, uLH: g.LH, uCx: g.cx, uF: F, uT: t % 1000, uWl: g.wy - g.ly, uM: M,
       uHasRock: rock ? 1 : 0, uHasJet: wet ? 1 : 0, uRock: [g.rock.x, g.rock.y - g.ly, g.rock.w, g.rock.h], uAxis: [g.sx, g.wy - g.ly, lx, lyy - g.ly],
       uJet: [g.band[0], g.band[1] - g.band[0], 0, 0], uRings: R, uN: rings.length });
+  }
+  // The background effects just above the lake on the screen (they're fixed to it), for the lake to mirror: from the
+  // horizon up as far as its reflection reaches down, across the lake's width, their light added together
+  function mirrorSky() {
+    const v = bg.view, on = bg.night?.on(), srcs = [on?.stars && bg.stars, on?.aurora && bg.aurora, bg.fallOn && bg.fall].filter(Boolean);
+    if (!v || !srcs.length) return false;
+    const c = skyBand.getContext("2d"), top = v.top - g.LH - 4;
+    c.globalCompositeOperation = "source-over"; c.clearRect(0, 0, skyBand.width, skyBand.height);
+    c.globalCompositeOperation = "lighter";
+    for (const src of srcs) { const r = src.width / v.vw; c.drawImage(src, v.left * r, top * r, g.W * r, (g.LH + 4) * r, 0, 0, skyBand.width, skyBand.height); }
+    gpu.tex("tSky", skyBand);
+    return true;
   }
   // The lake without the GPU, from the horizon (0) down: the waves for each row of pixels, then what it mirrors, then its
   // glints and ripples (only near where it lands)
@@ -328,6 +340,7 @@ export function streamer(jet, lake) {
         const wl = g.wy - g.ly;
         g.band = [Math.floor(2 * wl - g.LH - 3), Math.ceil(land(1)[1] - g.ly + 3)];
         jetBand = canvas2(jet.width, Math.ceil((g.band[1] - g.band[0]) * k));
+        skyBand = canvas2(lake.width, Math.ceil((g.LH + 4) * k));
         gpu.tex("tBow", bowS);
         if (rock) gpu.tex("tRock", rock);
       } else {
