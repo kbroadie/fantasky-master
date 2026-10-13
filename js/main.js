@@ -204,30 +204,34 @@ function lift(p, t) {
       st.setProperty("--la", `${p.a}px`); st.setProperty("--lb", `${p.b}px`);
       st.animationTimeline = p.tl; st.animationRange = `${p.r0}px ${p.r1}px`; st.animationName = "lift";
     }
+    skyLift(p);
     return;
   }
   const v = `0 ${Math.round(p.a + (p.b - p.a) * t)}px`;
   if (p.v !== v) { p.v = v; for (const el of lifted) el.style.translate = v; }
+  skyLift(p, t);
 }
 // The house's sky peeks up from the screen's bottom (on request): while Patatas's block is below the screen, the sky is held
 // where a swipe holds it (as if the block began at the screen's edge), and rises with the footer once that comes up.
 // Dimmed while it peeks (on request), brightening to the scene's own as Patatas's block comes up, by the time the house
 // shows. Scroll-driven where supported, so it keeps pace with the scroll, else per frame. While a swipe lifts the footer,
 // which then holds the sky, only the dimming runs, from where the page was laid out before it
-let skyEl = null, skyK = "", sky = { r: 0, h: 0 }, praf = 0;
+let skyEl = null, skyK = "", sky = { r: 0, h: 1 }, praf = 0;
 const pageTop = (el) => { let y = 0; for (; el; el = el.offsetParent) y += el.offsetTop; return y; }; // as laid out (no lift)
 function peek() {
   praf = 0;
   if (!skyEl?.isConnected) { skyEl = $("#foot .house > .sky"); skyK = ""; }
   if (!skyEl) return;
-  const lifting = document.body.classList.contains("lifting");
-  if (!lifting) { const dq = pageTop($("#dq")); sky = { r: Math.round(dq - innerHeight), h: Math.max(1, pageTop($("#foot")) - dq) }; }
-  const { r, h } = sky, st = skyEl.style, move = !lifting && r > 0, dim = r + h > 0;
+  if (document.body.classList.contains("lifting")) { skyK = ""; return; } // skyLift has it
+  const dq = pageTop($("#dq"));
+  sky = { r: Math.round(dq - innerHeight), h: Math.max(1, pageTop($("#foot")) - dq) };
+  const { r, h } = sky, st = skyEl.style, move = r > 0, dim = r + h > 0;
   if (SDA) {
     const k = `${r} ${h} ${move}`;
     if (k === skyK) return;
     skyK = k;
     st.animationName = "none"; getComputedStyle(skyEl).animationName; // restarted: Chrome keeps a running one's old range start
+    st.animationTimeline = "";
     st.setProperty("--pk", `${-r}px`);
     st.animationRange = `0px ${Math.max(1, r)}px, ${r}px ${r + h}px`;
     st.animationName = `${move ? "peek" : "none"}, ${dim ? "peek-dim" : "none"}`;
@@ -239,6 +243,23 @@ function peek() {
   }
 }
 const queuePeek = () => { if (!praf) praf = requestAnimationFrame(peek); };
+// The sky's opacity with Patatas's block's top this far down the screen (as peek-dim gives it)
+const skyOp = (dqY) => +(PEEK_DIM + (1 - PEEK_DIM) * Math.max(0, Math.min(1, (innerHeight - dqY) / sky.h))).toFixed(3);
+// Mid-swipe the lifted footer holds the sky, and its opacity blends from the one page's to the other's with the swipe
+// (a scored week's dimmed peek to an unscored one's footer, in full)
+function skyLift(p, t) {
+  if (!skyEl?.isConnected) return;
+  const st = skyEl.style;
+  if (p.sda) {
+    st.animationName = "none"; getComputedStyle(skyEl).animationName; // restarted, as in peek
+    st.setProperty("--oa", p.oa); st.setProperty("--ob", p.ob);
+    st.animationTimeline = p.tl; st.animationRange = `${p.r0}px ${p.r1}px`; st.animationName = "peek-lift";
+  } else {
+    const o = `${+(p.oa + (p.ob - p.oa) * t).toFixed(3)}`;
+    if (st.transform) st.transform = "";
+    if (st.opacity !== o) st.opacity = o;
+  }
+}
 // Room a slide's swiper leaves for it at the least: down to the screen's bottom, less the footer
 const roomIn = (body) => innerHeight - topIn(body) - (parseFloat(getComputedStyle(document.body).paddingBottom) || 0) - feetH();
 // The footer's parts glide when the page's height jumps (a row opening or closing, a card changing), in step with the
@@ -266,8 +287,8 @@ function fit(body, glide = false) {
       const below = y + view + rise;
       const at = (h) => Math.min(top + h + Math.max(0, y - Math.max(0, rest + h - view)), below);
       const a = Math.round(at(ha) - (top + hi)), b = Math.round(at(hb) - (top + hi));
-      const same = pair && pair.a === a && pair.b === b && pair.tl === `--${body.id.slice(0, -5)}` && pair.r0 === i * w;
-      pair = { body, i, a, b, tl: `--${body.id.slice(0, -5)}`, r0: i * w, r1: (i + 1) * w, sda: SDA };
+      const same = pair && pair.a === a && pair.b === b && pair.tl === `--${body.id.slice(0, -5)}` && pair.r0 === i * w && pair.oa === skyOp(at(ha) - y) && pair.ob === skyOp(at(hb) - y);
+      pair = { body, i, a, b, tl: `--${body.id.slice(0, -5)}`, r0: i * w, r1: (i + 1) * w, sda: SDA, oa: skyOp(at(ha) - y), ob: skyOp(at(hb) - y) };
       if (body.style.height !== `${hi}px`) body.style.height = `${hi}px`;
       if (!same || !pair.sda) lift(pair, t);
     } else if (!pair.sda) lift(pair, t);
