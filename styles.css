@@ -800,6 +800,10 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 @property --pk { syntax: "<length>"; inherits: false; initial-value: 0px; }
 @keyframes peek { from { transform: translateY(var(--pk)); } to { transform: none; } }
 @keyframes peek-dim { from { opacity: .5; } to { opacity: 1; } } /* .5: PEEK_DIM in main.js */
+/* Mid-swipe, from the one page's opacity to the other's (main.js, skyLift) */
+@property --oa { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --ob { syntax: "<number>"; inherits: false; initial-value: 1; }
+@keyframes peek-lift { from { opacity: var(--oa); } to { opacity: var(--ob); } }
 /* The ground runs back to y 69 (raised with the structures, leaving the ducks room on the drive), the lawn behind everything (the conifer's foot, the caravan's), the drive coming up to
    the structures' fronts; both start above the feet standing on them, tucked under, as browsers that round an SVG's
    edge and a box's edge to the device's pixels differently (Safari) showed a pixel of sky where they met exactly */
