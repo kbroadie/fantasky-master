@@ -198,7 +198,7 @@ html[data-vt="slam"]::view-transition-new(vt-fx) { animation: none; }`].join("\n
 }
 
 // What depends on the tap: Iris's circle, and the centre Zoom and Vertigo move about. Written here, as a custom
-// property on the root would restyle every duck and pineapple
+// property on the root would restyle every duck
 const mid = (r) => (r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: innerWidth / 2, y: innerHeight / 2 });
 let stageCss = null, staged = null, slamText = null;
 // The pictures' space (the snapshot containing block) can be larger than the screen: on a phone it takes in the address

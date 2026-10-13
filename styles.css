@@ -1118,7 +1118,7 @@ html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .
 html.fz body::before { background: #2a0a46; -webkit-backdrop-filter: none; backdrop-filter: none; }
 html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
 
-/* Fantasy Land's footer: a lake under the rainbow, Alex on his rock, ducks and pineapples afloat (.run while on screen) */
+/* Fantasy Land's footer: a lake under the rainbow, Alex on his rock, the ducks afloat (.run while on screen) */
 .fz-foot { display: none; }
 /* Clips only sideways (overflow-x: clip: no scroll box, no stacking context), so the rainbow can rise behind the table */
 html.fz .fz-foot { --bow: radial-gradient(circle farthest-side at 50% 100%,
@@ -1154,25 +1154,22 @@ html.fz .fz-bow {
 .fz-lake { position: absolute; left: 0; right: 0; bottom: 0; height: calc(67 * min(390px, 100cqw) / 390); overflow: hidden;
   background: url("img/lake.svg") 0 0 / 400px 100% repeat-x, linear-gradient(#3d6f9c, #1a4470 22%, #0d2a4c 55%, #06162b); }
 .fz-lake::before { content: ""; position: absolute; z-index: 1; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(150, 240, 255, .5) 20%, rgba(190, 250, 255, .7) 50%, rgba(150, 240, 255, .5) 80%, transparent); filter: blur(1px); }
-/* The rainbow mirrored in it, about the horizon (on request): the bow as it stands, flipped about the lake's top edge
-   and foreshortened as the lake's depth is (to 42%), so the whole arc shows in it; fainter */
-.fz-bow-r { position: absolute; left: -25cqw; bottom: 4px; width: 150cqw; height: 75cqw; opacity: .55; mix-blend-mode: screen;
-  transform: scaleY(-.42); transform-origin: 50% calc(75cqw + 4px - 67 * min(390px, 100cqw) / 390);
+/* The rainbow mirrored in it, about the horizon (on request: "Reflections don't squash. They're mirror images
+   proportionally"): the bow as it stands, flipped about the lake's top edge at full size, so what shows is the mirror of
+   the bow's feet nearest the horizon; a little fainter */
+.fz-bow-r { position: absolute; left: -25cqw; bottom: 4px; width: 150cqw; height: 75cqw; opacity: .5; mix-blend-mode: screen;
+  transform: scaleY(-1); transform-origin: 50% calc(75cqw + 4px - 67 * min(390px, 100cqw) / 390);
   background: var(--bow); -webkit-mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); }
 /* The scene above the water, mirrored in it about the waterline (40px up): Alex's rock, faint and fading with depth. The
-   ducks and pineapples reflect themselves (below), and the stream draws its own (stream.js) */
+   ducks reflect themselves (below), and the stream draws its own (stream.js) */
 .fz-mirror { position: absolute; inset: 0; overflow: hidden; opacity: .42; /* clipped: flipped, it hung below the page */
   -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, .1), rgba(0, 0, 0, .35) 14px, #000 39px, transparent 41px); mask-image: linear-gradient(to top, rgba(0, 0, 0, .1), rgba(0, 0, 0, .35) 14px, #000 39px, transparent 41px); }
 .fz-flip { position: absolute; inset: 0; transform: scaleY(-1); transform-origin: 50% calc(100% - 40px); }
 .fz-mirror .mr-refl { position: absolute; left: calc(50% + 72px); bottom: 40px; width: 124px; height: auto; }
-html.fz #foot .duck, .fz-pine svg { -webkit-box-reflect: below 0 linear-gradient(transparent 45%, rgba(0, 0, 0, .38)); }
-/* Pineapples afloat (on request), at home where they're placed; the stream pushes them and the ducks about, and they knock
-   into each other (stream.js; main.js moves them) */
-.fz-pines { position: absolute; inset: 0; }
-.fz-pine { position: absolute; width: 14px; height: 22px; margin-left: -7px; }
-.fz-pine svg { display: block; width: 100%; height: 100%; }
-html.fz #foot .dk { transform-origin: 50% calc(100% - 10px); will-change: transform; } /* tilting about where they sit; moved without a repaint */
-.fz-pine { transform-origin: 50% 100%; will-change: transform; }
+html.fz #foot .duck { -webkit-box-reflect: below 0 linear-gradient(transparent 45%, rgba(0, 0, 0, .38)); }
+/* The stream pushes the ducks about, and they knock into each other (stream.js; main.js moves them); not to be tapped
+   here (on request) */
+html.fz #foot .dk { transform-origin: 50% calc(100% - 10px); will-change: transform; pointer-events: none; } /* tilting about where they sit; moved without a repaint */
 html:not(.fz) #foot .dk { transform: none !important; } /* pushed about only on the lake */
 /* Alex Horne as a mermaid on his rock (on request; img/alex-rock.webp, cut from a painting the user sent, its own spray
    left out, cut off at its waterline): at the right of the footer, standing on the lake's waterline (40px up, where his

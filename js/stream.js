@@ -1,14 +1,15 @@
-// Alex's stream in Fantasy Land's footer: water from his chest funnel, a solid jet that breaks up into droplets,
-// splashing and ringing the lake where it lands, all of it mirrored in the lake. Its pressure rises while he's pressed
-// (main.js) and the arc rises and reaches with it, at its fullest the circle round the rainbow's centre, as the rainbow
-// above. Each drop keeps the arc it left on, so a change runs out along the stream. Where it lands it pushes what floats
-// (the ducks, the pineapples) away from it and on, and they knock into each other and off Alex's rock, slowed by the
-// water and paddling slowly home; their places are sent out (main.js moves them). Shared by stream-worker.js and
-// main.js's fallback; no DOM.
+// Alex's stream in Fantasy Land's footer: water from his chest funnel while he's pressed (main.js), none otherwise; a
+// solid jet that breaks up into droplets, splashing and ringing the lake where it lands, all of it mirrored in the lake.
+// Its pressure rises while he's held and the arc rises and reaches with it, at its fullest the circle round the
+// rainbow's centre, as the rainbow above. Each drop keeps the arc it left on, so a change runs out along the stream.
+// Where it lands it pushes the ducks away from it and on, and they knock into each other and off Alex's rock, slowed by
+// the water and paddling slowly home; their places are sent out (main.js moves them). When the water's gone and the
+// ducks are still, it stops drawing until he's pressed again. Shared by stream-worker.js and main.js's fallback; no DOM.
 
 const FPS = 30; // the footer's other motion is the compositor's; this is drawn, so at a pace a 60 or 120Hz screen divides
 const RATE = 230; // drops a second
 const UP = 2.2, DOWN = 1.5; // how fast the pressure rises while pressed, and falls when let go (a second)
+const ON = 8, OFF = 5; // how fast the flow turns on when he's pressed, and off when he's let go (a second)
 // What floats, on the lake's plane: across in px, and back from the near edge in units of 2.5 a px up the screen (it's
 // seen from low down, so depth is foreshortened)
 const Z = 2.5, NEAR = 18; // px up from the foot where the plane's depth 0 is
@@ -24,7 +25,7 @@ const SEND = 1 / 15, SEE = 0.2;
 
 export function streamer(canvas, send = () => {}) {
   const x = canvas.getContext("2d");
-  let g = null, k = 1, p = 0, want = 0, drops = [], bits = [], rings = [], id = 0, last = 0, owed = 0, still = false;
+  let g = null, k = 1, p = 0, want = 0, flow = 0, t1 = 0, drops = [], bits = [], rings = [], id = 0, last = 0, owed = 0, still = false, run = false;
   let bodies = [], hits = [], sent = null, since = 0;
   const ease = (t) => t * t * (3 - 2 * t);
   // The arc at a pressure (0 to 1) at s along it (0 at the spout, 1 at the water): from the resting curve (a parabola over
@@ -62,10 +63,14 @@ export function streamer(canvas, send = () => {}) {
       x.stroke();
     };
     x.lineCap = "round"; x.lineJoin = "round";
-    // The solid jet from the spout: a glassy body, a pale core
-    along(0, sb + 0.04, 4.6 + 2 * e, "rgba(150,215,255,.16)");
-    along(0, sb + 0.04, 2.4 + e, "rgba(205,238,255,.7)");
-    along(0, sb + 0.03, 0.9, "rgba(255,255,255,.9)", -0.4);
+    // The solid jet from the spout while it flows (reaching out as it starts, thinning as it stops): a glassy body, a
+    // pale core
+    const reach = Math.min(sb + 0.04, (t - t1) / span(e));
+    if (flow > 0.02 && reach > 0) {
+      along(0, reach, (4.6 + 2 * e) * flow, "rgba(150,215,255,.16)");
+      along(0, reach, (2.4 + e) * flow, "rgba(205,238,255,.7)");
+      along(0, Math.max(0, reach - 0.01), 0.9 * flow, "rgba(255,255,255,.9)", -0.4);
+    }
     // The drops, each a short streak along its way, by size in three strokes
     const sets = [[], [], []];
     drops = drops.filter((d) => {
@@ -118,7 +123,7 @@ export function streamer(canvas, send = () => {}) {
     });
   }
   // The floating things for a moment: pushed where the stream lands, slowed by the water, pulled home, knocked about
-  function float(dt, quiet) {
+  function float(dt) {
     if (!bodies.length) return;
     const zw = (g.H - g.wy - NEAR) * Z;
     for (const b of bodies) b.px = b.pz = 0;
@@ -152,7 +157,7 @@ export function streamer(canvas, send = () => {}) {
       const vn = (b.vx - a.vx) * nx + (b.vz - a.vz) * nz;
       if (vn < 0) { const jn = (-(1 + BOUNCE) * vn) / (1 / a.m + 1 / b.m); a.vx -= (jn / a.m) * nx; a.vz -= (jn / a.m) * nz; b.vx += (jn / b.m) * nx; b.vz += (jn / b.m) * nz; }
     }
-    if (!quiet) report(dt);
+    report(dt);
   }
   // Their places off home (px across, px down the screen) and a tilt as they're pushed, to a tenth of a px
   function report(dt) {
@@ -166,16 +171,13 @@ export function streamer(canvas, send = () => {}) {
     });
     if (moved) { sent = out; since = 0; send({ type: "bodies", a: out }); }
   }
-  // The stream already flowing at t: n drops spread along its way
-  function prime(t, n) {
-    drops = []; bits = []; rings = [];
-    for (let i = 0; i < n; i++) { emit(t, 1); drops.at(-1).t0 = t - Math.random() * drops.at(-1).T * 0.98; }
-  }
-  // Still: the stream drawn once along its arc, its drops where they'd be
+  // Still: the stream drawn once at its fullest while he's pressed, its drops where they'd be; nothing otherwise
   function stillFrame() {
     const t = 10;
-    prime(t, 60);
-    draw(t);
+    drops = []; bits = []; rings = [];
+    flow = want; p = want; t1 = 0;
+    if (want) for (let i = 0; i < 60; i++) { emit(t, 1); drops.at(-1).t0 = t - Math.random() * drops.at(-1).T * 0.98; }
+    if (g) draw(t);
     bits = []; rings = [];
   }
   const raf = globalThis.requestAnimationFrame ? (f) => requestAnimationFrame(f) : (f) => setTimeout(() => f(performance.now()), 16);
@@ -186,12 +188,18 @@ export function streamer(canvas, send = () => {}) {
     const dt = last ? Math.min(0.1, (now - last) / 1000) : 1 / FPS;
     last = now;
     p += (want - p) * Math.min(1, (want > p ? UP : DOWN) * dt);
-    owed += RATE * (1 + 0.6 * p) * dt;
-    const n = Math.floor(owed); owed -= n;
     const t = now / 1000;
+    if (want && flow < 0.02) t1 = t; // the water leaves the spout now
+    flow = want ? Math.min(1, flow + ON * dt) : Math.max(0, flow - OFF * dt);
+    owed += RATE * (1 + 0.6 * p) * flow * dt;
+    const n = Math.floor(owed); owed -= n;
     emit(t, n);
     draw(t);
     float(dt);
+    // Nothing flowing, in the air or moving: stop until he's pressed
+    if (!want && !flow && !drops.length && !bits.length && !rings.length && bodies.every((b) => Math.hypot(b.vx, b.vz) < 0.3 && Math.hypot(b.fx, b.fz) < 0.3)) {
+      p = 0; report(1); unraf(id); id = 0;
+    }
   }
   return {
     // The canvas's size and the places in it (CSS px): the spout, the water, the rainbow's centre
@@ -212,20 +220,14 @@ export function streamer(canvas, send = () => {}) {
         return { hx: b.x, hz, x: b.x + (o ? o.x - o.hx : 0), z: hz + (o ? o.z - o.hz : 0), vx: o?.vx ?? 0, vz: o?.vz ?? 0, fx: o?.fx ?? 0, fz: o?.fz ?? 0, r: b.r, m: b.m };
       });
       if (g.rock) g.rock.z = (g.H - g.wy - NEAR) * Z + 30;
-      // New, they've been sitting in the resting stream all along: settled where it holds them before they're shown,
-      // so nothing moves (and costs the page) as they're first seen
-      if (!old.length && bodies.length) {
-        const rx = at(0, 1)[0];
-        for (let i = 0, n = 0; i < 600; i++) { for (n += RATE / FPS; n >= 1; n--) hits.push(rx); float(1 / FPS, true); }
-        for (const b of bodies) b.vx = b.vz = 0;
-      }
       sent = null;
       still = m.still;
-      if (still) { hits = []; stillFrame(); report(0); }
+      hits = [];
+      if (still) { stillFrame(); report(0); }
     },
-    press(on) { want = on ? 1 : 0; if (still) { p = want; stillFrame(); } },
-    // Flowing as it's shown (not reaching the water a second later, nor landing all that was in the air when it stopped)
-    start() { if (!still && !id && g) { last = 0; prime(performance.now() / 1000, Math.round(RATE * span(ease(p)))); id = raf(step); } },
-    stop() { unraf(id); id = 0; },
+    press(on) { want = on ? 1 : 0; if (still) stillFrame(); else if (run && !id && g) { last = 0; id = raf(step); } },
+    // Not landing all that was in the air when it stopped
+    start() { run = true; if (!still && !id && g) { last = 0; drops = []; bits = []; rings = []; id = raf(step); } },
+    stop() { run = false; unraf(id); id = 0; },
   };
 }

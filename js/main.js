@@ -829,8 +829,8 @@ function waterSend(type, arg) {
   }
   water(type, arg);
 }
-// What floats and gets pushed about (stream.js): the ducks (moved as a whole, .dk; measured by the duck) and the
-// pineapples, each at its place off home with a tilt
+// What floats and gets pushed about (stream.js): the ducks (moved as a whole, .dk; measured by the duck), each at its
+// place off home with a tilt
 let floats = [], floatOff = [];
 function floatTo(a) {
   floats.forEach((el, i) => {
@@ -846,11 +846,11 @@ function waterOn() {
   const a = $(".fz-alex").getBoundingClientRect(), m = $(".fz-mer").getBoundingClientRect(), u = m.width / 124;
   if (!a.width || !state.fantasy || document.hidden) return;
   if (!water) waterSend("stop"); // set up first: here, without a worker, it's drawn still (moving, it took the main thread)
-  if (!floats.length) { floats = [...$$("#foot .dk"), ...$$(".fz-pine")]; floatOff = floats.map(() => [0, 0, 0]); } // the ducks are drawn by now
+  if (!floats.length) { floats = $$("#foot .dk"); floatOff = floats.map(() => [0, 0, 0]); } // the ducks are drawn by now
   for (const el of floats) el.style.transform = "";
   const bodies = floats.map((el) => {
-    const r = (el.querySelector(".duck") ?? el).getBoundingClientRect(), duck = el.classList.contains("dk");
-    return { x: r.left + r.width / 2 - a.left, b: a.bottom - r.bottom, r: duck ? 8 : 6, m: duck ? 1 : 1.3 };
+    const r = el.querySelector(".duck").getBoundingClientRect();
+    return { x: r.left + r.width / 2 - a.left, b: a.bottom - r.bottom, r: 8, m: 1 };
   });
   floatTo(floatOff.flat());
   waterSend("geom", { W: a.width, H: a.height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: a.height - 40, cx: a.width / 2, cy: a.height - 4,
