@@ -244,12 +244,6 @@ main { padding-top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top))
   .how-glint { display: none; }
 }
 
-/* Diagnostics (tools.js), switched on Moss's cards: a site card in the corner, the graphs drawn in its tokens */
-.fps-meter {
-  position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 100; width: 168px; height: 104px; cursor: grab; touch-action: none; /* draggable (tools.js) */
-  border: 1px solid var(--b-gold); border-radius: 12px; background: linear-gradient(135deg, var(--s3), var(--s2)); box-shadow: 0 4px 14px rgba(0, 0, 0, .4);
-}
-
 /* ── Standings */
 /* Two boards side by side: fixed place column, then Show and League halves per row. Nothing sorts. */
 /* Tracks: --rk place strip, two halves padded --pad, points column --sc, --g gap; --pe (head padding) is 0. */
@@ -310,12 +304,12 @@ html:not(.fz) #dq[data-sky="night"] .em-say { --ink: #eef1ff; --pop: #dfe6ff; --
 html:not(.fz) #dq[data-sky="night"] .em-bub :is(path, ellipse) { stroke: #c8d4ff; stroke-width: 2px; }
 html:not(.fz) #dq[data-sky="night"] .em-bub .s0 { stop-color: color-mix(in srgb, var(--s-top) 70%, #3a4a7a); }
 html:not(.fz) #dq[data-sky="night"] .em-bub .s1 { stop-color: color-mix(in srgb, var(--s-hor) 70%, #10162e); }
-.em-bub stop:nth-child(1) { stop-color: #ff4fc3; }
-.em-bub stop:nth-child(2) { stop-color: #ffa94d; }
-.em-bub stop:nth-child(3) { stop-color: #ffe14d; }
-.em-bub stop:nth-child(4) { stop-color: #6dff9a; }
-.em-bub stop:nth-child(5) { stop-color: #4fd8ff; }
-.em-bub stop:nth-child(6) { stop-color: #b37bff; }
+#em-fill stop:nth-child(1) { stop-color: #ff4fc3; }
+#em-fill stop:nth-child(2) { stop-color: #ffa94d; }
+#em-fill stop:nth-child(3) { stop-color: #ffe14d; }
+#em-fill stop:nth-child(4) { stop-color: #6dff9a; }
+#em-fill stop:nth-child(5) { stop-color: #4fd8ff; }
+#em-fill stop:nth-child(6) { stop-color: #b37bff; }
 /* The words at the bubble's middle: each shape's middle is a little lower than the box's (measured with the fonts) */
 .em-say > span { position: relative; top: var(--ty, 1.25px); }
 html:not(.fz) #dq[data-sky="day"] .em-say { --ty: 3.75px; }
@@ -344,10 +338,22 @@ html:not(.fz) #dq:is([data-sky="twilight"], [data-sky="night"]) .em-pop .p-star,
 .em-win { display: none; }
 html.fz .em-fail { display: none; }
 html.fz .em-win { display: inline; }
-html.fz .em-say { --ink: #241400; --pop: #ff4fc3; }
-html.fz .em-bub stop:nth-child(odd) { stop-color: #d4a028; }
-html.fz .em-bub stop:nth-child(even) { stop-color: #f6d76a; }
-html.fz .em-bub stop:nth-child(3), html.fz .em-bub stop:nth-child(4) { stop-color: #fff1b8; }
+/* Fantasy Land's Patatas (on request: "Reimagine fantasy land patatas and the speech bubble to fit the new aesthetic"):
+   out under its night sky, lit by it: cooler and dimmer, a green rim from the aurora below and a magenta one from its
+   red above; his plate dark enamel with starlit gold letters; his words a dream, a thought bubble of night sky edged in
+   the aurora's colours, glowing, "Embrace success" in the gold he'd go back to, two stars by it */
+html.fz .em-who img { filter: brightness(.82) saturate(.85) hue-rotate(-6deg) drop-shadow(0 3px 5px rgba(80, 255, 170, .32)) drop-shadow(0 -3px 7px rgba(255, 80, 170, .26)) drop-shadow(0 2px 6px rgba(0, 0, 0, .6)); }
+html.fz .em-who b {
+  color: #f6e3a0; text-shadow: 0 0 6px rgba(246, 215, 106, .5);
+  background: linear-gradient(180deg, #2a1a5c, #120a30); box-shadow: inset 0 0 0 1px rgba(143, 125, 255, .55), 0 0 8px rgba(93, 255, 176, .22), 0 1px 2px rgba(0, 0, 0, .6);
+}
+html.fz .em-say { --ink: #f6dc8a; --pop: #f6e3a0; --ty: 4.25px; text-shadow: 0 0 8px rgba(246, 215, 106, .45);
+  --bub-sh: drop-shadow(0 0 5px rgba(93, 255, 176, .35)) drop-shadow(0 0 9px rgba(160, 110, 255, .35)); --bub-sh-down: drop-shadow(0 0 3px rgba(93, 255, 176, .35)) drop-shadow(0 0 5px rgba(160, 110, 255, .3)); }
+html.fz .em-bub .k-comic { display: none; }
+html.fz .em-bub :is(.k-thought, .k-dots) { display: inline; }
+html.fz .em-bub :is(path, ellipse) { fill: url(#em-night); stroke: url(#em-aur); stroke-width: 2px; }
+html.fz .em-pop .p-lines { display: none; }
+html.fz .em-pop :is(.p-star, .p-star2) { display: inline; }
 @media (prefers-reduced-motion: reduce) { .embrace { transition: none; } }
 .board { --pe: 0px; --rk: 32px; --pad: 11px; --sc: 34px; --g: 6px; }
 .card.board { position: relative; margin: 12px var(--px); }
@@ -792,6 +798,9 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 /* The sky's optics and the comet (halo.js), the same in both footers: behind the drawing, their light added to the sky,
    their foot the horizon (main.js sets the height) */
 .house > .sky-c { position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); bottom: calc(67 * var(--u)); pointer-events: none; mix-blend-mode: plus-lighter; }
+/* The stars and the aurora (stars.js, night.js), in the sky, so they peek with it and fade into the page as it does:
+   their foot the horizon, their middle due south */
+.house > .sky > canvas { position: absolute; left: 0; bottom: calc(9 * var(--u)); width: 100%; height: calc(100% - 9 * var(--u)); pointer-events: none; }
 /* The sky rises well above the footer, behind the page (the slides are above the footer; Patatas's block is lifted above
    it, #dq), fading out as it goes up */
 .house > .sky {
@@ -928,7 +937,8 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    dream has replaced the earth in the same place; the same elements, so they hold still through the switch), behind the
    lake, Alex and the page; its sky clip kept, or they'd be cut away with the rest */
 html.fz .house { visibility: hidden; }
-html.fz .house :is(.sun, .moon, .sky-c, clipPath, clipPath *) { visibility: visible; }
+html.fz .house :is(.sun, .moon, .sky-c, .sky, clipPath, clipPath *) { visibility: visible; }
+html.fz .house > .sky { background: none !important; } /* its stars and aurora kept, its colours gone (hidden, it lost its fade too) */
 html.fz #foot { z-index: -1; }
 html.fz .house, html.fz .house * { animation: none !important; } /* its hidden parts' motion stopped (it cost every scroll) */
 /* Footer card off, or reduced motion: lit on show days, still */
@@ -1054,9 +1064,9 @@ html.fz {
 }
 html.fz body { background: var(--bg); }
 html.fz body::after { background: radial-gradient(60% 40% at 15% 0%, rgba(255, 79, 195, .32), transparent 70%), radial-gradient(60% 40% at 85% 10%, rgba(79, 216, 255, .26), transparent 70%), radial-gradient(70% 50% at 50% 100%, rgba(179, 123, 255, .3), transparent 70%); }
-#fz-fall, .fz-bg { display: none; }
+#fz-fall { display: none; }
 /* The background effects, fixed behind everything: the stars, the aurora, the fall (in that order, each light added) */
-html.fz #fz-fall, html.fz .fz-bg { display: block; position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
+html.fz #fz-fall { display: block; position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
 html.fz .topbar::before { background: linear-gradient(180deg, rgba(70, 14, 110, .45), rgba(40, 8, 72, .72)); }
 html.fz .hdr::before { background: linear-gradient(90deg, rgba(255, 63, 164, .38), rgba(176, 75, 255, .36), rgba(23, 212, 240, .32)); }
 html.fz .hero, html.fz .ep-head { background: var(--grain), radial-gradient(90% 100% at 50% 0%, rgba(255, 90, 200, .26), transparent 80%); }
@@ -1183,6 +1193,21 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-toggle[aria-checked="true"] { background: linear-gradient(180deg, var(--gold3), var(--gold2)); }
 .sw-toggle[aria-checked="true"]::after { transform: translateX(18px); background: #241400; }
 @media (prefers-reduced-motion: reduce) { .sw-toggle, .sw-toggle::after { transition: none; } }
+/* Moss's cards in groups, each folding away under its head (cast.js, main.js): its title, how many of its settings are
+   changed, and a chevron turning as it opens */
+.sw-group { margin: 0 var(--px) 12px; }
+#cast-body .sw-group .card { margin-inline: 0; }
+.sw-grid[hidden] { display: none; }
+.sw-g-head {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid var(--b-dim); border-radius: 14px;
+  background: linear-gradient(135deg, var(--s3), var(--s2)); color: var(--t1); cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.sw-g-title { font: 400 15px var(--ff-head); text-transform: uppercase; letter-spacing: .04em; }
+.sw-g-sum { margin-left: auto; font: 500 11px var(--fm); letter-spacing: .08em; text-transform: uppercase; color: var(--t3); }
+.sw-chev { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--gold2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s var(--ease); }
+.sw-group.open .sw-chev { transform: rotate(180deg); }
+.sw-group > .sw-grid { margin: 12px 0 0; }
+@media (prefers-reduced-motion: reduce) { .sw-chev { transition: none; } }
 /* Moss's cards as tiles: two to a row, an effect with sliders across both */
 .sw-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-auto-flow: row dense; gap: 12px; margin-bottom: 12px; }
 .sw-grid > .card { margin: 0; }
@@ -1200,7 +1225,6 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 }
 .sw-val.on { color: var(--gold2); text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 .sw-steps { grid-column: 1 / -1; display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 12px; }
-.sw-auto { margin-left: 4px; font: 500 11px var(--fm); letter-spacing: .08em; text-transform: uppercase; color: var(--gold2); }
 .sw-sub { padding: 0 12px 6px; font: 500 11px var(--fm); letter-spacing: .1em; text-transform: uppercase; color: var(--t3); }
 .sw-count { padding: 0 12px 12px; margin-top: -2px; font-size: 13px; color: var(--t3); }
 .sw-pr { font: 500 12px var(--fm); font-variant-numeric: tabular-nums; color: var(--gold2); }
@@ -1229,7 +1253,7 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 }
 .sw-seg button[aria-checked="true"] { color: #241400; background: linear-gradient(180deg, var(--gold3), var(--gold2)); }
 /* Settings turned off on Moss's cards (switches.js) */
-html.no-fall #fz-fall, html.no-stars #fz-stars, html.no-aurora #fz-aurora, html.no-podium .fx, html.no-howlight .how-glint { display: none; }
+html.no-fall #fz-fall, html.no-stars .stars-c, html.no-aurora .aurora-c, html.no-podium .fx, html.no-howlight .how-glint { display: none; }
 /* Decorations off: Fantasy Land's sparkles, glint and tab rainbow all there but still */
 html.no-deco .tab-ind::before, html.no-deco .ep-title::before, html.no-deco .ep-title::after { animation: none !important; }
 html.no-deco .fz-word::after { display: none; }

@@ -6,15 +6,16 @@ import { moonAt, moonPath, skyFor } from "./sky.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
-import { castOrder, castTabs, castSlides, castSlide, fill, at as sliderAt, changedSay, resettable } from "./views/cast.js";
-import { get, set, item, shown, hourOf, resetAll, changed, pin, onSwitch } from "./switches.js";
-import "./tools.js";
+import { castOrder, castTabs, castSlides, castSlide, fill, at as sliderAt, changedSay, resettable, groupSay } from "./views/cast.js";
+import { GROUPS, get, set, item, shown, hourOf, resetAll, changed, onSwitch, setAirPhase } from "./switches.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay, reloadFresh } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
 import { initFlip, toggleFantasy, scene } from "./flip.js";
 import { streamer } from "./stream.js";
 import { drawSky, degPx, sunSky, cometSky } from "./halo.js";
+import { drawStars } from "./stars.js";
+import { night } from "./night.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -681,29 +682,42 @@ const heatTap = (e) => {
 };
 $("#cast-body").addEventListener("click", heatTap);
 // The Moss Easter egg (cast.js): his portrait swaps him and his cards. Each control sets its setting at once, and the
-// Defaults card counts what differs from the design
+// Defaults card and each group's head count what differs from the design
 const counted = (slide) => {
   const n = changed();
   slide.querySelector(".sw-count").textContent = changedSay(n);
   slide.querySelector(".sw-reset").disabled = !resettable();
+  for (const g of GROUPS) { const el = slide.querySelector(`.sw-group[data-g="${g.id}"] .sw-g-sum`); if (el) el.textContent = groupSay(g); }
 };
+let reloading = false;
 $("#cast-body").addEventListener("click", (e) => {
   const slide = e.target.closest(".slide");
+  const head = e.target.closest(".sw-g-head");
+  if (head) { // a group folds away, or opens; kept per device
+    const sec = head.parentElement, open = !sec.classList.contains("open");
+    sec.classList.toggle("open", open);
+    head.setAttribute("aria-expanded", open);
+    sec.querySelector(".sw-grid").hidden = !open;
+    try { if (open) localStorage.setItem(`fm-grp-${sec.dataset.g}`, "1"); else localStorage.removeItem(`fm-grp-${sec.dataset.g}`); } catch { /* private mode */ }
+    if (open) revision();
+    return;
+  }
   const opt = e.target.closest(".sw-seg [data-v]");
   if (opt) {
     const it = item(opt.dataset.sw);
-    pin(it.key); // chosen here: auto-tune leaves it alone
-    opt.closest(".sw-row")?.querySelector(".sw-auto")?.remove();
     set(it.key, it.type === "steps" ? +opt.dataset.v : opt.dataset.v);
     for (const b of opt.parentElement.children) b.setAttribute("aria-checked", b === opt);
-    if (it.type === "time") timeCard(opt.closest(".sw-card"), it);
-    return counted(slide);
+    if (it.type === "dial") dialCard(opt.closest(".sw-card"), it);
+    counted(slide);
+    // A transition is played by a tap on it: the view switches with it, from the button
+    if (it.key === "fzMove") toggleFantasy(`.sw-seg [data-sw="fzMove"][data-v="${opt.dataset.v}"]`, tapAt(e));
+    return;
   }
   const val = e.target.closest(".sw-val[data-reset]");
   if (val) { // a slider's value: back to the design
     const it = item(val.dataset.reset), r = slide.querySelector(`.sw-range[data-sw="${it.key}"]`);
     set(it.key, it.def);
-    if (it.type === "time") timeCard(val.closest(".sw-card"), it);
+    if (it.type === "dial") dialCard(val.closest(".sw-card"), it);
     else {
       r.value = it.def;
       r.style.setProperty("--v", fill(it));
@@ -721,11 +735,10 @@ $("#cast-body").addEventListener("click", (e) => {
     if (item(k).main) sw.closest(".sw-card").classList.toggle("off", !get(k));
     return counted(slide);
   }
-  const reload = e.target.closest(".sw-reload");
-  if (reload) {
-    reload.disabled = true;
-    reload.textContent = "Reloading…";
-    return reloadFresh();
+  // Reload, its words kept as they are (on request)
+  if (e.target.closest(".sw-reload")) {
+    if (!reloading) { reloading = true; reloadFresh(); }
+    return;
   }
   const img = e.target.closest(".cd-img[data-moss]"), reset = e.target.closest(".sw-reset");
   if (!img && !reset) return;
@@ -744,9 +757,9 @@ function revision() {
     for (const b of $$("#cast-body .sw-reload")) b.classList.toggle("gold", n > PR); // gold when there's a newer one to get
   });
 }
-// The Time of day card shows its setting three ways: the slider's place, the time in its head (gold once chosen) and
-// the time of day's button, if it's one of them
-function timeCard(card, it) {
+// A dial's card (Time of day, Moon phase) shows its setting three ways: the slider's place, its value in the head (gold
+// once chosen) and its button, if it's one of them
+function dialCard(card, it) {
   const v = get(it.key), r = card.querySelector(".sw-range"), val = card.querySelector(".sw-val");
   r.value = sliderAt(it);
   r.style.setProperty("--v", fill(it));
@@ -759,9 +772,9 @@ $("#cast-body").addEventListener("input", (e) => {
   const r = e.target.closest(".sw-range");
   if (!r) return;
   const it = item(r.dataset.sw), v = +r.value, val = r.closest(".sw-slide, .sw-card").querySelector(".sw-val");
-  if (it.type === "time") {
+  if (it.type === "dial") {
     set(it.key, String(v));
-    timeCard(r.closest(".sw-card"), it);
+    dialCard(r.closest(".sw-card"), it);
     return counted(r.closest(".slide"));
   }
   set(it.key, v);
@@ -828,19 +841,19 @@ function waterSend(type, arg) {
   }
   water(type, arg);
 }
-// Where the lake is on the screen, for it to mirror the background effects above it (fixed to the screen): told as the
-// page scrolls, once a frame at most, while it's on screen and there are any
+// Where the lake is on the screen, for it to mirror the fall above it (fixed to the screen): told as the page scrolls,
+// once a frame at most, while it's on screen and the fall's on
 let viewing = 0;
 function lakeView() {
   viewing = 0;
   const w = waterWorker && scene();
-  if (!w || !waterSeen || !state.fantasy || !(get("fall") || get("stars") || get("aurora"))) return;
+  if (!w || !waterSeen || !state.fantasy || !get("fall")) return;
   const r = $(".fz-lake").getBoundingClientRect();
   w.postMessage({ to: "view", arg: { top: r.top, left: r.left, vw: document.documentElement.clientWidth, vh: innerHeight } });
 }
 const lakeViewSoon = () => { if (!viewing && state.fantasy && waterSeen) viewing = requestAnimationFrame(lakeView); };
 addEventListener("scroll", lakeViewSoon, { passive: true });
-onSwitch(["fall", "stars", "aurora"], lakeViewSoon);
+onSwitch(["fall"], lakeViewSoon);
 // His picture, for his reflection: handed over once it's loaded (a bitmap to the worker)
 let rockSent = false;
 function sendRock() {
@@ -855,7 +868,8 @@ function waterOn() {
   const a = $(".fz-alex").getBoundingClientRect(), m = $(".fz-mer").getBoundingClientRect(), u = m.width / 124;
   if (!a.width || !state.fantasy || document.hidden) return;
   if (!water) waterSend("stop"); // set up first: here, without a worker, it's drawn still (moving, it took the main thread)
-  waterSend("geom", { W: a.width, H: a.height, LH: $(".fz-lake").getBoundingClientRect().height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: m.bottom - a.top, cx: a.width / 2, cy: a.height - 4,
+  const sk = $("#foot .house .aurora-c").getBoundingClientRect();
+  waterSend("geom", { sky: { x: a.left - sk.left, w: sk.width, h: sk.height }, W: a.width, H: a.height, LH: $(".fz-lake").getBoundingClientRect().height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: m.bottom - a.top, cx: a.width / 2, cy: a.height - 4,
     rock: { x: m.left - a.left, y: m.top - a.top, w: m.width, h: m.height }, deg: degPx(innerWidth, innerHeight), res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
   sendRock();
   waterSend("start");
@@ -888,7 +902,7 @@ function showDay() {
   const pick = get("houseTime"), h = hourOf(pick), sun = (h - 6) / 14, moon = (h + 4) % 24 / 10;
   // (the Time of day card, while it follows the clock, moves with it)
   const tc = pick === "clock" && $("#cast-body .sw-range[data-sw=houseTime]")?.closest(".sw-card");
-  if (tc) timeCard(tc, item("houseTime"));
+  if (tc) dialCard(tc, item("houseTime"));
   const at = {};
   for (const [k, t] of [["sun", sun], ["moon", moon]]) {
     const el = house.querySelector(`.${k}`), x = 20 + 350 * Math.max(0, Math.min(1, t));
@@ -930,6 +944,8 @@ function celestial() {
     comet = { x, y, tx: (x - sp.x) / n, ty: (y - sp.y) / n, show: 0.9 * cs.b * dark(6) };
   }
   drawSky(skyC, { w: W, h: Hc, k: 1, deg, sun, moon, comet }); // soft light: a pixel a CSS px is plenty
+  stars(fz, deg);
+  auroraShow(fz ? 1 : dark(6));
   // Fantasy Land's lake mirrors it: the sky's foot, flipped, with the disc of whichever is up
   skyMsg = null;
   if (!fz || !water || !waterSeen) return;
@@ -941,6 +957,8 @@ function celestial() {
   const b = skyBand.getContext("2d");
   b.setTransform(k, 0, 0, -k, (M - lx) * k, Hc * k);
   b.drawImage(skyC, 0, 0, skyC.width, skyC.height, 0, 0, W, Hc);
+  // (and the stars, their foot the horizon too)
+  if (get("stars") && starsC?.width > 1) b.drawImage(starsC, 0, 0, starsC.width, starsC.height, 0, Hc - starsC.clientHeight, W, starsC.clientHeight);
   const up = sun ?? moon, d = place(sunUp ? light.at.sun : light.at.moon), r = 9 * u;
   if (sunUp) { b.fillStyle = "rgb(255,250,236)"; b.beginPath(); b.arc(d.x, d.y, r, 0, Math.PI * 2); b.fill(); }
   else {
@@ -953,6 +971,59 @@ function celestial() {
   const gl = { x: d.x - lx, h: Hc - d.y, b: sunUp ? 2.2 : 1.4 * Math.sqrt(bright), r: 1.6, col: sunUp ? (low ? [1, 0.75, 0.5] : [1, 0.96, 0.88]) : [0.85, 0.88, 1] };
   createImageBitmap(skyBand).then((bmp) => { skyMsg = { bmp, gl: up ? gl : null }; water?.("sky", skyMsg); }).catch(() => {});
 }
+// The stars (stars.js): the sky as the episode on show aired, that night, at the time of day shown; as faint as the sky
+// lets them show: none by day, the brightest first in twilight, in London's light only to about magnitude 4, less under a
+// bright moon; in Fantasy Land, which has no city, to 6.5, with the Milky Way (the moon washing it out as it fills).
+// Drawn again only when something changes (the sky turns a little each minute)
+let starsC = null, starKey = "";
+const CITY = [[-1, 0], [-3, 0.8], [-6, 2], [-9, 3], [-12, 3.6], [-15, 4]];
+function stars(fz, deg) {
+  starsC ??= $("#foot .house .stars-c");
+  if (!starsC) return;
+  if (!get("stars")) { if (starKey) { starsC.width = starsC.height = 1; starKey = ""; } return; }
+  const w = starsC.clientWidth, h = starsC.clientHeight;
+  if (!w || !h) return;
+  const e = light.height, night = !light.sun, i = CITY.findIndex(([x]) => x < e);
+  const city = e >= -1 ? 0 : i < 0 ? 4 : CITY[i - 1][1] + ((CITY[i][1] - CITY[i - 1][1]) * (e - CITY[i - 1][0])) / (CITY[i][0] - CITY[i - 1][0]);
+  const lim = fz ? 6.5 - (night ? 0.8 * moonLit : 0) : Math.max(0, city - (night ? 0.7 * moonLit : 0)), mw = fz ? 1 - (night ? 0.75 * moonLit : 0) : 0;
+  // That night: the airdate's 10pm London, moved to the hour shown (the small hours are the next morning's)
+  const hr = hourOf(get("houseTime")), off = hr - 22 < -10 ? hr + 2 : hr - 22, when = new Date((moonFor ?? Date.now()) + off * 3.6e6);
+  const k = Math.min(1, Math.sqrt(3e6 / (w * h))); // a pixel a CSS px: points of light look the same, and twice that cost Fantasy Land's scroll a third more
+  const key = [w, h, k, Math.round(+when / 6e4), lim.toFixed(2), mw.toFixed(2)].join();
+  if (key === starKey) return;
+  starKey = key;
+  drawStars(starsC, { w, h, k, deg, when, lim, mw, ext: fz ? 0.16 : 0.28 });
+}
+onSwitch(["stars"], () => celestial());
+// The aurora (night.js): in the sky with the stars, drawn in the scene's worker (else here, once, still), while it's on
+// and the sky lets it show (in the normal view once it's dark; in Fantasy Land always) and the page is showing
+let aur = null, aurShow = 0;
+function aurora() {
+  const c = $("#foot .house .aurora-c");
+  if (!c) return;
+  const on = get("aurora") && aurShow > 0 && !document.hidden;
+  if (!aur) {
+    if (!on) return;
+    const w = scene();
+    if (w) { const off = c.transferControlToOffscreen(); w.postMessage({ to: "night", type: "init", aurora: off }, [off]); aur = (t, a) => w.postMessage({ to: "night", type: t, arg: a }); }
+    else { const n = night(c); aur = (t, a) => n[t](a); }
+  }
+  if (!on) return aur("stop");
+  aur("start", { w: c.clientWidth, h: c.clientHeight, deg: degPx(innerWidth, innerHeight), res: Math.min(2, devicePixelRatio || 1) * get("auroraRes"), fps: get("auroraFps"),
+    reduced: reducedMotion || !scene(), bright: get("auroraBright"), speed: get("auroraSpeed"), show: aurShow });
+}
+// How much shows, each minute: started or stopped as it crosses nothing, else only told
+function auroraShow(v) {
+  const was = aurShow;
+  aurShow = +v.toFixed(2);
+  if ((was > 0) !== (aurShow > 0)) aurora();
+  else if (aur && was !== aurShow && get("aurora")) aur("show", aurShow);
+}
+let reAur = 0;
+const auroraSoon = () => { if (!reAur) reAur = requestAnimationFrame(() => { reAur = 0; aurora(); }); };
+onSwitch(["aurora", "auroraRes", "auroraFps", "auroraBright", "auroraSpeed"], auroraSoon);
+addEventListener("resize", auroraSoon);
+document.addEventListener("visibilitychange", auroraSoon);
 // The sun's and moon's path across the sky (the drawing's units: the house's tops at y 15 to 53, the footer's top at 0),
 // through the clear sky: rising at the left over the garage and the conifer's shoulder, under Patatas's name plate
 // (above the footer at y -12 to -31), over the conifer's tip, high in the sky under his bubble (its foot at y -41) and
@@ -1090,24 +1161,44 @@ function shade() {
   });
 }
 // The moon is the real one over London as the episode on show aired (10pm London; sky.js): its phase, and its lit edge
-// turned as it stood. The week on the Standings, the episode on Episodes, and on Cast the latest to have aired
-let moonFor = null;
+// turned as it stood. The week on the Standings, the episode on Episodes, and on Cast the latest to have aired. Or the
+// phase chosen on Moss's Moon phase card, its lit edge toward the sun below the horizon (west of it, at the right, while
+// it waxes; east while it wanes)
+let moonFor = null, airM = null, moonKey = "";
 function airMoon() {
   const eps = state.d?.episodes, el = $("#foot .house .lit");
   if (!eps?.length || !el) return;
   const i = state.page === "standings" ? stWeek(state.d) - 1 : state.page === "episodes" ? state.ep - 1 : Math.max(0, eps.filter((e) => e.air <= Date.now()).length - 1);
   const air = eps[Math.min(Math.max(i, 0), eps.length - 1)].air;
-  if (+air === moonFor) return;
-  moonFor = +air;
-  const m = moonAt(air);
-  el.setAttribute("d", moonPath(m.lit, 9));
-  el.setAttribute("transform", `rotate(${m.edge.toFixed(1)})`);
-  moonLit = m.lit;
+  if (+air !== moonFor) {
+    moonFor = +air;
+    airM = moonAt(air);
+    const turn = Math.acos(1 - 2 * airM.lit) / (2 * Math.PI);
+    setAirPhase(airM.waxing ? turn : 1 - turn);
+    const mc = get("moonPhase") === "air" && $("#cast-body .sw-range[data-sw=moonPhase]")?.closest(".sw-card");
+    if (mc) dialCard(mc, item("moonPhase"));
+  }
+  const pick = get("moonPhase");
+  let { lit, edge } = airM;
+  if (pick !== "air" && light) {
+    const p = +pick, h = hourOf(get("houseTime")), em = 55 * Math.sin(Math.PI * Math.max(0, Math.min(1, light.t)));
+    lit = (1 - Math.cos(2 * Math.PI * p)) / 2;
+    // The sun's angle from it (its elongation), below the horizon; across, the rest of that angle, west while it waxes
+    const th = 360 * Math.min(p, 1 - p), es = sunSky(h).elev, dy = em - Math.min(es, 0), dx = Math.sqrt(Math.max(0, th * th - dy * dy));
+    edge = (Math.atan2(dy, (p < 0.5 ? 1 : -1) * Math.max(dx, 0.001)) * 180) / Math.PI;
+  }
+  const key = `${lit.toFixed(3)} ${edge.toFixed(1)}`;
+  if (key === moonKey) return;
+  moonKey = key;
+  el.setAttribute("d", moonPath(lit, 9));
+  el.setAttribute("transform", `rotate(${edge.toFixed(1)})`);
+  moonLit = lit;
   shade();
   celestial();
 }
 setInterval(showDay, 60000);
 onSwitch(["houseTime"], showDay);
+onSwitch(["moonPhase"], airMoon);
 const houseSeen = new IntersectionObserver((es) => {
   const e = es.at(-1);
   if (e.isIntersecting) e.target.classList.add("up");
@@ -1181,7 +1272,7 @@ try {
   try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
   $("#welcome").innerHTML = welcomeCard();
   $("#welcome").hidden = !welcome;
-  initFlip({ redraw, later, sky: lakeViewSoon });
+  initFlip({ redraw, later });
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);

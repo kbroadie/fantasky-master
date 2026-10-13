@@ -1,11 +1,9 @@
 // Fantastikal Delusion: the same app where low scores win, a happy place for the bottom of the table. "Embrace failure"
-// under every tab switches it on, "Embrace success" off: fantasy mode (state.fantasy, html.fz), its background effects
-// behind everything (the fall, the stars, the aurora).
+// under every tab switches it on, "Embrace success" off: fantasy mode (state.fantasy, html.fz), its background effect
+// behind everything (the fall).
 import { $, state, reducedMotion } from "./ui.js";
 import { runner } from "./fall.js";
-import { night as nightSky } from "./night.js";
-import { get, val, onSwitch } from "./switches.js";
-import { fallFrames, watchPage } from "./tune.js";
+import { get, onSwitch } from "./switches.js";
 import { slamFx } from "./slam-fx.js";
 
 let on = false;
@@ -29,7 +27,7 @@ function set(show, anchor, tap) {
     const y1 = $(anchor)?.getBoundingClientRect().top;
     if (at && y1 != null) scrollBy(0, y1 - at.top);
     if (how === "slam") slamScroll();
-    if (show) { fall(); night(); glints(); } else { stopFall(); stopNight(); clearInterval(glinter); }
+    if (show) { fall(); glints(); } else { stopFall(); clearInterval(glinter); }
   };
   // Only the page on show is drawn in the switch; the others once it's over (main.js)
   if (how === "off" || reducedMotion || !document.startViewTransition) { swap(); hooks.later(); return; }
@@ -246,9 +244,9 @@ function nameMovers(clear = false) {
   });
 }
 
-// The background effects: drawn in the scene's worker (stream-worker.js, which also draws the lake, so it can mirror
-// them), or here without one. Nothing heavy in the page until it shows (iOS dropped page tiles).
-let run = null, nightRun = null, given = false, givenNight = false;
+// The background effect: drawn in the scene's worker (stream-worker.js, which also draws the lake, so it can mirror
+// it), or here without one. Nothing heavy in the page until it shows (iOS dropped page tiles).
+let run = null, given = false;
 export const moduleWorkers = (() => {
   let ok = false;
   try {
@@ -258,8 +256,7 @@ export const moduleWorkers = (() => {
   } catch {}
   return ok;
 })();
-// The scene's worker, made once where module workers can draw on canvases they're handed; the fall tells it how it keeps
-// up, for auto-tune
+// The scene's worker, made once where module workers can draw on canvases they're handed
 let sceneW;
 export function scene() {
   if (sceneW !== undefined) return sceneW;
@@ -267,7 +264,6 @@ export function scene() {
   if (moduleWorkers && "transferControlToOffscreen" in HTMLCanvasElement.prototype) {
     try {
       sceneW = new Worker(new URL("./stream-worker.js", import.meta.url), { type: "module" });
-      sceneW.onmessage = ({ data }) => { if (data.type === "frames") fallFrames(data); };
     } catch { sceneW = null; }
   }
   return sceneW;
@@ -277,33 +273,13 @@ function fall() {
   stopFall();
   const c = $("#fz-fall"), w = c.clientWidth, h = c.clientHeight;
   if (!w || !h || !get("fall")) return;
-  const opts = { res: Math.min(2, devicePixelRatio || 1) * val("fallRes"), fps: val("fallFps"), density: get("fallDensity"), figures: get("fallFigures"), bright: get("fallBright"), speed: get("fallSpeed") };
+  const opts = { res: Math.min(2, devicePixelRatio || 1) * get("fallRes"), fps: get("fallFps"), density: get("fallDensity"), figures: get("fallFigures"), bright: get("fallBright"), speed: get("fallSpeed") };
   const worker = !run && scene();
   if (worker) {
     if (!given) { given = true; const off = c.transferControlToOffscreen(); worker.postMessage({ to: "fall", type: "init", canvas: off }, [off]); }
     worker.postMessage({ to: "fall", type: "start", w, h, reduced: reducedMotion, opts });
-  } else { run = runner(c, w, h, reducedMotion, opts, fallFrames); run.start(); }
-  if (!reducedMotion) watchPage();
+  } else { run = runner(c, w, h, reducedMotion, opts); run.start(); }
 }
-// The night sky (night.js): the stars and the aurora; without the worker, drawn once, still
-// (moving, they'd take the page's frames)
-const NIGHT = ["stars", "aurora", "auroraRes", "auroraFps", "auroraBright", "auroraSpeed"];
-function night() {
-  stopNight();
-  if (!get("stars") && !get("aurora")) return;
-  const s = $("#fz-stars"), a = $("#fz-aurora"), w = document.documentElement.clientWidth, h = innerHeight, worker = !nightRun && scene();
-  const o = { w, h, dpr: Math.min(2, devicePixelRatio || 1), res: Math.min(2, devicePixelRatio || 1) * get("auroraRes"), fps: get("auroraFps"), reduced: reducedMotion || !worker,
-    stars: get("stars"), aurora: get("aurora"), bright: get("auroraBright"), speed: get("auroraSpeed") };
-  if (worker) {
-    if (!givenNight) { givenNight = true; const so = s.transferControlToOffscreen(), ao = a.transferControlToOffscreen(); worker.postMessage({ to: "night", type: "init", stars: so, aurora: ao }, [so, ao]); }
-    worker.postMessage({ to: "night", type: "start", arg: o });
-  } else { nightRun ??= nightSky(s, a); nightRun.start(o); }
-  hooks.sky?.();
-}
-function stopNight() { sceneW?.postMessage({ to: "night", type: "stop" }); nightRun?.stop(); }
-let renight = 0;
-onSwitch(NIGHT, () => { if (on && !renight) renight = requestAnimationFrame(() => { renight = 0; night(); }); });
-addEventListener("resize", () => { if (on && (get("stars") || get("aurora")) && !renight) renight = requestAnimationFrame(() => { renight = 0; night(); }); });
 // A Moss card's slider moves: start the fall again with it, once a frame at most
 let refall = 0;
 onSwitch(FALL, () => { if (on && !refall) refall = requestAnimationFrame(() => { refall = 0; fall(); }); });
@@ -319,6 +295,6 @@ function glints() {
 function stopFall() { sceneW?.postMessage({ to: "fall", type: "stop" }); run?.stop(); }
 onSwitch(["fzDeco"], () => { if (on) glints(); });
 // Not in a hidden tab: a worker without requestAnimationFrame draws on a timer that never pauses
-document.addEventListener("visibilitychange", () => { if (document.hidden) { stopFall(); stopNight(); } else if (on) { fall(); night(); } });
+document.addEventListener("visibilitychange", () => { if (document.hidden) stopFall(); else if (on) fall(); });
 
 export function initFlip(h) { hooks = { ...hooks, ...h }; }
