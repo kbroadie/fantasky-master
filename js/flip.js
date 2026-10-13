@@ -46,7 +46,7 @@ function set(show, anchor, tap) {
   const vt = document.startViewTransition(() => { swap(); pinStrip(); name(); if (before) fx = slamAfter(before); });
   if (PLACED.has(how)) vt.ready.then(() => {
     // Where the screen is in the pictures' space, now that it's set up: the places written above move with it. One look
-    // through the page's animations (in the dream, the sea's and the dolphins' too) finds the probe's and Slam's clock
+    // through the page's animations (in the dream, the footer's too) finds the probe's and Slam's clock
     const all = document.getAnimations(), pick = (pe) => all.find((a) => a.effect?.pseudoElement === pe);
     const o = snapOffset(pick("::view-transition-group(vt-probe)"));
     if (o && (o.x !== snapOff.x || o.y !== snapOff.y)) { snapOff = o; writeStage(); }
@@ -198,7 +198,7 @@ html[data-vt="slam"]::view-transition-new(vt-fx) { animation: none; }`].join("\n
 }
 
 // What depends on the tap: Iris's circle, and the centre Zoom and Vertigo move about. Written here, as a custom
-// property on the root would restyle every duck and dolphin
+// property on the root would restyle every duck
 const mid = (r) => (r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: innerWidth / 2, y: innerHeight / 2 });
 let stageCss = null, staged = null, slamText = null;
 // The pictures' space (the snapshot containing block) can be larger than the screen: on a phone it takes in the address

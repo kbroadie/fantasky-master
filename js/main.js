@@ -382,7 +382,7 @@ function bindSwiper(sw, onEdge, ends) {
 }
 const EDGES = new Map();
 
-// The footer's areas (Patatas, the house and its ducks, the dolphins) swipe the page's slides too (on request): a sideways
+// The footer's areas (Patatas, the house and its ducks, the lake) swipe the page's slides too (on request): a sideways
 // drag there moves the swiper on show with the finger (touch-action: pan-y leaves up and down to the page), and lets go
 // to the nearer slide, or on to the next on a flick; past an end, to the neighbouring tab, as on the slides. Snapping is
 // off while the finger moves it, as each scroll would snap, and back once it settles. A drag isn't a tap
@@ -801,11 +801,10 @@ $("#st-body").addEventListener("click", raceTap);
 $("#ep-body").addEventListener("click", (e) => e.target.closest(".tname")?.classList.toggle("full"));
 
 // The bar is always compact and always shown (styles.css): nothing to do as the page scrolls
-// Dolphins animate only on screen; the latest entry decides (batched entries come oldest first).
+// The lake's foam and stream run only on screen; the latest entry decides (batched entries come oldest first).
 // Watches the waves, not the footer: mid-swipe only they rise into view (lift)
 const footSeen = new IntersectionObserver((es) => {
   const e = es.at(-1);
-  if (e.isIntersecting) ducksOnWaves();
   e.target.parentElement.classList.toggle("run", e.isIntersecting);
   $("#foot").classList.toggle("run", e.isIntersecting);
 });
@@ -821,6 +820,7 @@ function waterSend(type, arg) {
       try {
         const w = new Worker(new URL("./stream-worker.js", import.meta.url), { type: "module" }), off = c.transferControlToOffscreen();
         w.postMessage({ type: "init", canvas: off }, [off]);
+        w.onmessage = ({ data }) => { if (data.type === "bodies") floatTo(data.a); };
         water = (t, a) => w.postMessage({ type: t, arg: a });
         waterWorker = true;
       } catch {}
@@ -829,14 +829,32 @@ function waterSend(type, arg) {
   }
   water(type, arg);
 }
-// Its places (CSS px, in the canvas): the spout (56.6px, 29px into his 124px picture), the water and the rainbow's
-// centre (the bow's foot, 4px up, styles.css)
+// What floats and gets pushed about (stream.js): the ducks (moved as a whole, .dk; measured by the duck), each at its
+// place off home with a tilt
+let floats = [], floatOff = [];
+function floatTo(a) {
+  floats.forEach((el, i) => {
+    const [dx, dy, r] = [a[i * 3], a[i * 3 + 1], a[i * 3 + 2]];
+    floatOff[i] = [dx, dy, r];
+    el.style.transform = dx || dy || r ? `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) rotate(${r.toFixed(1)}deg)` : "";
+  });
+}
+// Its places (CSS px, in the canvas): the spout (56.6px, 29px into his 124px picture), the water, the rainbow's centre
+// (the bow's foot, 4px up, styles.css), Alex's rock where it meets the water, and what floats, at home (each where it
+// stands on the water, from the foot)
 function waterOn() {
   const a = $(".fz-alex").getBoundingClientRect(), m = $(".fz-mer").getBoundingClientRect(), u = m.width / 124;
   if (!a.width || !state.fantasy || document.hidden) return;
   if (!water) waterSend("stop"); // set up first: here, without a worker, it's drawn still (moving, it took the main thread)
-  waterSend("geom", { W: a.width, H: a.height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: a.height - 41, cx: a.width / 2, cy: a.height - 4,
-    res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
+  if (!floats.length) { floats = $$("#foot .dk"); floatOff = floats.map(() => [0, 0, 0]); } // the ducks are drawn by now
+  for (const el of floats) el.style.transform = "";
+  const bodies = floats.map((el) => {
+    const r = el.querySelector(".duck").getBoundingClientRect();
+    return { x: r.left + r.width / 2 - a.left, b: a.bottom - r.bottom, r: 8, m: 1 };
+  });
+  floatTo(floatOff.flat());
+  waterSend("geom", { W: a.width, H: a.height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: a.height - 40, cx: a.width / 2, cy: a.height - 4,
+    rock: { x: m.left - a.left + 80 * u, r: 50 * u }, bodies, res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
   waterSend("start");
 }
 const waterOff = () => water?.("stop");
@@ -1038,18 +1056,6 @@ const houseSeen = new IntersectionObserver((es) => {
   if (e.isIntersecting) e.target.classList.add("up");
   e.target.classList.toggle("go", e.isIntersecting);
 });
-// The ducks ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
-// with them, so each duck's bob starts where the wave under it is
-function ducksOnWaves() {
-  const sea = $(".fz-waves"), w = sea.offsetWidth;
-  if (!state.fantasy || !w) return;
-  const left = sea.getBoundingClientRect().left, wave = 0.35 * w;
-  for (const dk of $$("#foot .dk")) {
-    const r = dk.getBoundingClientRect(), u = ((((r.left + r.width / 2 - left) / wave - 0.25) % 1) + 1) % 1;
-    dk.style.animationDelay = `${(-5 * u).toFixed(3)}s`;
-  }
-}
-
 // Sideways strips fade at the edge where more tabs are hidden
 function edges() {
   for (const s of $$(".strip.scroll")) {
@@ -1084,7 +1090,7 @@ const queueLight = () => { if (!lraf) lraf = requestAnimationFrame(cardLight); }
 addEventListener("scroll", queueLight, { passive: true });
 if (!SDA) addEventListener("scroll", queuePeek, { passive: true });
 
-addEventListener("resize", () => { peek(); ducksOnWaves(); for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); queueLight(); edges(); for (const r of $$("#st-body .pc.open")) placeLine(r); if (state.stView) syncBoards(true); });
+addEventListener("resize", () => { peek(); for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); queueLight(); edges(); for (const r of $$("#st-body .pc.open")) placeLine(r); if (state.stView) syncBoards(true); });
 
 addEventListener("hashchange", () => {
   const h = readHash();
