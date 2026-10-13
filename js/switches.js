@@ -1,113 +1,110 @@
 // Hidden settings, tweaked on Maurice Moss's cards (the Cast tab's Easter egg, cast.js), a card per effect, per device in
-// localStorage. Every effect is at its lowest quality by default, and off but for the podium effects, Fantasy Land's footer
-// and its transition: frame pacing comes first, and the cards turn them on and up. Everything applies live (fm-switch events). Each kind of setting has
-// its control: an effect's on/off a switch in its card's head (main), a small fixed set segmented buttons (steps, choice),
-// a strength a slider (range)
+// localStorage. Every effect is at its lowest quality by default, and off but for the podium effects, the stars, the
+// footers and Fantasy Land's transition: frame pacing comes first, and the cards turn them on and up. Everything applies
+// live (fm-switch events). Each kind of setting has its control: an effect's on/off a switch in its card's head (main), a
+// small fixed set segmented buttons (steps, choice), a strength a slider (range), a value that can follow something (the
+// clock, the airdate) a slider over buttons (dial)
 
 // Fantasy Land's transition is Slam where Chromium draws it, else Iris (Safari, and every iOS browser, all WebKit)
 const CHROMIUM = !!navigator.userAgentData?.brands?.some((b) => b.brand === "Chromium");
-export const CARDS = [
-  // Fantasy Land's switch in its head (not a setting: it switches the view), and how the view changes (flip.js)
-  { title: "Fantasy Land", fz: true,
-    items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["grade", "Grade"],
-      ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
-  { title: "Frame rate",
-    items: [{ key: "fps", type: "toggle", def: false, main: true }] },
-  // The effects step their quality to what this device keeps up with (tune.js)
-  { title: "Auto-tune",
-    items: [{ key: "autoTune", type: "toggle", def: false, main: true }] },
-  { title: "Background effects", view: "fz",
-    items: [
-      { key: "fall", type: "toggle", def: false, main: true, cls: "no-fall" },
-      { key: "fallRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
-      // Rates a 60 or 120Hz screen divides evenly, so each frame is held as long as the last (45 came out uneven)
-      { key: "fallFps", type: "steps", label: "Frame rate", def: 15, options: [[15, "15"], [20, "20"], [30, "30"], [60, "60 fps"]] },
-      { key: "fallDensity", type: "range", label: "Streaks", def: 1, min: 0, max: 3, step: 0.25, unit: "×" },
-      { key: "fallFigures", type: "range", label: "Figures", def: 7, min: 0, max: 20, step: 1, unit: "" },
-      { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
-      { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
-    ] },
-  // The night sky behind it (night.js): an aurora, at its lowest quality to begin with, and a still field of stars
-  { title: "Aurora", view: "fz",
-    items: [
-      { key: "aurora", type: "toggle", def: false, main: true, cls: "no-aurora" },
-      { key: "auroraRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
-      { key: "auroraFps", type: "steps", label: "Frame rate", def: 15, options: [[15, "15"], [20, "20"], [30, "30"], [60, "60 fps"]] },
-      { key: "auroraBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
-      { key: "auroraSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 3, step: 0.25, unit: "×" },
-    ] },
-  { title: "Stars", view: "fz",
-    items: [{ key: "stars", type: "toggle", def: false, main: true, cls: "no-stars" }] },
-  // The rest of its motion: the sparkles' twinkle, the glint on Fantasy and the sliding tab rainbow. Off, all there, still
-  { title: "Decorations", view: "fz",
-    items: [{ key: "fzDeco", type: "toggle", def: false, main: true, cls: "no-deco" }] },
-  { title: "Card opacity", view: "fz",
-    items: [{ key: "fzAlpha", type: "range", def: 0.84, min: 0.5, max: 1, step: 0.02, pct: true, css: "--fz-a" }] },
-  { title: "Podium effects",
-    items: [
-      { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
-      { key: "podRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
-      { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
-      { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
-    ] },
-  { title: "Scoring cards",
-    items: [{ key: "howLight", type: "toggle", def: false, main: true, cls: "no-howlight" }] },
-  // The cards that change the footer's scene, last. The footers: Fantasy Land's lake, Alex's stream moving (when he's
-  // pressed) and pushing the ducks about; upright, the house's lights coming up on show days and its chimney's smoke. Off,
-  // still (the stream drawn still, the house lit at once)
-  { title: "Footer",
-    items: [{ key: "fzSea", type: "toggle", def: true, main: true, cls: "no-sea" }] },
-  // The house's scene at a chosen time, or by the device's clock (main.js); the normal view only, where it is. A time: a
-  // slider through the day (any quarter hour, kept as its hour, "13.25") over the times of day as buttons
-  { title: "Time of day", view: "up",
-    items: [{ key: "houseTime", type: "time", label: "Time of day", def: "clock", min: 0, max: 23.75, step: 0.25, options: [["5.5", "Dawn"], ["7", "Sunrise"],
-      ["10", "Morning"], ["13", "Midday"], ["16.5", "Afternoon"], ["19.5", "Sunset"], ["20.5", "Dusk"], ["23", "Night"], ["clock", "Clock"]] }] },
+// The cards in groups, each folding away (cast.js; which are open is kept per device), the same in both views
+export const GROUPS = [
+  { id: "fz", title: "Fantasy Land", cards: [
+    // Fantasy Land's switch in its head (not a setting: it switches the view), and how the view changes (flip.js): a tap
+    // on one plays it
+    { title: "Fantasy Land", fz: true,
+      items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["grade", "Grade"],
+        ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
+    { title: "Background effects",
+      items: [
+        { key: "fall", type: "toggle", def: false, main: true, cls: "no-fall" },
+        { key: "fallRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
+        // Rates a 60 or 120Hz screen divides evenly, so each frame is held as long as the last (45 came out uneven)
+        { key: "fallFps", type: "steps", label: "Frame rate", def: 15, options: [[15, "15"], [20, "20"], [30, "30"], [60, "60 fps"]] },
+        { key: "fallDensity", type: "range", label: "Streaks", def: 1, min: 0, max: 3, step: 0.25, unit: "×" },
+        { key: "fallFigures", type: "range", label: "Figures", def: 7, min: 0, max: 20, step: 1, unit: "" },
+        { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
+        { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
+      ] },
+    // The rest of its motion: the sparkles' twinkle, the glint on Fantasy and the sliding tab rainbow. Off, all there, still
+    { title: "Decorations",
+      items: [{ key: "fzDeco", type: "toggle", def: false, main: true, cls: "no-deco" }] },
+    { title: "Card opacity",
+      items: [{ key: "fzAlpha", type: "range", def: 0.84, min: 0.5, max: 1, step: 0.02, pct: true, css: "--fz-a" }] },
+  ] },
+  // The sky over both footers (main.js, halo.js, stars.js, night.js)
+  { id: "sky", title: "Sky", cards: [
+    // The scene at a chosen time, or by the device's clock: a slider through the day (any quarter hour, kept as its hour,
+    // "13.25") over the times of day as buttons
+    { title: "Time of day",
+      items: [{ key: "houseTime", type: "dial", def: "clock", min: 0, max: 23.75, step: 0.25, options: [["5.5", "Dawn"], ["7", "Sunrise"],
+        ["10", "Morning"], ["13", "Midday"], ["16.5", "Afternoon"], ["19.5", "Sunset"], ["20.5", "Dusk"], ["23", "Night"], ["clock", "Clock"]],
+        now: () => { const d = new Date(); return d.getHours() + d.getMinutes() / 60; }, say: (h) => `${Math.floor(h)}:${String(Math.floor((h % 1) * 60)).padStart(2, "0")}` }] },
+    // The moon's phase (its age through the month: 0 new, 0.5 full), or the real one as the episode on show aired
+    { title: "Moon phase",
+      items: [{ key: "moonPhase", type: "dial", def: "air", min: 0, max: 0.99, step: 0.01, options: [["0", "New"], ["0.25", "First qtr"], ["0.5", "Full"],
+        ["0.75", "Last qtr"], ["air", "Airdate"]], now: () => airPhase, say: phaseSay }] },
+    { title: "Stars",
+      items: [{ key: "stars", type: "toggle", def: true, main: true, cls: "no-stars" }] },
+    // An aurora, at its lowest quality to begin with
+    { title: "Aurora",
+      items: [
+        { key: "aurora", type: "toggle", def: false, main: true, cls: "no-aurora" },
+        { key: "auroraRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
+        { key: "auroraFps", type: "steps", label: "Frame rate", def: 15, options: [[15, "15"], [20, "20"], [30, "30"], [60, "60 fps"]] },
+        { key: "auroraBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
+        { key: "auroraSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 3, step: 0.25, unit: "×" },
+      ] },
+  ] },
+  { id: "fx", title: "Effects", cards: [
+    { title: "Podium effects",
+      items: [
+        { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
+        { key: "podRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
+        { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
+        { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
+      ] },
+    { title: "Scoring cards",
+      items: [{ key: "howLight", type: "toggle", def: false, main: true, cls: "no-howlight" }] },
+    // The footers' motion: Fantasy Land's lake and Alex's stream (when he's pressed); the house's lights coming up on show
+    // days and its chimney's smoke. Off, still (the stream drawn still, the house lit at once)
+    { title: "Footer",
+      items: [{ key: "fzSea", type: "toggle", def: true, main: true, cls: "no-sea" }] },
+  ] },
 ];
-// A card for one view only (view: "fz", Fantasy Land; "up", the normal view) shows only there
-export const cardsShown = (fantasy) => CARDS.filter((c) => !c.view || (c.view === "fz") === fantasy);
+export const CARDS = GROUPS.flatMap((g) => g.cards);
 const ITEMS = Object.fromEntries(CARDS.flatMap((c) => c.items.map((it) => [it.key, it])));
 const id = (k) => `fm-sw-${k}`;
 export const item = (k) => ITEMS[k];
-// A time's hour: the one chosen, or the clock's now
-export const hourOf = (v) => {
-  if (v !== "clock") return +v;
-  const now = new Date();
-  return now.getHours() + now.getMinutes() / 60;
-};
-const clock = (h) => `${Math.floor(h)}:${String(Math.floor((h % 1) * 60)).padStart(2, "0")}`;
-export const shown = (it, v) => (it.type === "time" ? clock(hourOf(v)) : it.pct ? `${Math.round(v * 100)}%` : `${+v.toFixed(2)}${it.unit}`);
+// A dial's value (the time of day, the moon's phase): the one chosen, or what it follows (the clock, the airdate's moon)
+export const dialAt = (it, v = values[it.key]) => (v === it.def ? it.now() : +v);
+export const hourOf = (v) => dialAt(ITEMS.houseTime, v);
+// The airdate's moon (main.js), for the Moon phase card while it follows it
+let airPhase = 0.5;
+export const setAirPhase = (p) => { airPhase = p; };
+function phaseSay(p) {
+  const lit = (1 - Math.cos(2 * Math.PI * p)) / 2, near = (q) => Math.abs(p - q) < 0.02 || Math.abs(p - q - 1) < 0.02;
+  return near(0) ? "New" : near(0.25) ? "First quarter" : near(0.5) ? "Full" : near(0.75) ? "Last quarter" : `${p < 0.5 ? "Waxing" : "Waning"} ${Math.round(lit * 100)}%`;
+}
+export const shown = (it, v) => (it.type === "dial" ? it.say(dialAt(it, v)) : it.pct ? `${Math.round(v * 100)}%` : `${+v.toFixed(2)}${it.unit}`);
 
 // Read once; settings that no longer exist are forgotten
 const values = {};
-try { for (const k of Object.keys(localStorage)) if (k.startsWith("fm-sw-") && !ITEMS[k.slice(6)]) localStorage.removeItem(k); } catch { /* private mode */ }
+try {
+  for (const k of Object.keys(localStorage)) if (k.startsWith("fm-sw-") && !ITEMS[k.slice(6)]) localStorage.removeItem(k);
+  for (const k of ["fm-auto", "fm-pinned", "fm-fps-pos"]) localStorage.removeItem(k); // auto-tune and the frame rate graphs, gone
+} catch { /* private mode */ }
 for (const [k, it] of Object.entries(ITEMS)) {
   let v = null;
   try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
-  const read = it.type === "toggle" ? v === "1" : it.type === "choice" || it.type === "time" ? v : +v;
-  // A value no longer offered (an old slider's in-between step) is the default; a time is any hour of the day
-  const ok = it.type === "time" ? read === "clock" || (read !== "" && +read >= 0 && +read < 24) : !it.options || it.options.some(([o]) => o === read);
+  const read = it.type === "toggle" ? v === "1" : it.type === "choice" || it.type === "dial" ? v : +v;
+  // A value no longer offered (an old slider's in-between step) is the default; a dial's any value in its range
+  const ok = it.type === "dial" ? read === it.def || (read !== "" && +read >= it.min && +read <= it.max) : !it.options || it.options.some(([o]) => o === read);
   values[k] = v == null || !ok ? it.def : read;
 }
 export const get = (k) => values[k];
 const tell = (k, v) => dispatchEvent(new CustomEvent("fm-switch", { detail: { key: k, value: v } }));
 
-// Auto-tune (tune.js) chooses these where they're left as designed: auto holds what it chose (and its levels, _fall and
-// _pod), pinned the ones set on the cards, which it leaves alone. Both per device. val() is what an effect uses
-export const TUNABLE = ["fallRes", "fallFps", "podRes"];
-const json = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-const auto = json("fm-auto", {}), pinned = new Set(json("fm-pinned", []));
-const keep = () => { try { localStorage.setItem("fm-auto", JSON.stringify(auto)); localStorage.setItem("fm-pinned", JSON.stringify([...pinned])); } catch { /* private mode */ } };
-export const tuned = (k) => TUNABLE.includes(k) && values.autoTune && !pinned.has(k) && ITEMS[k].options.some(([o]) => o === auto[k]);
-export const val = (k) => (tuned(k) ? auto[k] : values[k]);
-export const autoGet = (k) => auto[k];
-export const autoUsed = () => Object.keys(auto).length > 0 || pinned.size > 0; // something for Reset to start again
-export function setAuto(k, v) {
-  if (auto[k] === v || pinned.has(k)) return;
-  auto[k] = v;
-  keep();
-  if (TUNABLE.includes(k) && values.autoTune) tell(k, val(k));
-}
-export function pin(k) { if (TUNABLE.includes(k) && !pinned.has(k)) { pinned.add(k); keep(); } }
 export function set(k, v) {
   const it = ITEMS[k];
   values[k] = v;
@@ -117,16 +114,12 @@ export function set(k, v) {
   } catch { /* private mode: lasts the visit */ }
   apply(it);
   tell(k, v);
-  if (k === "autoTune") for (const t of TUNABLE) tell(t, val(t)); // the effects take up, or drop, what it chose
 }
 export const changed = () => Object.keys(ITEMS).filter((k) => get(k) !== ITEMS[k].def).length;
-// Back to the design, and auto-tune starts again
+export const changedIn = (g) => g.cards.flatMap((c) => c.items).filter((it) => get(it.key) !== it.def).length;
+// Back to the design
 export function resetAll() {
   for (const k of Object.keys(ITEMS)) if (get(k) !== ITEMS[k].def) set(k, ITEMS[k].def);
-  for (const k of Object.keys(auto)) delete auto[k];
-  pinned.clear();
-  keep();
-  for (const t of TUNABLE) tell(t, val(t));
 }
 export const onSwitch = (keys, fn) => addEventListener("fm-switch", ({ detail: d }) => { if (keys.includes(d.key)) fn(d); });
 

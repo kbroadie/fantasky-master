@@ -2,7 +2,7 @@
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
-import { cardsShown, changed, autoUsed, get, val, tuned, shown, hourOf } from "../switches.js";
+import { GROUPS, changed, changedIn, get, shown, dialAt } from "../switches.js";
 import { PR } from "../version.js";
 
 // Fantasy: lowest total first
@@ -27,27 +27,27 @@ const isMoss = (c) => c.full === "Richard Ayoade";
 const toggle = (it, name) => `<button type="button" class="sw-toggle" role="switch" aria-checked="${get(it.key)}" aria-label="${esc(name)}" data-sw="${it.key}"></button>`;
 // A small fixed set: segmented buttons, one tap each (a grid when there are many)
 const segs = (it, name, grid = false) => `<div class="sw-seg${grid ? " grid" : ""}" role="radiogroup" aria-label="${esc(name)}">${it.options.map(([v, label]) =>
-  `<button type="button" role="radio" aria-checked="${val(it.key) === v}" data-sw="${it.key}" data-v="${v}">${esc(label)}</button>`).join("")}</div>`;
+  `<button type="button" role="radio" aria-checked="${get(it.key) === v}" data-sw="${it.key}" data-v="${v}">${esc(label)}</button>`).join("")}</div>`;
 // A strength: a slider (--v, how far along, for its gold fill) and its value, gold once changed; a tap on it resets it
 const range = (it, name) => `<input type="range" class="sw-range" data-sw="${it.key}" aria-label="${esc(name)}" min="${it.min}" max="${it.max}" step="${it.step}" value="${at(it)}" style="--v:${fill(it)}">`;
-// Where a slider stands: its value, or a time's hour (the clock's now, when it follows the clock)
-export const at = (it, v = get(it.key)) => (it.type === "time" ? hourOf(v) : v);
+// Where a slider stands: its value, or a dial's (what it follows, while it follows it)
+export const at = (it, v = get(it.key)) => (it.type === "dial" ? dialAt(it, v) : v);
 export const fill = (it, v = get(it.key)) => `${(((at(it, v) - it.min) / (it.max - it.min)) * 100).toFixed(1)}%`;
 const value = (it, name) => `<button type="button" class="sw-val${get(it.key) !== it.def ? " on" : ""}" data-reset="${it.key}" aria-label="${esc(name)}: reset">${shown(it, get(it.key))}</button>`;
 const control = (it) => (it.type === "steps"
-  ? `<div class="sw-row sw-steps"><span>${esc(it.label)}${tuned(it.key) ? ' <b class="sw-auto">Auto</b>' : ""}</span>${segs(it, it.label)}</div>`
+  ? `<div class="sw-row sw-steps"><span>${esc(it.label)}</span>${segs(it, it.label)}</div>`
   : `<div class="sw-row sw-slide"><span>${esc(it.label)}</span>${range(it, it.label)}${value(it, it.label)}</div>`);
-// Tiles: a lone switch or slider is a small tile, an effect with settings spans the row. Only the cards for the view on show
-const tiled = (c) => c.items.length === 1 && !["choice", "time"].includes(c.items[0].type);
-const switchCard = (c) => {
+// Tiles: a lone switch or slider is a small tile, an effect with settings spans the row
+const tiled = (c) => c.items.length === 1 && !["choice", "dial"].includes(c.items[0].type);
+const switchCard = (c, alone = false) => {
   const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
-  if (c.fz) { // Fantasy Land: its switch, and the transition it plays, so a pick is tried at once
+  if (c.fz) { // Fantasy Land: its switch, and the transitions, each played by a tap on it
     const it = rest[0];
     return `
     <div class="card sw-card wide"><div class="card-head"><span>${esc(c.title)}</span><button type="button" class="sw-toggle" role="switch" aria-checked="${!!state.fantasy}" aria-label="${esc(c.title)}" data-fz></button></div>
       <div class="sw-sub">${esc(it.label)}</div>${segs(it, it.label, true)}</div>`;
   }
-  if (!main && rest.length === 1 && rest[0].type === "time") { // a time: its slider, the time in the head, and the times of day
+  if (!main && rest.length === 1 && rest[0].type === "dial") { // a dial: its slider, its value in the head, and its marks as buttons
     const it = rest[0];
     return `
     <div class="card sw-card wide"><div class="card-head"><span>${esc(c.title)}</span>${value(it, c.title)}</div>
@@ -61,29 +61,44 @@ const switchCard = (c) => {
   if (!main && rest.length === 1) { // a lone slider: its value in the head
     const it = rest[0];
     return `
-    <div class="card sw-card"><div class="card-head"><span>${esc(c.title)}</span>${value(it, c.title)}</div>
+    <div class="card sw-card${alone ? " wide" : ""}"><div class="card-head"><span>${esc(c.title)}</span>${value(it, c.title)}</div>
       <div class="sw-one">${range(it, c.title)}</div></div>`;
   }
   return `
-    <div class="card sw-card${rest.length ? " wide" : ""}${main && !get(main.key) ? " off" : ""}">
+    <div class="card sw-card${rest.length || alone ? " wide" : ""}${main && !get(main.key) ? " off" : ""}">
       <div class="card-head"><span>${esc(c.title)}</span>${main ? toggle(main, c.title) : ""}</div>
       ${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
     </div>`;
 };
-// How many settings differ from the design, or that auto-tune has chosen some; Reset does nothing without either
-export const changedSay = (n = changed()) => (n ? `${n} changed` : autoUsed() ? "Auto-tuned" : "As designed");
-export const resettable = () => changed() > 0 || autoUsed();
-const switchCards = () => {
-  // Defaults fills a row's gap, and Revision spans the row when it would be left alone in one
-  const cards = cardsShown(!!state.fantasy), n = changed();
+// How many settings differ from the design; Reset does nothing without any
+export const changedSay = (n = changed()) => (n ? `${n} changed` : "As designed");
+export const resettable = () => changed() > 0;
+// Each group folds away under its head (main.js keeps which are open, per device); its head says how many of its
+// settings are changed. The page's own cards last: Defaults, and Revision (the PR this page came in with)
+export const groupOpen = (id) => { try { return localStorage.getItem(`fm-grp-${id}`) === "1"; } catch { return false; } };
+const CHEV = '<svg class="sw-chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>';
+const group = (id, title, sum, body) => {
+  const open = groupOpen(id);
   return `
-    <div class="sw-grid">
-      ${cards.map(switchCard).join("")}
+    <section class="sw-group${open ? " open" : ""}" data-g="${id}">
+      <button type="button" class="sw-g-head" aria-expanded="${open}"><span class="sw-g-title">${esc(title)}</span><span class="sw-g-sum">${sum}</span>${CHEV}</button>
+      <div class="sw-grid"${open ? "" : " hidden"}>${body}</div>
+    </section>`;
+};
+export const groupSay = (g) => changedSay(changedIn(g));
+// A group's cards: a tile left alone in its row spans it
+const cardsOf = (g) => {
+  const tiles = g.cards.filter(tiled);
+  return g.cards.map((c) => switchCard(c, tiles.length % 2 === 1 && c === tiles.at(-1))).join("");
+};
+const switchCards = () => {
+  const n = changed();
+  return `<div class="sw-groups">${GROUPS.map((g) => group(g.id, g.title, groupSay(g), cardsOf(g))).join("")}
+    ${group("page", "Page", `<b class="sw-pr">#${PR}</b>`, `
       <div class="card sw-card"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset"${resettable() ? "" : " disabled"}>Reset</button></div>
         <div class="sw-count">${changedSay(n)}</div></div>
-      <div class="card sw-card${cards.filter(tiled).length % 2 ? " wide" : ""}"><div class="card-head"><span>Revision</span><button type="button" class="ed-btn sw-reload">Reload</button></div>
-        <div class="sw-count"><b class="sw-pr">#${PR}</b> · <span class="sw-rev">Checking…</span></div></div>
-    </div>`;
+      <div class="card sw-card"><div class="card-head"><span>Revision</span><button type="button" class="ed-btn sw-reload">Reload</button></div>
+        <div class="sw-count"><b class="sw-pr">#${PR}</b> · <span class="sw-rev">Checking…</span></div></div>`)}</div>`;
 };
 
 function median(xs) {

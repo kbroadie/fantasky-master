@@ -136,8 +136,8 @@ export function standingsSlides(d) {
 
 // The way into the low-scores-win mode and back (flip.js), under every tab: Patatas asks, in a comic speech bubble (an SVG
 // stretched behind the words, its outline drawn at one width) whose words follow the mode (styles.css)
-// Patatas's bubble takes the sky (main.js sets #dq's data-sky and the sky's colours): the comic bubble (Fantasy Land, and
-// before the sky is known), a cumulus cloud by day, a glowing pill at sunrise and sunset, a soft cloud in twilight and a
+// Patatas's bubble takes the sky (main.js sets #dq's data-sky and the sky's colours): the comic bubble (before the sky is
+// known), Fantasy Land's dream cloud, a cumulus cloud by day, a glowing pill at sunrise and sunset, a soft cloud in twilight and a
 // thought bubble by night, its little circles trailing to him
 const BUBBLES = [
   ["comic", "M32 7C72 1 140 3 177 8C195 11 199 29 196 46C194 66 182 78 150 81C110 85 62 84 38 79C28 77 22 71 19 63C18 61 18 60 18 58Q6 58-18 51Q4 45 17 40C14 31 14 22 19 15C22 10 26 8 32 7Z"],
@@ -145,7 +145,10 @@ const BUBBLES = [
   ["pill", "M44 6H166Q197 6 197 45Q197 84 166 84H44Q26 84 20 68Q6 65-16 54Q7 47 16 36Q22 6 44 6Z"],
   ["thought", "M32 22C30 8 52 3 63 12C72 2 93 1 102 10C112 1 134 2 142 12C155 4 179 9 178 23C196 26 199 46 188 56C198 69 183 84 164 79C156 89 130 89 120 81C110 90 86 90 78 81C68 89 44 87 38 77C24 79 14 68 19 57C8 52 10 36 22 33C20 27 24 23 32 22Z"],
 ].map(([k, d]) => `<path class="k-${k}" d="${d}"/>`).join("") + `<g class="k-dots"><ellipse cx="4" cy="36" rx="6.5" ry="6"/><ellipse cx="-10" cy="28" rx="4" ry="3.6"/></g>`;
-const SKY_FILLS = `<linearGradient id="em-sky" x1="0" y1="0" x2="0" y2="1"><stop class="s0" offset="0"/><stop class="s1" offset="1"/></linearGradient>`;
+// Fantasy Land's: a dream cloud in the night sky, its edge in the aurora's colours (styles.css)
+const SKY_FILLS = `<linearGradient id="em-sky" x1="0" y1="0" x2="0" y2="1"><stop class="s0" offset="0"/><stop class="s1" offset="1"/></linearGradient>` +
+  `<radialGradient id="em-night" cx=".4" cy=".3" r=".85"><stop offset="0" stop-color="#2c2266"/><stop offset=".7" stop-color="#151036"/><stop offset="1" stop-color="#0c0a26"/></radialGradient>` +
+  `<linearGradient id="em-aur" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5dffb0"/><stop offset=".45" stop-color="#8f7dff"/><stop offset="1" stop-color="#ff6fb4"/></linearGradient>`;
 export const EMBRACE = `<button class="embrace" type="button"><span class="em-who"><img src="img/patatas.webp" alt="" width="271" height="320" loading="lazy" decoding="async"><b>Patatas</b></span><span class="em-say"><svg class="em-bub" viewBox="0 0 200 90" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="em-fill"><stop offset="0"/><stop offset=".2"/><stop offset=".4"/><stop offset=".6"/><stop offset=".8"/><stop offset="1"/></linearGradient>${SKY_FILLS}</defs>${BUBBLES}</svg><svg class="em-pop" viewBox="0 0 24 24" aria-hidden="true"><path class="p-lines" d="M6 9 3 3M12 7l1-6M17 11l6-4"/><path class="p-star" d="M12 2Q13 7 18 8Q13 9 12 14Q11 9 6 8Q11 7 12 2Z"/><path class="p-star2" d="M20 13Q20.6 15.4 23 16Q20.6 16.6 20 19Q19.4 16.6 17 16Q19.4 15.4 20 13Z"/></svg><span class="em-fail">Embrace failure</span><span class="em-win">Embrace success</span></span></button>`;
 
 // Board: head, optional race chart (state.stView; drawn at measured width by syncBoards), rows
