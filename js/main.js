@@ -809,52 +809,42 @@ const footSeen = new IntersectionObserver((es) => {
   $("#foot").classList.toggle("run", e.isIntersecting);
 });
 footSeen.observe($(".fz-waves"));
-// Alex's stream (stream.js): drawn in a worker that owns its canvas where it can be, else here; only while the footer's
-// waves are on screen and the page is showing. Pressing him pumps it up: its pressure rises while he's held, for a
-// moment at least on a tap, and falls when he's let go or the press turns into a scroll or swipe
+// The lake and Alex's stream (stream.js): drawn in a worker that owns their canvases where it can be, else here, still;
+// only while the footer's on screen and the page is showing. Pressing him pumps it up: its pressure rises while he's
+// held, for a moment at least on a tap, and falls when he's let go or the press turns into a scroll or swipe
 let water = null, waterWorker = false;
 function waterSend(type, arg) {
   if (!water) {
-    const c = $(".mr-water");
+    const c = $(".mr-water"), l = $(".lake-c");
     if (moduleWorkers && "transferControlToOffscreen" in c) {
       try {
-        const w = new Worker(new URL("./stream-worker.js", import.meta.url), { type: "module" }), off = c.transferControlToOffscreen();
-        w.postMessage({ type: "init", canvas: off }, [off]);
-        w.onmessage = ({ data }) => { if (data.type === "bodies") floatTo(data.a); };
+        const w = new Worker(new URL("./stream-worker.js", import.meta.url), { type: "module" }), jet = c.transferControlToOffscreen(), lake = l.transferControlToOffscreen();
+        w.postMessage({ type: "init", jet, lake }, [jet, lake]);
         water = (t, a) => w.postMessage({ type: t, arg: a });
         waterWorker = true;
       } catch {}
     }
-    if (!water) { const s = streamer(c); water = (t, a) => s[t](a); }
+    if (!water) { const s = streamer(c, l); water = (t, a) => s[t](a); }
   }
   water(type, arg);
 }
-// What floats and gets pushed about (stream.js): the ducks (moved as a whole, .dk; measured by the duck), each at its
-// place off home with a tilt
-let floats = [], floatOff = [];
-function floatTo(a) {
-  floats.forEach((el, i) => {
-    const [dx, dy, r] = [a[i * 3], a[i * 3 + 1], a[i * 3 + 2]];
-    floatOff[i] = [dx, dy, r];
-    el.style.transform = dx || dy || r ? `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) rotate(${r.toFixed(1)}deg)` : "";
-  });
+// His picture, for his reflection: handed over once it's loaded (a bitmap to the worker)
+let rockSent = false;
+function sendRock() {
+  if (rockSent) return;
+  rockSent = true;
+  const img = $(".fz-mer img");
+  img.decode().then(() => (waterWorker ? createImageBitmap(img) : img)).then((b) => water("rock", b)).catch(() => { rockSent = false; });
 }
-// Its places (CSS px, in the canvas): the spout (56.6px, 29px into his 124px picture), the water, the rainbow's centre
-// (the bow's foot, 4px up, styles.css), Alex's rock where it meets the water, and what floats, at home (each where it
-// stands on the water, from the foot)
+// Their places (CSS px, in the stream's canvas, the lake's starting LH from its foot): the spout (56.6px, 29px into his
+// 124px picture), the water (his rock's foot), the rainbow's centre (the bow's foot, 4px up, styles.css) and his rock
 function waterOn() {
   const a = $(".fz-alex").getBoundingClientRect(), m = $(".fz-mer").getBoundingClientRect(), u = m.width / 124;
   if (!a.width || !state.fantasy || document.hidden) return;
   if (!water) waterSend("stop"); // set up first: here, without a worker, it's drawn still (moving, it took the main thread)
-  if (!floats.length) { floats = $$("#foot .dk"); floatOff = floats.map(() => [0, 0, 0]); } // the ducks are drawn by now
-  for (const el of floats) el.style.transform = "";
-  const bodies = floats.map((el) => {
-    const r = el.querySelector(".duck").getBoundingClientRect();
-    return { x: r.left + r.width / 2 - a.left, b: a.bottom - r.bottom, r: 8, m: 1 };
-  });
-  floatTo(floatOff.flat());
-  waterSend("geom", { W: a.width, H: a.height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: a.height - 40, cx: a.width / 2, cy: a.height - 4,
-    rock: { x: m.left - a.left + 80 * u, r: 50 * u }, bodies, res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
+  waterSend("geom", { W: a.width, H: a.height, LH: $(".fz-lake").getBoundingClientRect().height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: m.bottom - a.top, cx: a.width / 2, cy: a.height - 4,
+    rock: { x: m.left - a.left, y: m.top - a.top, w: m.width, h: m.height }, res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
+  sendRock();
   waterSend("start");
 }
 const waterOff = () => water?.("stop");
