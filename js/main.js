@@ -12,7 +12,8 @@ import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay, reloadFresh } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, toggleFantasy } from "./flip.js";
+import { initFlip, toggleFantasy, moduleWorkers } from "./flip.js";
+import { streamer } from "./stream.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -809,12 +810,45 @@ const footSeen = new IntersectionObserver((es) => {
   $("#foot").classList.toggle("run", e.isIntersecting);
 });
 footSeen.observe($(".fz-waves"));
-// Pressing Alex (Fantasy Land's mermaid) pumps up his stream: it surges while he's held, for a moment at least on a tap,
-// and falls back when he's let go; a press that turns into a scroll or a swipe lets go
+// Alex's stream (stream.js): drawn in a worker that owns its canvas where it can be, else here; only while the footer's
+// waves are on screen and the page is showing. Pressing him pumps it up: its pressure rises while he's held, for a
+// moment at least on a tap, and falls when he's let go or the press turns into a scroll or swipe
+let water = null, waterWorker = false;
+function waterSend(type, arg) {
+  if (!water) {
+    const c = $(".mr-water");
+    if (moduleWorkers && "transferControlToOffscreen" in c) {
+      try {
+        const w = new Worker(new URL("./stream-worker.js", import.meta.url), { type: "module" }), off = c.transferControlToOffscreen();
+        w.postMessage({ type: "init", canvas: off }, [off]);
+        water = (t, a) => w.postMessage({ type: t, arg: a });
+        waterWorker = true;
+      } catch {}
+    }
+    if (!water) { const s = streamer(c); water = (t, a) => s[t](a); }
+  }
+  water(type, arg);
+}
+// Its places (CSS px, in the canvas): the spout (56.6px, 29px into his 124px picture), the water and the rainbow's
+// centre (the bow's foot, 4px up, styles.css)
+function waterOn() {
+  const a = $(".fz-alex").getBoundingClientRect(), m = $(".fz-mer").getBoundingClientRect(), u = m.width / 124;
+  if (!a.width || !state.fantasy || document.hidden) return;
+  if (!water) waterSend("stop"); // set up first: here, without a worker, it's drawn still (moving, it took the main thread)
+  waterSend("geom", { W: a.width, H: a.height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: a.height - 41, cx: a.width / 2, cy: a.height - 4,
+    res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
+  waterSend("start");
+}
+const waterOff = () => water?.("stop");
+let waterSeen = false;
+new IntersectionObserver((es) => { waterSeen = es.at(-1).isIntersecting; waterSeen ? waterOn() : waterOff(); }).observe($(".fz-waves"));
+document.addEventListener("visibilitychange", () => (document.hidden ? waterOff() : waterSeen && waterOn()));
+addEventListener("resize", () => { if (waterSeen) waterOn(); });
+onSwitch(["fzSea"], () => { if (waterSeen) { waterOff(); waterOn(); } });
 const mer = $(".fz-mer");
 let merAt = null, merT = 0, merOff = 0;
-const merUp = () => { merAt = null; clearTimeout(merOff); merOff = setTimeout(() => mer.classList.remove("surge"), Math.max(0, 450 - (performance.now() - merT))); };
-mer.addEventListener("pointerdown", (e) => { merAt = [e.pointerId, e.clientX, e.clientY]; merT = performance.now(); clearTimeout(merOff); mer.classList.add("surge"); });
+const merUp = () => { merAt = null; clearTimeout(merOff); merOff = setTimeout(() => water?.("press", false), Math.max(0, 450 - (performance.now() - merT))); };
+mer.addEventListener("pointerdown", (e) => { merAt = [e.pointerId, e.clientX, e.clientY]; merT = performance.now(); clearTimeout(merOff); water?.("press", true); });
 mer.addEventListener("pointermove", (e) => { if (merAt?.[0] === e.pointerId && Math.hypot(e.clientX - merAt[1], e.clientY - merAt[2]) > 10) merUp(); });
 for (const t of ["pointerup", "pointercancel", "pointerleave"]) mer.addEventListener(t, (e) => { if (merAt?.[0] === e.pointerId) merUp(); });
 mer.addEventListener("contextmenu", (e) => e.preventDefault()); // a long press is his, not the image menu's

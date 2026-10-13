@@ -246,7 +246,7 @@ function nameMovers(clear = false) {
 
 // The fall: drawn by fall.js in a worker that owns the canvas, or here without OffscreenCanvas. Nothing heavy in the page until it shows (iOS dropped page tiles).
 let worker = null, run = null;
-const moduleWorkers = (() => {
+export const moduleWorkers = (() => {
   let ok = false;
   try {
     const url = URL.createObjectURL(new Blob([""], { type: "text/javascript" }));
