@@ -3,7 +3,7 @@ import { loadText, parseCSV, buildSeries } from "./csv.js";
 import { initEdit } from "./edit.js";
 import { derive, currentSeriesKey, airInstant } from "./league.js";
 import { moonAt, moonPath, skyFor } from "./sky.js";
-import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer, DINGHY } from "./ui.js";
+import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides, castSlide, fill, at as sliderAt, changedSay, resettable } from "./views/cast.js";
@@ -45,7 +45,7 @@ function loadSeries(key) {
   btn.setAttribute("aria-label", `Series ${key}. Tap to switch series`);
   renderStandings(d);
   renderSlides(d);
-  if (!$("#foot").children.length) { $("#foot").innerHTML = footer(); $(".fz-boat").innerHTML = DINGHY; houseSeen.observe($("#foot")); }
+  if (!$("#foot").children.length) { $("#foot").innerHTML = footer(); houseSeen.observe($("#foot")); }
   showDay();
   if (!$("#dq").children.length) $("#dq").innerHTML = EMBRACE;
   countdown();
@@ -809,6 +809,15 @@ const footSeen = new IntersectionObserver((es) => {
   $("#foot").classList.toggle("run", e.isIntersecting);
 });
 footSeen.observe($(".fz-waves"));
+// Pressing Alex (Fantasy Land's mermaid) pumps up his stream: it surges while he's held, for a moment at least on a tap,
+// and falls back when he's let go; a press that turns into a scroll or a swipe lets go
+const mer = $(".fz-mer");
+let merAt = null, merT = 0, merOff = 0;
+const merUp = () => { merAt = null; clearTimeout(merOff); merOff = setTimeout(() => mer.classList.remove("surge"), Math.max(0, 450 - (performance.now() - merT))); };
+mer.addEventListener("pointerdown", (e) => { merAt = [e.pointerId, e.clientX, e.clientY]; merT = performance.now(); clearTimeout(merOff); mer.classList.add("surge"); });
+mer.addEventListener("pointermove", (e) => { if (merAt?.[0] === e.pointerId && Math.hypot(e.clientX - merAt[1], e.clientY - merAt[2]) > 10) merUp(); });
+for (const t of ["pointerup", "pointercancel", "pointerleave"]) mer.addEventListener(t, (e) => { if (merAt?.[0] === e.pointerId) merUp(); });
+mer.addEventListener("contextmenu", (e) => e.preventDefault()); // a long press is his, not the image menu's
 // The house (ui.js) lights up on show days: the day, on this device, that any episode airs. Checked each minute, so it
 // comes on at midnight. Its lights come up the first time it's seen (.up), and its chimney smokes while it's on screen
 function showDay() {
@@ -995,13 +1004,13 @@ const houseSeen = new IntersectionObserver((es) => {
   if (e.isIntersecting) e.target.classList.add("up");
   e.target.classList.toggle("go", e.isIntersecting);
 });
-// The ducks (and Alex's dinghy) ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
+// The ducks ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
 // with them, so each duck's bob starts where the wave under it is
 function ducksOnWaves() {
   const sea = $(".fz-waves"), w = sea.offsetWidth;
   if (!state.fantasy || !w) return;
   const left = sea.getBoundingClientRect().left, wave = 0.35 * w;
-  for (const dk of $$("#foot .dk, .fz-boat")) {
+  for (const dk of $$("#foot .dk")) {
     const r = dk.getBoundingClientRect(), u = ((((r.left + r.width / 2 - left) / wave - 0.25) % 1) + 1) % 1;
     dk.style.animationDelay = `${(-5 * u).toFixed(3)}s`;
   }
