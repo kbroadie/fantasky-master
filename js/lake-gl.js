@@ -1,18 +1,22 @@
 // Fantasy Land's lake on the GPU (stream.js draws it with this where WebGL is there, in the stream's worker): for each
 // pixel, the water's surface there, a slow swell and a finer chop plus every ripple spreading from where the stream
-// lands, each a ring on the lake's plane seen in perspective; its slope shifts what's mirrored there (the rainbow about
-// the horizon, the background effects above it, Alex's rock about its foot, the stream about the water under it) and
-// catches the sky's light on the crests. Waves too fine to see at their distance are left out, so the far water is a smooth mirror. Its light is added
+// lands, each a ring on the lake's plane seen in perspective; its slope shifts what's mirrored there (the sky about the
+// horizon, with the sun or the moon and their halos, the background effects above it, Alex's rock about its foot, the
+// stream about the water under it), catches the sky's light on the crests and scatters the sun or moon into a glitter
+// path. Waves too fine to see at their distance are left out, so the far water is a smooth mirror. Its light is added
 // to the lake's colour under it (styles.css); what it mirrors of his rock and the stream covers it.
 
 const VS = "attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }";
 const FS = `precision highp float;
 uniform vec2 uSize, uBowSize;
-uniform float uK, uLH, uCx, uF, uT, uWl, uM, uHasRock, uHasJet, uHasSky;
+uniform float uK, uLH, uCx, uF, uT, uWl, uM, uHasRock, uHasJet, uHasSky, uDeg;
+uniform vec4 uGl;
+uniform vec3 uGlC;
 uniform vec4 uRock, uAxis, uJet;
 uniform sampler2D tBow, tRock, tJet, tSky;
 uniform vec4 uRings[16];
 uniform int uN;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 // a wave's slope, left out where it's too fine to see at its distance
 float seen(float k, float Z) { return clamp((uLH * 6.2832 / k / (Z * Z) - 2.0) / 4.0, 0.0, 1.0); }
 vec2 wave(vec2 d, float k, float a, float w, vec2 P, float Z) { return d * (a * k * cos(k * dot(d, P) - w * uT) * seen(k, Z)); }
@@ -34,9 +38,10 @@ void main() {
   }
   vec2 off = g * vec2(30.0, 40.0);
   float rf = mix(0.85, 0.35, s); // it mirrors more at a grazing angle
-  vec3 add = texture2D(tBow, (q + vec2(uM, 0.0) + off) / uBowSize).rgb * rf * 0.6;
+  vec3 add = texture2D(tBow, (q + vec2(uM, 0.0) + off) / uBowSize).rgb * rf * 0.9; // the sky, its halos and the sun or moon
   if (uHasSky > 0.5) add += texture2D(tSky, vec2((q.x + off.x) * uK / uSize.x, (uLH + 4.0 - q.y - off.y) / (uLH + 4.0))).rgb * rf * 0.85; // the background effects above it
   vec4 near = vec4(0.0);
+  float cover = 0.0; // how much of what's mirrored behind it his rock hides
   float ax = clamp((uAxis.x - q.x) / max(1.0, uAxis.x - uAxis.z), 0.0, 1.0), axis = mix(uAxis.y, uAxis.w, ax);
   if (uHasJet > 0.5 && q.y > axis) {
     vec2 j = vec2(q.x, 2.0 * axis - q.y) + off;
@@ -44,9 +49,23 @@ void main() {
   }
   if (uHasRock > 0.5 && q.y > uWl) {
     vec2 uv = (vec2(q.x, 2.0 * uWl - q.y) + off - uRock.xy) / uRock.zw;
-    if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) near += texture2D(tRock, uv) * 0.62 * (1.0 - near.a);
+    if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) { vec4 rk = texture2D(tRock, uv); cover = rk.a; near += rk * 0.62 * (1.0 - near.a); }
   }
   near *= rf;
+  add *= 1.0 - cover; // the rock is nearer: its reflection hides the sky's behind it
+  // The glitter path of the sun or the moon: where a facet of the water, tilted by the swell, the chop and the finest
+  // ripples (a flicker, per few pixels), mirrors it. A tilt of a moves what's mirrored by 2a, so the facets that catch
+  // it lie in a column under it, as long as the slopes are steep; narrower across, at this grazing angle
+  if (uGl.z > 0.0) {
+    vec2 cell = floor(gl_FragCoord.xy / max(1.0, uK)), tk = vec2(floor(uT * 7.0));
+    vec2 sl = g + (vec2(hash(cell + tk), hash(cell + tk + 17.3)) - 0.5) * 0.24; // facets as steep as real water's
+    float ys = q.y + sl.y * uDeg * 114.6, xs = q.x + sl.x * uDeg * 40.0;
+    float spark = smoothstep(uGl.w, 0.0, length(vec2(xs - uGl.x, ys - uGl.y)));
+    // and the sheen they make together, soft, a column under it, widening toward us
+    float sx = (q.x - uGl.x) / (5.0 + 0.3 * q.y), sy = (q.y - uGl.y) / max(20.0, 0.6 * uGl.y);
+    // (none where his rock stands between the water and the sun: there it mirrors the rock)
+    add += uGlC * (spark + 0.06 * exp(-sx * sx - sy * sy)) * uGl.z * rf * (1.0 - cover);
+  }
   float up = -g.y, lit = max(0.0, up) * 2.4 + pow(max(0.0, up * 16.0 - 0.6), 3.0) * 0.2; // crests catch the sky
   float dark = clamp(g.y * 3.0, 0.0, 0.45); // and the backs of the waves are darker
   gl_FragColor = vec4(add + near.rgb + vec3(0.84, 0.8, 1.0) * lit * rf * 0.3, near.a + dark * (1.0 - near.a));
@@ -87,7 +106,7 @@ export function glLake(canvas) {
         if (n === "uRings") gl.uniform4fv(u("uRings"), x);
         else if (n === "uN") gl.uniform1i(u(n), x);
         else if (typeof x === "number") gl.uniform1f(u(n), x);
-        else (x.length === 2 ? gl.uniform2fv : gl.uniform4fv).call(gl, u(n), x);
+        else [, , gl.uniform2fv, gl.uniform3fv, gl.uniform4fv][x.length].call(gl, u(n), x);
       }
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     },

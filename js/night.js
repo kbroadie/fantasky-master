@@ -1,5 +1,5 @@
-// Fantasy Land's night sky, behind everything (two of Moss's background effects): a field of stars with now and then a
-// comet crossing it, and an aurora, its curtains folding slowly, green low and pink-red high with a violet fringe along
+// Fantasy Land's night sky, behind everything (two of Moss's background effects): a field of stars (the comet is the
+// house's sky's, halo.js), and an aurora, its curtains folding slowly, green low and pink-red high with a violet fringe along
 // their feet, hanging low enough over the lake to be mirrored in it. Each on its own fixed canvas, under the fall. Shared
 // by stream-worker.js (which also hands them to the lake to mirror) and flip.js's fallback; no DOM.
 
@@ -54,8 +54,7 @@ function aurora(canvas) {
   };
 }
 
-// The stars, drawn once (most faint and small, a few bright with a soft glow, white, blue-white or warm), and a comet:
-// a bright head with a long tail fading behind it, crossing part of the sky over a few seconds
+// The stars, drawn once (most faint and small, a few bright with a soft glow, white, blue-white or warm)
 function starField(w, h, k) {
   const c = typeof OffscreenCanvas === "function" ? new OffscreenCanvas(Math.round(w * k), Math.round(h * k)) : Object.assign(document.createElement("canvas"), { width: Math.round(w * k), height: Math.round(h * k) });
   const x = c.getContext("2d"), tints = ["255,255,255", "205,222,255", "255,236,214", "232,226,255"];
@@ -69,53 +68,25 @@ function starField(w, h, k) {
   }
   return c;
 }
-function comet(w, h) {
-  const dx = (Math.random() < 0.5 ? 1 : -1) * (0.85 + Math.random() * 0.15), dy = 0.15 + Math.random() * 0.4, n = Math.hypot(dx, dy); // mostly across, a little down
-  return { x: Math.random() * w, y: Math.random() * h * 0.6, dx: dx / n, dy: dy / n, v: 40 + Math.random() * 50, len: 70 + Math.random() * 90, life: 3 + Math.random() * 2.5, t: 0 };
-}
-function drawComet(x, c) {
-  const f = Math.min(1, c.t / 0.6, (c.life - c.t) / 0.8), hx = c.x + c.dx * c.v * c.t, hy = c.y + c.dy * c.v * c.t;
-  const tx = hx - c.dx * c.len, ty = hy - c.dy * c.len;
-  const tail = x.createLinearGradient(hx, hy, tx, ty);
-  tail.addColorStop(0, `rgba(225,240,255,${0.85 * f})`); tail.addColorStop(0.25, `rgba(170,215,255,${0.4 * f})`); tail.addColorStop(1, "rgba(150,200,255,0)");
-  x.lineCap = "round";
-  x.strokeStyle = tail; x.lineWidth = 3.2; x.globalAlpha = 0.35; x.beginPath(); x.moveTo(hx, hy); x.lineTo(tx, ty); x.stroke();
-  x.globalAlpha = 1; x.lineWidth = 1.1; x.stroke();
-  const head = x.createRadialGradient(hx, hy, 0, hx, hy, 5);
-  head.addColorStop(0, `rgba(255,255,255,${f})`); head.addColorStop(0.3, `rgba(200,230,255,${0.5 * f})`); head.addColorStop(1, "rgba(160,210,255,0)");
-  x.fillStyle = head; x.fillRect(hx - 5, hy - 5, 10, 10);
-}
-
 // start(o): o.w and o.h (the screen, CSS px), o.dpr (the stars' pixels per CSS px), o.res (the aurora's), o.fps, o.reduced
-// (one still frame), and which are on: o.stars (o.comets a minute) and o.aurora (o.bright, o.speed); stop(). on() says
+// (one still frame), and which are on: o.stars and o.aurora (o.bright, o.speed); stop(). on() says
 // which are drawn now, for the lake to mirror
 export function night(starsC, auroraC) {
   const sx = starsC.getContext("2d");
   const glDraw = aurora(auroraC);
   const raf = globalThis.requestAnimationFrame ? (f) => requestAnimationFrame(f) : (f) => setTimeout(() => f(performance.now()), 16);
   const unraf = globalThis.cancelAnimationFrame ?? clearTimeout;
-  let o = null, field = null, id = 0, last = 0, t = 0, next = 0, flying = null, idle = true;
-  const wait = () => (60 / Math.max(0.1, o.comets)) * (0.5 + Math.random()); // seconds to the next comet
-  function stars(fresh) {
-    if (!o?.stars) return;
-    if (!fresh && !flying && idle) return; // the field is still: drawn once
+  let o = null, id = 0, last = 0, t = 0;
+  // The field is still: drawn once
+  function stars() {
     sx.setTransform(1, 0, 0, 1, 0, 0); sx.clearRect(0, 0, starsC.width, starsC.height);
-    sx.drawImage(field, 0, 0);
-    sx.setTransform(o.dpr, 0, 0, o.dpr, 0, 0);
-    if (flying) drawComet(sx, flying);
-    idle = !flying;
+    sx.drawImage(starField(o.w, o.h, o.dpr), 0, 0);
   }
   function step(now) {
     id = raf(step);
     if (last && now - last < 1000 / o.fps - 3) return;
     const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
     last = now; t += dt * o.speed;
-    if (o.stars && o.comets > 0) {
-      next -= dt;
-      if (!flying && next <= 0) { flying = comet(o.w, o.h); next = wait(); }
-      if (flying && (flying.t += dt) >= flying.life) flying = null;
-    }
-    stars(false);
     if (o.aurora && glDraw) glDraw(o.w, o.h, 40 + t, o.bright);
   }
   return {
@@ -124,13 +95,12 @@ export function night(starsC, auroraC) {
       o = opts;
       starsC.width = o.stars ? Math.round(o.w * o.dpr) : 1; starsC.height = o.stars ? Math.round(o.h * o.dpr) : 1;
       auroraC.width = o.aurora ? Math.max(1, Math.round(o.w * o.res)) : 1; auroraC.height = o.aurora ? Math.max(1, Math.round(o.h * o.res)) : 1;
-      if (o.stars) { field = starField(o.w, o.h, o.dpr); stars(true); }
+      if (o.stars) stars();
       if (o.aurora && glDraw) glDraw(o.w, o.h, 40 + t, o.bright);
-      next = 2 + Math.random() * 4; // the first comet soon, then now and then
-      // Still: as it is; moving only if the aurora's on or comets come
-      if (!o.reduced && (o.aurora || (o.stars && o.comets > 0))) { last = 0; id = raf(step); }
+      // Still: as it is; moving only if the aurora's on
+      if (!o.reduced && o.aurora) { last = 0; id = raf(step); }
     },
-    stop() { unraf(id); id = 0; flying = null; o = null; },
+    stop() { unraf(id); id = 0; o = null; },
     on: () => ({ stars: !!o?.stars, aurora: !!(o?.aurora && glDraw) }),
   };
 }

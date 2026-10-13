@@ -9,9 +9,8 @@ const CHROMIUM = !!navigator.userAgentData?.brands?.some((b) => b.brand === "Chr
 export const CARDS = [
   // Fantasy Land's switch in its head (not a setting: it switches the view), and how the view changes (flip.js)
   { title: "Fantasy Land", fz: true,
-    items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["blur", "Blur"],
-      ["lens", "Lens"], ["flare", "Flare"], ["swirl", "Swirl"], ["slow", "Slow"], ["flash", "Flash"], ["grade", "Grade"],
-      ["zoom", "Zoom"], ["roll", "Roll"], ["tilt", "Tilt"], ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
+    items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["grade", "Grade"],
+      ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
   { title: "Frame rate",
     items: [{ key: "fps", type: "toggle", def: false, main: true }] },
   // The effects step their quality to what this device keeps up with (tune.js)
@@ -28,8 +27,7 @@ export const CARDS = [
       { key: "fallBright", type: "range", label: "Brightness", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
       { key: "fallSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 2, step: 0.25, unit: "×" },
     ] },
-  // The night sky behind it (night.js): an aurora, at its lowest quality to begin with, and a field of stars that a comet
-  // crosses now and then (comets a minute; still but for them)
+  // The night sky behind it (night.js): an aurora, at its lowest quality to begin with, and a still field of stars
   { title: "Aurora", view: "fz",
     items: [
       { key: "aurora", type: "toggle", def: false, main: true, cls: "no-aurora" },
@@ -39,10 +37,7 @@ export const CARDS = [
       { key: "auroraSpeed", type: "range", label: "Speed", def: 1, min: 0.25, max: 3, step: 0.25, unit: "×" },
     ] },
   { title: "Stars", view: "fz",
-    items: [
-      { key: "stars", type: "toggle", def: false, main: true, cls: "no-stars" },
-      { key: "comets", type: "range", label: "Comets", def: 2, min: 0, max: 10, step: 1, unit: "/min" },
-    ] },
+    items: [{ key: "stars", type: "toggle", def: false, main: true, cls: "no-stars" }] },
   // The rest of its motion: the sparkles' twinkle, the glint on Fantasy and the sliding tab rainbow. Off, all there, still
   { title: "Decorations", view: "fz",
     items: [{ key: "fzDeco", type: "toggle", def: false, main: true, cls: "no-deco" }] },

@@ -14,6 +14,7 @@ import { PR, latestPR, revSay, reloadFresh } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
 import { initFlip, toggleFantasy, scene } from "./flip.js";
 import { streamer } from "./stream.js";
+import { drawSky, degPx, sunSky, cometSky } from "./halo.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -186,6 +187,7 @@ function redraw() {
     jump(SWIPER[state.page], SWIPER[state.page].get());
   }
   writeHash();
+  celestial(); // each footer shows them as it does
 }
 const feet = () => [$("#dq"), $(".fz-foot"), $("#foot")];
 // Includes top margins, so a short page ends exactly at the screen's edge
@@ -193,7 +195,7 @@ const feetH = () => feet().reduce((h, el) => h + (el?.offsetHeight ? el.offsetHe
 // Swiper height = its slide's, leaving room for the footer. Mid-swipe it takes the taller slide and the footer parts move between both places (measured once per pair). Moved by a scroll-driven `lift` animation where supported, else per-frame translate. Per-part translate: a custom property would restyle every SVG <use>.
 const SDA = CSS.supports("animation-timeline: scroll()");
 const PEEK_DIM = 0.5; // the sky's opacity while it peeks (peek-dim in styles.css)
-const lifted = [$("#dq"), $("#foot"), $(".fz-bow"), $(".fz-waves")].filter(Boolean); // cached: a class lookup per frame was the main cost
+const lifted = [$("#dq"), $("#foot"), $(".fz-waves")].filter(Boolean); // cached: a class lookup per frame was the main cost
 let pair = null;
 function lift(p, t) {
   if (!p) { for (const el of lifted) { el.style.translate = ""; el.style.animationName = ""; } document.body.classList.remove("lifting"); peek(); return; }
@@ -483,7 +485,7 @@ $("#series").addEventListener("click", () => {
   show(state.page);
 });
 
-// Where a tap landed: the transitions open from it (Iris's circle, Zoom's and Vertigo's centre); none from a keyboard
+// Where a tap landed: the transitions open from it (Iris's circle, Vertigo's centre); none from a keyboard
 const tapAt = (e) => (e.detail ? { x: e.clientX, y: e.clientY } : null);
 $("#dq").addEventListener("click", (e) => { if (e.target.closest(".embrace")) toggleFantasy("#dq", tapAt(e)); });
 // Patatas pressed: held while the finger is down and a moment after, so a quick tap shows it (iOS shows :active only
@@ -854,16 +856,17 @@ function waterOn() {
   if (!a.width || !state.fantasy || document.hidden) return;
   if (!water) waterSend("stop"); // set up first: here, without a worker, it's drawn still (moving, it took the main thread)
   waterSend("geom", { W: a.width, H: a.height, LH: $(".fz-lake").getBoundingClientRect().height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: m.bottom - a.top, cx: a.width / 2, cy: a.height - 4,
-    rock: { x: m.left - a.left, y: m.top - a.top, w: m.width, h: m.height }, res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
+    rock: { x: m.left - a.left, y: m.top - a.top, w: m.width, h: m.height }, deg: degPx(innerWidth, innerHeight), res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
   sendRock();
   waterSend("start");
   lakeViewSoon();
+  if (skyMsg) water("sky", skyMsg); else celestial();
 }
 const waterOff = () => water?.("stop");
 let waterSeen = false;
 new IntersectionObserver((es) => { waterSeen = es.at(-1).isIntersecting; waterSeen ? waterOn() : waterOff(); }).observe($(".fz-waves"));
 document.addEventListener("visibilitychange", () => (document.hidden ? waterOff() : waterSeen && waterOn()));
-addEventListener("resize", () => { if (waterSeen) waterOn(); });
+addEventListener("resize", () => { if (waterSeen) waterOn(); else celestial(); });
 onSwitch(["fzSea"], () => { if (waterSeen) { waterOff(); waterOn(); } });
 const mer = $(".fz-mer");
 let merAt = null, merT = 0, merOff = 0;
@@ -898,6 +901,57 @@ function showDay() {
   light = { t: day ? sun : moon, sun: day, at, height: day ? 55 * Math.sin(Math.PI * sun) : -40 * Math.sin(Math.PI * moon) };
   airMoon();
   shade();
+  celestial();
+}
+// The sky's optics and the comet (halo.js), the same in both footers: drawn behind the house each minute, their light
+// added; in the normal view each as the time of day lets it show (the sun's halos while it's up, the moon's by its light
+// once it's dark, the comet after nautical twilight), in Fantasy Land's dark sky always. And for its lake, the sky just
+// above the horizon, mirrored, with the sun or the moon in it, and where their glitter path falls
+let skyC = null, skyBand = null, skyMsg = null; // the lake's sky, kept to hand over again as the lake comes back into view
+function celestial() {
+  const house = $("#foot .house");
+  if (!house || !light) return;
+  skyC ??= house.querySelector(".sky-c");
+  const hr = house.getBoundingClientRect(), u = hr.width / 390, W = $("#foot").clientWidth, left = (W - hr.width) / 2;
+  const deg = degPx(innerWidth, innerHeight), fz = state.fantasy;
+  // Only as tall as what's drawn reaches: the 46° halo (and the arc 46° above a low sun) round whichever is up, or the comet
+  const upY = (69 - (light.sun ? light.at.sun : light.at.moon)[1]) * u, cs = cometSky(new Date(), hourOf(get("houseTime")));
+  const Hc = Math.ceil(Math.max(upY + 50 * deg, cs ? (cs.elev + 6) * deg : 0));
+  skyC.style.height = `${Hc}px`;
+  const place = ([x, y]) => ({ x: left + x * u, y: Hc - (69 - y) * u }), dark = (from) => (fz ? 1 : Math.max(0, Math.min(1, (-light.height - from) / 6)));
+  const sunUp = light.sun, bright = moonLit ** 3; // a quarter moon gives about a tenth of a full one's light
+  const sun = sunUp ? { ...place(light.at.sun), elev: light.height, show: 1 } : null;
+  const moon = !sunUp ? { ...place(light.at.moon), elev: 55 * Math.sin(Math.PI * light.t), show: 0.45 * Math.sqrt(bright) * dark(4) } : null;
+  const h = hourOf(get("houseTime"));
+  let comet = null;
+  if (cs) {
+    const sp = sunUp ? place(light.at.sun) : { x: sunSky(h).x * W, y: Hc - sunSky(h).elev * deg }, x = cs.x * W, y = Hc - cs.elev * deg;
+    const n = Math.hypot(x - sp.x, y - sp.y) || 1;
+    comet = { x, y, tx: (x - sp.x) / n, ty: (y - sp.y) / n, show: 0.9 * cs.b * dark(6) };
+  }
+  drawSky(skyC, { w: W, h: Hc, k: 1, deg, sun, moon, comet }); // soft light: a pixel a CSS px is plenty
+  // Fantasy Land's lake mirrors it: the sky's foot, flipped, with the disc of whichever is up
+  skyMsg = null;
+  if (!fz || !water || !waterSeen) return;
+  const lake = $(".fz-lake"), lr = lake.getBoundingClientRect(), LH = lr.height, M = 4, k = Math.min(2, devicePixelRatio || 1);
+  if (!LH) return;
+  const lx = lr.left - skyC.getBoundingClientRect().left;
+  skyBand ??= document.createElement("canvas");
+  skyBand.width = Math.round((lr.width + 2 * M) * k); skyBand.height = Math.round((LH + 4) * k);
+  const b = skyBand.getContext("2d");
+  b.setTransform(k, 0, 0, -k, (M - lx) * k, Hc * k);
+  b.drawImage(skyC, 0, 0, skyC.width, skyC.height, 0, 0, W, Hc);
+  const up = sun ?? moon, d = place(sunUp ? light.at.sun : light.at.moon), r = 9 * u;
+  if (sunUp) { b.fillStyle = "rgb(255,250,236)"; b.beginPath(); b.arc(d.x, d.y, r, 0, Math.PI * 2); b.fill(); }
+  else {
+    const lit = house.querySelector(".moon .lit"), rot = +(lit.getAttribute("transform") || "").replace(/[^-\d.]/g, "") || 0;
+    b.save(); b.translate(d.x, d.y); b.scale(u, u);
+    b.fillStyle = "rgba(150,160,190,.18)"; b.beginPath(); b.arc(0, 0, 9, 0, Math.PI * 2); b.fill();
+    b.rotate((rot * Math.PI) / 180); b.fillStyle = "rgb(236,236,228)"; b.fill(new Path2D(lit.getAttribute("d") || "")); b.restore();
+  }
+  const low = sunUp && light.height < 12;
+  const gl = { x: d.x - lx, h: Hc - d.y, b: sunUp ? 2.2 : 1.4 * Math.sqrt(bright), r: 1.6, col: sunUp ? (low ? [1, 0.75, 0.5] : [1, 0.96, 0.88]) : [0.85, 0.88, 1] };
+  createImageBitmap(skyBand).then((bmp) => { skyMsg = { bmp, gl: up ? gl : null }; water?.("sky", skyMsg); }).catch(() => {});
 }
 // The sun's and moon's path across the sky (the drawing's units: the house's tops at y 15 to 53, the footer's top at 0),
 // through the clear sky: rising at the left over the garage and the conifer's shoulder, under Patatas's name plate
@@ -1050,6 +1104,7 @@ function airMoon() {
   el.setAttribute("transform", `rotate(${m.edge.toFixed(1)})`);
   moonLit = m.lit;
   shade();
+  celestial();
 }
 setInterval(showDay, 60000);
 onSwitch(["houseTime"], showDay);
