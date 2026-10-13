@@ -1152,6 +1152,7 @@ html.fz .fz-bow {
    together toward the horizon (img/lake.svg) and a thin glow along the horizon. Still: only the stream splashes and
    rings it, and only the stream moves what floats on it */
 .fz-lake { position: absolute; left: 0; right: 0; bottom: 0; height: calc(67 * min(390px, 100cqw) / 390); overflow: hidden;
+  isolation: isolate; /* its horizon glow over the bow's reflection, but behind Alex's rock (on request) */
   background: url("img/lake.svg") 0 0 / 400px 100% repeat-x, linear-gradient(#3d6f9c, #1a4470 22%, #0d2a4c 55%, #06162b); }
 .fz-lake::before { content: ""; position: absolute; z-index: 1; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(150, 240, 255, .5) 20%, rgba(190, 250, 255, .7) 50%, rgba(150, 240, 255, .5) 80%, transparent); filter: blur(1px); }
 /* The rainbow mirrored in it, about the horizon (on request: "Reflections don't squash. They're mirror images
