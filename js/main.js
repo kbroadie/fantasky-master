@@ -12,7 +12,7 @@ import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay, reloadFresh } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, toggleFantasy, moduleWorkers } from "./flip.js";
+import { initFlip, toggleFantasy, scene } from "./flip.js";
 import { streamer } from "./stream.js";
 
 const PAGES = ["standings", "episodes", "cast"];
@@ -809,25 +809,36 @@ const footSeen = new IntersectionObserver((es) => {
   $("#foot").classList.toggle("run", e.isIntersecting);
 });
 footSeen.observe($(".fz-waves"));
-// The lake and Alex's stream (stream.js): drawn in a worker that owns their canvases where it can be, else here, still;
-// only while the footer's on screen and the page is showing. Pressing him pumps it up: its pressure rises while he's
-// held, for a moment at least on a tap, and falls when he's let go or the press turns into a scroll or swipe
+// The lake and Alex's stream (stream.js): drawn in the scene's worker (flip.js) on canvases it's handed, where it can
+// be, else here, still; only while the footer's on screen and the page is showing. Pressing him pumps it up: its
+// pressure rises while he's held, for a moment at least on a tap, and falls when he's let go or the press turns into a
+// scroll or swipe
 let water = null, waterWorker = false;
 function waterSend(type, arg) {
   if (!water) {
-    const c = $(".mr-water"), l = $(".lake-c");
-    if (moduleWorkers && "transferControlToOffscreen" in c) {
-      try {
-        const w = new Worker(new URL("./stream-worker.js", import.meta.url), { type: "module" }), jet = c.transferControlToOffscreen(), lake = l.transferControlToOffscreen();
-        w.postMessage({ type: "init", jet, lake }, [jet, lake]);
-        water = (t, a) => w.postMessage({ type: t, arg: a });
-        waterWorker = true;
-      } catch {}
-    }
-    if (!water) { const s = streamer(c, l); water = (t, a) => s[t](a); }
+    const c = $(".mr-water"), l = $(".lake-c"), w = scene();
+    if (w) {
+      const jet = c.transferControlToOffscreen(), lake = l.transferControlToOffscreen();
+      w.postMessage({ to: "water", type: "init", jet, lake }, [jet, lake]);
+      water = (t, a) => w.postMessage({ to: "water", type: t, arg: a });
+      waterWorker = true;
+    } else { const s = streamer(c, l); water = (t, a) => s[t](a); }
   }
   water(type, arg);
 }
+// Where the lake is on the screen, for it to mirror the background effects above it (fixed to the screen): told as the
+// page scrolls, once a frame at most, while it's on screen and there are any
+let viewing = 0;
+function lakeView() {
+  viewing = 0;
+  const w = waterWorker && scene();
+  if (!w || !waterSeen || !state.fantasy || !(get("fall") || get("stars") || get("aurora"))) return;
+  const r = $(".fz-lake").getBoundingClientRect();
+  w.postMessage({ to: "view", arg: { top: r.top, left: r.left, vw: document.documentElement.clientWidth, vh: innerHeight } });
+}
+const lakeViewSoon = () => { if (!viewing && state.fantasy && waterSeen) viewing = requestAnimationFrame(lakeView); };
+addEventListener("scroll", lakeViewSoon, { passive: true });
+onSwitch(["fall", "stars", "aurora"], lakeViewSoon);
 // His picture, for his reflection: handed over once it's loaded (a bitmap to the worker)
 let rockSent = false;
 function sendRock() {
@@ -846,6 +857,7 @@ function waterOn() {
     rock: { x: m.left - a.left, y: m.top - a.top, w: m.width, h: m.height }, res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
   sendRock();
   waterSend("start");
+  lakeViewSoon();
 }
 const waterOff = () => water?.("stop");
 let waterSeen = false;
@@ -1114,7 +1126,7 @@ try {
   try { welcome = !localStorage.getItem("fm-welcome"); } catch {}
   $("#welcome").innerHTML = welcomeCard();
   $("#welcome").hidden = !welcome;
-  initFlip({ redraw, later });
+  initFlip({ redraw, later, sky: lakeViewSoon });
   const h = readHash();
   loadSeries(h.key);
   applyArg(h.page, h.arg);

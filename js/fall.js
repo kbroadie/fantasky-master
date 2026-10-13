@@ -1,4 +1,4 @@
-// The fantasy fall: rainbow streaks and motes rushing up, with stick figures and emoji. Shared by fall-worker.js and flip.js's fallback; no DOM.
+// The fantasy fall: rainbow streaks and motes rushing up, with stick figures and emoji. Shared by the scene's worker (stream-worker.js) and flip.js's fallback; no DOM.
 
 const DEPTHS = [
   { n: 46, v: 55, len: [3, 6], w: 1, a: 0.5 },
