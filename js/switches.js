@@ -42,9 +42,9 @@ export const CARDS = [
     ] },
   { title: "Scoring cards",
     items: [{ key: "howLight", type: "toggle", def: false, main: true, cls: "no-howlight" }] },
-  // The cards that change the footer's scene, last. The footers: Fantasy Land's rolling sea, the ducks bobbing on it and the
-  // leaping dolphins; upright, the house's lights coming up on show days and its chimney's smoke. Off, still (the dolphins
-  // hidden, the house lit at once)
+  // The cards that change the footer's scene, last. The footers: Fantasy Land's lake, Alex's stream moving and pushing the
+  // ducks and pineapples about; upright, the house's lights coming up on show days and its chimney's smoke. Off, still (the
+  // stream drawn still, the house lit at once)
   { title: "Footer",
     items: [{ key: "fzSea", type: "toggle", def: true, main: true, cls: "no-sea" }] },
   // The house's scene at a chosen time, or by the device's clock (main.js); the normal view only, where it is. A time: a

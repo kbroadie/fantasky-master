@@ -1,16 +1,31 @@
 // Alex's stream in Fantasy Land's footer: water from his chest funnel, a solid jet that breaks up into droplets,
 // splashing and ringing the lake where it lands, all of it mirrored in the lake. Its pressure rises while he's pressed
 // (main.js) and the arc rises and reaches with it, at its fullest the circle round the rainbow's centre, as the rainbow
-// above. Each drop keeps the arc it left on, so a change runs out along the stream. Shared by stream-worker.js and
+// above. Each drop keeps the arc it left on, so a change runs out along the stream. Where it lands it pushes what floats
+// (the ducks, the pineapples) away from it and on, and they knock into each other and off Alex's rock, slowed by the
+// water and paddling slowly home; their places are sent out (main.js moves them). Shared by stream-worker.js and
 // main.js's fallback; no DOM.
 
 const FPS = 30; // the footer's other motion is the compositor's; this is drawn, so at a pace a 60 or 120Hz screen divides
 const RATE = 230; // drops a second
 const UP = 2.2, DOWN = 1.5; // how fast the pressure rises while pressed, and falls when let go (a second)
+// What floats, on the lake's plane: across in px, and back from the near edge in units of 2.5 a px up the screen (it's
+// seen from low down, so depth is foreshortened)
+const Z = 2.5, NEAR = 18; // px up from the foot where the plane's depth 0 is
+// The stream's push where it lands (px/s², at its middle, the drops' share of it, more as they come faster when he's
+// pressed), and how far it reaches past a body's edge
+const PUSH = 420, REACH = 14;
+// The water's drag (a second), the pull home (overdamped, so they paddle slowly home and come to rest), and how much a
+// knock gives back
+const DRAG = 3, HOME = 0.4, BOUNCE = 0.45;
+// Moving them costs the page a frame's style and paint, so their places go out at most 15 times a second (the page
+// glides between them), only when one has moved enough to see, and not at all once they're still
+const SEND = 1 / 15, SEE = 0.2;
 
-export function streamer(canvas) {
+export function streamer(canvas, send = () => {}) {
   const x = canvas.getContext("2d");
   let g = null, k = 1, p = 0, want = 0, drops = [], bits = [], rings = [], id = 0, last = 0, owed = 0, still = false;
+  let bodies = [], hits = [], sent = null, since = 0;
   const ease = (t) => t * t * (3 - 2 * t);
   // The arc at a pressure (0 to 1) at s along it (0 at the spout, 1 at the water): from the resting curve (a parabola over
   // the ducks) toward the rainbow's circle, round its centre through the spout, down to the water on the far side
@@ -32,6 +47,7 @@ export function streamer(canvas) {
     }
   }
   function splash(px, t) {
+    hits.push(px);
     for (let i = 0; i < 2; i++) bits.push({ x: px, y: g.wy - 1, vx: (Math.random() - 0.5) * 50, vy: -(25 + Math.random() * 55), t0: t });
     if (Math.random() < 0.35) rings.push({ x: px, t0: t });
   }
@@ -101,11 +117,64 @@ export function streamer(canvas) {
       return true;
     });
   }
+  // The floating things for a moment: pushed where the stream lands, slowed by the water, pulled home, knocked about
+  function float(dt, quiet) {
+    if (!bodies.length) return;
+    const zw = (g.H - g.wy - NEAR) * Z;
+    for (const b of bodies) b.px = b.pz = 0;
+    for (const px of hits) for (const b of bodies) {
+      const dx = b.x - px, dz = b.z - zw, d = Math.hypot(dx, dz), reach = REACH + b.r;
+      if (d >= reach) continue;
+      const f = (PUSH * (1 + 1.5 * ease(p)) * (1 - d / reach)) / b.m / RATE, nx = d ? dx / d : 0, nz = d ? dz / d : 0;
+      // Out from where it lands, and on with the water past it; pressed, the water's rush carries all it hits on with it
+      // (at rest only past it, or what sits on Alex's side is dragged through and pushed back for ever)
+      const on = 0.8 * Math.max(Math.min(1, 0.5 - dx / 8), Math.min(1, 3 * ease(p)), 0);
+      let ux = nx * 0.6 - on, uz = nz * 0.6; const n = Math.hypot(ux, uz) || 1; ux /= n; uz /= n;
+      b.px += ux * f; b.pz += uz * f;
+    }
+    hits = [];
+    // The push smoothed a little, as the water's flow, so a steady stream holds them still
+    const slow = Math.exp(-DRAG * dt), sm = Math.min(1, dt / 0.1);
+    for (const b of bodies) {
+      b.fx += (b.px / dt - b.fx) * sm; b.fz += (b.pz / dt - b.fz) * sm;
+      b.vx = (b.vx + (b.fx - HOME * (b.x - b.hx)) * dt) * slow; b.vz = (b.vz + (b.fz - HOME * (b.z - b.hz)) * dt) * slow;
+      b.x += b.vx * dt; b.z += b.vz * dt;
+      if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * BOUNCE; } else if (b.x > g.W - b.r) { b.x = g.W - b.r; b.vx = -Math.abs(b.vx) * BOUNCE; }
+      if (b.z < 0) { b.z = 0; b.vz = Math.abs(b.vz) * BOUNCE; } else if (b.z > 70) { b.z = 70; b.vz = -Math.abs(b.vz) * BOUNCE; }
+      const rk = g.rock; // Alex's rock, its foot in the water a little back from where it meets it
+      if (rk) { const dx = b.x - rk.x, dz = b.z - rk.z, d = Math.hypot(dx, dz), m = rk.r + b.r; if (d < m && d) { b.x = rk.x + (dx / d) * m; b.z = rk.z + (dz / d) * m; const vn = (b.vx * dx + b.vz * dz) / d; if (vn < 0) { b.vx -= (1 + BOUNCE) * vn * dx / d; b.vz -= (1 + BOUNCE) * vn * dz / d; } } }
+    }
+    for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++) {
+      const a = bodies[i], b = bodies[j], dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz), m = a.r + b.r;
+      if (d >= m || !d) continue;
+      const nx = dx / d, nz = dz / d, over = m - d, wa = b.m / (a.m + b.m), wb = a.m / (a.m + b.m);
+      a.x -= nx * over * wa; a.z -= nz * over * wa; b.x += nx * over * wb; b.z += nz * over * wb;
+      const vn = (b.vx - a.vx) * nx + (b.vz - a.vz) * nz;
+      if (vn < 0) { const jn = (-(1 + BOUNCE) * vn) / (1 / a.m + 1 / b.m); a.vx -= (jn / a.m) * nx; a.vz -= (jn / a.m) * nz; b.vx += (jn / b.m) * nx; b.vz += (jn / b.m) * nz; }
+    }
+    if (!quiet) report(dt);
+  }
+  // Their places off home (px across, px down the screen) and a tilt as they're pushed, to a tenth of a px
+  function report(dt) {
+    since += dt;
+    if (sent && since < SEND - 1e-3) return;
+    const out = new Float32Array(bodies.length * 3), r10 = (v) => Math.round(v * 10) / 10;
+    let moved = !sent;
+    bodies.forEach((b, i) => {
+      out[i * 3] = r10(b.x - b.hx); out[i * 3 + 1] = r10(-(b.z - b.hz) / Z); out[i * 3 + 2] = Math.round(Math.max(-14, Math.min(14, b.vx * 0.35)) * 2) / 2;
+      if (sent) for (let c = 0; c < 3; c++) if (Math.abs(out[i * 3 + c] - sent[i * 3 + c]) >= (c === 2 ? 0.5 : SEE)) moved = true;
+    });
+    if (moved) { sent = out; since = 0; send({ type: "bodies", a: out }); }
+  }
+  // The stream already flowing at t: n drops spread along its way
+  function prime(t, n) {
+    drops = []; bits = []; rings = [];
+    for (let i = 0; i < n; i++) { emit(t, 1); drops.at(-1).t0 = t - Math.random() * drops.at(-1).T * 0.98; }
+  }
   // Still: the stream drawn once along its arc, its drops where they'd be
   function stillFrame() {
-    drops = []; bits = []; rings = [];
     const t = 10;
-    for (let i = 0; i < 60; i++) { emit(t, 1); drops.at(-1).t0 = t - Math.random() * drops.at(-1).T * 0.98; }
+    prime(t, 60);
     draw(t);
     bits = []; rings = [];
   }
@@ -122,6 +191,7 @@ export function streamer(canvas) {
     const t = now / 1000;
     emit(t, n);
     draw(t);
+    float(dt);
   }
   return {
     // The canvas's size and the places in it (CSS px): the spout, the water, the rainbow's centre
@@ -135,11 +205,27 @@ export function streamer(canvas) {
       const wd = Math.round(g.wy * k);
       g.fade = x.createLinearGradient(0, wd, 0, wd + 40 * k);
       g.fade.addColorStop(0, "rgba(0,0,0,0)"); g.fade.addColorStop(1, "rgba(0,0,0,1)");
+      // What floats: at home where it's placed, keeping how far it's been pushed off
+      const old = bodies;
+      bodies = (m.bodies ?? []).map((b, i) => {
+        const hz = (b.b - NEAR) * Z, o = old.length === m.bodies.length ? old[i] : null;
+        return { hx: b.x, hz, x: b.x + (o ? o.x - o.hx : 0), z: hz + (o ? o.z - o.hz : 0), vx: o?.vx ?? 0, vz: o?.vz ?? 0, fx: o?.fx ?? 0, fz: o?.fz ?? 0, r: b.r, m: b.m };
+      });
+      if (g.rock) g.rock.z = (g.H - g.wy - NEAR) * Z + 30;
+      // New, they've been sitting in the resting stream all along: settled where it holds them before they're shown,
+      // so nothing moves (and costs the page) as they're first seen
+      if (!old.length && bodies.length) {
+        const rx = at(0, 1)[0];
+        for (let i = 0, n = 0; i < 600; i++) { for (n += RATE / FPS; n >= 1; n--) hits.push(rx); float(1 / FPS, true); }
+        for (const b of bodies) b.vx = b.vz = 0;
+      }
+      sent = null;
       still = m.still;
-      if (still) stillFrame();
+      if (still) { hits = []; stillFrame(); report(0); }
     },
     press(on) { want = on ? 1 : 0; if (still) { p = want; stillFrame(); } },
-    start() { if (!still && !id && g) { last = 0; id = raf(step); } },
+    // Flowing as it's shown (not reaching the water a second later, nor landing all that was in the air when it stopped)
+    start() { if (!still && !id && g) { last = 0; prime(performance.now() / 1000, Math.round(RATE * span(ease(p)))); id = raf(step); } },
     stop() { unraf(id); id = 0; },
   };
 }
