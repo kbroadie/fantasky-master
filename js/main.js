@@ -191,6 +191,7 @@ const feet = () => [$("#dq"), $(".fz-foot"), $("#foot")];
 const feetH = () => feet().reduce((h, el) => h + (el?.offsetHeight ? el.offsetHeight + (parseFloat(getComputedStyle(el).marginTop) || 0) : 0), 0);
 // Swiper height = its slide's, leaving room for the footer. Mid-swipe it takes the taller slide and the footer parts move between both places (measured once per pair). Moved by a scroll-driven `lift` animation where supported, else per-frame translate. Per-part translate: a custom property would restyle every SVG <use>.
 const SDA = CSS.supports("animation-timeline: scroll()");
+const PEEK_DIM = 0.5; // the sky's opacity while it peeks (peek-dim in styles.css)
 const lifted = [$("#dq"), $("#foot"), $(".fz-bow"), $(".fz-waves")].filter(Boolean); // cached: a class lookup per frame was the main cost
 let pair = null;
 function lift(p, t) {
@@ -210,24 +211,31 @@ function lift(p, t) {
 }
 // The house's sky peeks up from the screen's bottom (on request): while Patatas's block is below the screen, the sky is held
 // where a swipe holds it (as if the block began at the screen's edge), and rises with the footer once that comes up.
-// Scroll-driven where supported, so it keeps pace with the scroll, else per frame; off while a swipe lifts the footer
-let skyEl = null, skyR = null, praf = 0;
+// Dimmed while it peeks (on request), brightening to the scene's own as Patatas's block comes up, by the time the house
+// shows. Scroll-driven where supported, so it keeps pace with the scroll, else per frame. While a swipe lifts the footer,
+// which then holds the sky, only the dimming runs, from where the page was laid out before it
+let skyEl = null, skyK = "", sky = { r: 0, h: 0 }, praf = 0;
+const pageTop = (el) => { let y = 0; for (; el; el = el.offsetParent) y += el.offsetTop; return y; }; // as laid out (no lift)
 function peek() {
   praf = 0;
-  if (!skyEl?.isConnected) { skyEl = $("#foot .house > .sky"); skyR = null; }
+  if (!skyEl?.isConnected) { skyEl = $("#foot .house > .sky"); skyK = ""; }
   if (!skyEl) return;
-  let r = -innerHeight;
-  for (let el = $("#dq"); el; el = el.offsetParent) r += el.offsetTop; // its place in the page, as laid out (no lift)
-  r = document.body.classList.contains("lifting") ? 0 : Math.max(0, Math.round(r));
-  const st = skyEl.style;
+  const lifting = document.body.classList.contains("lifting");
+  if (!lifting) { const dq = pageTop($("#dq")); sky = { r: Math.round(dq - innerHeight), h: Math.max(1, pageTop($("#foot")) - dq) }; }
+  const { r, h } = sky, st = skyEl.style, move = !lifting && r > 0, dim = r + h > 0;
   if (SDA) {
-    if (r === skyR) return;
-    skyR = r;
-    if (r) { st.setProperty("--pk", `${-r}px`); st.animationRange = `0px ${r}px`; st.animationName = "peek"; } else st.animationName = "";
+    const k = `${r} ${h} ${move}`;
+    if (k === skyK) return;
+    skyK = k;
+    st.animationName = "none"; getComputedStyle(skyEl).animationName; // restarted: Chrome keeps a running one's old range start
+    st.setProperty("--pk", `${-r}px`);
+    st.animationRange = `0px ${Math.max(1, r)}px, ${r}px ${r + h}px`;
+    st.animationName = `${move ? "peek" : "none"}, ${dim ? "peek-dim" : "none"}`;
   } else {
-    skyR = r;
-    const v = r > scrollY ? `translateY(${Math.round(scrollY - r)}px)` : "";
-    if (st.transform !== v) st.transform = v;
+    const t = move && r > scrollY ? `translateY(${Math.round(scrollY - r)}px)` : "";
+    const o = dim && scrollY < r + h ? `${Math.max(0, Math.min(1, (scrollY - r) / h)) * (1 - PEEK_DIM) + PEEK_DIM}` : "";
+    if (st.transform !== t) st.transform = t;
+    if (st.opacity !== o) st.opacity = o;
   }
 }
 const queuePeek = () => { if (!praf) praf = requestAnimationFrame(peek); };
@@ -823,6 +831,8 @@ function arcY(x) {
 // it, long and to the side when it's low and short when it's high (sx, sy: how far across and down the shadow of each unit
 // of height reaches); by the moon, as strong as it's full
 let light = null, moonLit = 0.5;
+// The sky's bands blend in a perceptual space, as light does, where supported: no grey between the blues and a sunset's rose
+const OKLAB = CSS.supports("background-image", "linear-gradient(in oklab, red, blue)") ? "in oklab " : "";
 function shade() {
   const house = $("#foot .house");
   if (!house || !light) return;
@@ -860,9 +870,13 @@ function shade() {
   const [gx] = light.at.sun, gy = 69, hi = Math.max(0, Math.min(1, light.height / 25));
   const glow = (c, a) => `color-mix(in srgb, ${c} ${(a * 100).toFixed(0)}%, transparent)`;
   const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${y(light.at.moon[1])}, ${glow("#c8d2ff", 0.18 * moonLit)}, transparent)`];
+  // Opposite the sun in twilight, the Belt of Venus over Earth's shadow; by full night, London's faint glow on the horizon
+  const belt = sky.beltA ? [`radial-gradient(${u(230)} ${u(44)} at ${x(390 - gx)} ${y(gy)}, ${glow(`color-mix(in srgb, ${sky.top} 55%, ${sky.horizon})`, sky.beltA)} 22%, ${glow(sky.belt, sky.beltA)} 48%, transparent)`] : [];
+  const city = light.height < -8 ? [`linear-gradient(to top, ${glow("#3a2c2a", 0.5 * Math.min(1, (-8 - light.height) / 8))}, transparent ${u(36)})`] : [];
   house.querySelector(".sky").style.background = [...moonGlow,
     `radial-gradient(${u(220 - 100 * hi)} ${u(60 + 20 * hi)} at ${x(gx)} ${y(gy)}, ${glow(sky.glow, sky.glowA)}, transparent)`,
-    `linear-gradient(${sky.top}, ${sky.horizon})`].join(",");
+    ...belt, ...city,
+    `linear-gradient(${OKLAB}to top, ${sky.horizon}, ${sky.low} ${u(30)}, ${sky.high} ${u(120)}, ${sky.top})`].join(",");
   house.querySelector(".ground").style.background = [
     `radial-gradient(${u(200)} ${u(30)} at ${x(gx)} 0, ${glow(sky.glow, sky.glowA * 0.3)}, transparent)`,
     "linear-gradient(var(--mc), color-mix(in srgb, var(--mc) 55%, var(--bg)))"].join(",");

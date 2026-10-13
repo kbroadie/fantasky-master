@@ -46,19 +46,23 @@ export function moonPath(lit, r) {
   return `M0 ${-r}A${r} ${r} 0 0 1 0 ${r}A${rx} ${r} 0 0 ${sweep} 0 ${-r}Z`;
 }
 
-// The sky and the scene's grade for the sun's height (degrees; below the horizon through twilight and night): the sky's
-// colour overhead and at the horizon, the glow around the sun (or where it's set), and how much of the sky's light
-// reaches the structures. Between the rows, it's interpolated
+// The sky and the scene's grade for the sun's height (degrees; below the horizon through twilight and night), from
+// photographs of real skies: the sky in bands from overhead down to the horizon (deep blue overhead by day, paling through
+// cyan to a hazy white-blue; at sunset blue over lavender over a rose horizon; in twilight the layers of blue hour), the
+// glow on the horizon under the sun, the Belt of Venus (a pink band over Earth's blue-grey shadow, opposite the sun just
+// after it sets and before it rises), and how much of the sky's light reaches the structures. Between the rows, it's
+// interpolated
 const GRADE = [
-  // height, overhead, horizon, glow, glow's strength, ambient %
-  [-18, "#020308", "#070a16", "#070a16", 0, 6],
-  [-12, "#04071a", "#111a38", "#232650", 0.35, 8],
-  [-6, "#0a1534", "#2c3362", "#8a4660", 0.7, 10],
-  [-2, "#142553", "#5b4a7c", "#e2643c", 0.9, 12],
-  [0, "#21407a", "#a46e88", "#ff8442", 1, 14],
-  [4, "#2f579a", "#dc9e86", "#ffae6a", 0.85, 16],
-  [10, "#3a6ab2", "#b6c8e0", "#ffdcaa", 0.55, 20],
-  [25, "#3a6ec4", "#a6c6ec", "#f4f6ff", 0.4, 22],
+  // height, overhead, high, low, horizon, glow, glow's strength, ambient %, belt, belt's strength
+  [-18, "#020308", "#03050d", "#050814", "#070a16", "#070a16", 0, 6, "#070a16", 0],
+  [-12, "#04071a", "#070e2a", "#0c1534", "#111a38", "#232650", 0.35, 8, "#1c1c40", 0],
+  [-6, "#0a1534", "#15254f", "#2a2d62", "#2c3362", "#8a4660", 0.7, 10, "#4a3c6c", 0.3],
+  [-2, "#142553", "#283c7c", "#6a5894", "#5b4a7c", "#e2643c", 0.9, 12, "#b07894", 0.6],
+  [0, "#21407a", "#48609e", "#b4849e", "#a46e88", "#ff8442", 1, 14, "#d898a8", 0.6],
+  [4, "#2f579a", "#5578b2", "#c6a6b6", "#dc9e86", "#ffae6a", 0.85, 16, "#e6b4b0", 0.3],
+  [10, "#3a6ab2", "#5888c8", "#92b0d8", "#b6c8e0", "#ffdcaa", 0.55, 20, "#e6b4b0", 0],
+  [25, "#3a6ec4", "#5690d6", "#86b2e4", "#a6c6ec", "#f4f6ff", 0.4, 22, "#e6b4b0", 0],
+  [45, "#2c62c4", "#4a88d8", "#80b0e8", "#a6c6ec", "#f4f6ff", 0.35, 22, "#e6b4b0", 0],
 ];
 // The sun's own colour by its height: red at the horizon, white high up
 const SUN = [[-1, "#ff5a2a"], [2, "#ff7a3a"], [6, "#ffb070"], [15, "#fff1d0"], [30, "#fffaf0"]];
@@ -74,7 +78,7 @@ function lerp(table, e) {
   });
 }
 export function skyFor(e) {
-  const h = Math.max(-18, Math.min(30, e)); // past the tables' ends, their ends
-  const [top, horizon, glow, glowA, ambK] = lerp(GRADE, h);
-  return { top, horizon, glow, glowA, ambK, sun: lerp(SUN, h)[0] };
+  const h = Math.max(-18, Math.min(45, e)); // past the tables' ends, their ends
+  const [top, high, low, horizon, glow, glowA, ambK, belt, beltA] = lerp(GRADE, h);
+  return { top, high, low, horizon, glow, glowA, ambK, belt, beltA, sun: lerp(SUN, h)[0] };
 }
