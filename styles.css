@@ -937,7 +937,6 @@ html:not(.fz) .duck { width: min(18px, 4.615cqw); height: min(14px, 3.59cqw); }
 .duck { width: 18px; height: 14px; fill: url(#dk-shade); }
 /* In the normal view the ducks take the light too, dimmer and cooler in twilight and by night (their filter, set by
    main.js); not on the sea */
-html.fz #foot .ducks, html.fz #foot .dk { filter: none !important; } /* nor the house's shadow (main.js) */
 :is(.dk.lit, .editing) .duck { fill: var(--gold3); opacity: 1; filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .dk .duck { transition: transform .15s var(--ease); }
 .dk.lit .duck { transform: scale(1.18); }
@@ -1118,7 +1117,7 @@ html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .
 html.fz body::before { background: #2a0a46; -webkit-backdrop-filter: none; backdrop-filter: none; }
 html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
 
-/* Fantasy Land's footer: a lake under the rainbow, Alex on his rock, the ducks afloat (.run while on screen) */
+/* Fantasy Land's footer: a still lake under the rainbow, Alex on his rock (.run while on screen) */
 .fz-foot { display: none; }
 /* Clips only sideways (overflow-x: clip: no scroll box, no stacking context), so the rainbow can rise behind the table */
 html.fz .fz-foot { --bow: radial-gradient(circle farthest-side at 50% 100%,
@@ -1147,31 +1146,18 @@ html.fz .fz-bow {
   -webkit-mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%);
 }
 /* The lake (on request: "the same perspective and horizon as the normal footer", calm and reflective, "more James Cameron
-   Avatar"): a flat plane from the house footer's horizon (67 units up, as its ground's top at 69 of 136) to the foot,
-   pale and bright far off where it mirrors the sky, deep blue-black near, with glowing plankton smaller and closer
-   together toward the horizon (img/lake.svg) and a thin glow along the horizon. Still: only the stream splashes and
-   rings it, and only the stream moves what floats on it */
+   Avatar"; then "look real"): a flat plane from the house footer's horizon (67 units up, as its ground's top at 69 of
+   136) to the foot, the sky's purple far off where it mirrors most, deep water near, with glowing plankton smaller and
+   closer together toward the horizon (img/lake.svg) and a faint line of the sky's light along the horizon */
 .fz-lake { position: absolute; left: 0; right: 0; bottom: 0; height: calc(67 * min(390px, 100cqw) / 390); overflow: hidden;
   isolation: isolate; /* its horizon glow over the bow's reflection, but behind Alex's rock (on request) */
-  background: url("img/lake.svg") 0 0 / 400px 100% repeat-x, linear-gradient(#3d6f9c, #1a4470 22%, #0d2a4c 55%, #06162b); }
-.fz-lake::before { content: ""; position: absolute; z-index: 1; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(150, 240, 255, .5) 20%, rgba(190, 250, 255, .7) 50%, rgba(150, 240, 255, .5) 80%, transparent); filter: blur(1px); }
-/* The rainbow mirrored in it, about the horizon (on request: "Reflections don't squash. They're mirror images
-   proportionally"): the bow as it stands, flipped about the lake's top edge at full size, so what shows is the mirror of
-   the bow's feet nearest the horizon; a little fainter */
-.fz-bow-r { position: absolute; left: -25cqw; bottom: 4px; width: 150cqw; height: 75cqw; opacity: .5; mix-blend-mode: screen;
-  transform: scaleY(-1); transform-origin: 50% calc(75cqw + 4px - 67 * min(390px, 100cqw) / 390);
-  background: var(--bow); -webkit-mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); }
-/* The scene above the water, mirrored in it about the waterline (40px up): Alex's rock, faint and fading with depth. The
-   ducks reflect themselves (below), and the stream draws its own (stream.js) */
-.fz-mirror { position: absolute; inset: 0; overflow: hidden; opacity: .42; /* clipped: flipped, it hung below the page */
-  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, .1), rgba(0, 0, 0, .35) 14px, #000 39px, transparent 41px); mask-image: linear-gradient(to top, rgba(0, 0, 0, .1), rgba(0, 0, 0, .35) 14px, #000 39px, transparent 41px); }
-.fz-flip { position: absolute; inset: 0; transform: scaleY(-1); transform-origin: 50% calc(100% - 40px); }
-.fz-mirror .mr-refl { position: absolute; left: calc(50% + 72px); bottom: 40px; width: 124px; height: auto; }
-html.fz #foot .duck { -webkit-box-reflect: below 0 linear-gradient(transparent 45%, rgba(0, 0, 0, .38)); }
-/* The stream pushes the ducks about, and they knock into each other (stream.js; main.js moves them); not to be tapped
-   here (on request) */
-html.fz #foot .dk { transform-origin: 50% calc(100% - 10px); will-change: transform; pointer-events: none; } /* tilting about where they sit; moved without a repaint */
-html:not(.fz) #foot .dk { transform: none !important; } /* pushed about only on the lake */
+  background: url("img/lake.svg") 0 0 / 400px 100% repeat-x, linear-gradient(#3b2e70, #2b2662 12%, #191d48 40%, #0c1432 70%, #070b1f); } /* the sky's purple far off, where it mirrors most, deep water near */
+.fz-lake::before { content: ""; position: absolute; z-index: 1; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(200, 190, 255, .3) 20%, rgba(214, 204, 255, .42) 50%, rgba(200, 190, 255, .3) 80%, transparent); filter: blur(1px); }
+/* What it mirrors (the rainbow about the horizon, Alex's rock and his stream about the waterline), its swell and its
+   ripples: drawn on its canvas (stream.js), under the horizon's glow */
+.lake-c { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* No ducks on the lake (on request) */
+html.fz #foot .ducks { display: none; }
 /* Alex Horne as a mermaid on his rock (on request; img/alex-rock.webp, cut from a painting the user sent, its own spray
    left out, cut off at its waterline): at the right of the footer, standing on the lake's waterline (40px up, where his
    reflection is mirrored, .fz-mirror); foam at the rock's foot. His stream is drawn on a canvas
@@ -1245,10 +1231,10 @@ html.no-fall #fz-fall, html.no-podium .fx, html.no-howlight .how-glint { display
 /* Decorations off: Fantasy Land's sparkles, glint and tab rainbow all there but still */
 html.no-deco .tab-ind::before, html.no-deco .ep-title::before, html.no-deco .ep-title::after { animation: none !important; }
 html.no-deco .fz-word::after { display: none; }
-/* Its footer off: the stream still, and nothing pushed about */
+/* Its footer off: the lake and the stream still */
 html.no-sea .fz-mer::after { animation: none !important; }
 html.no-howlight .how-card { animation: none !important; }
-/* In the dream the ducks sit on the calm lake, still */
+/* In the dream the footer is the lake's (.fz-foot) */
 html.fz #foot { position: relative; height: 0; margin: 0; }
 /* Transitions to and from Fantasy Land (flip.js, html[data-vt]; chosen on a Moss card), after film's dream sequences.
    The browser pictures the page before and after; these animate the two pictures. Every curve is an easy ease, and all
