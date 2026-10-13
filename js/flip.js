@@ -199,7 +199,7 @@ html[data-vt="slam"]::view-transition-new(vt-fx) { animation: none; }`].join("\n
   return fx;
 }
 
-// What depends on the tap: Iris's circle, and the centre Zoom and Vertigo move about. Written here, as a custom
+// What depends on the tap: Iris's circle, and the centre Vertigo moves about. Written here, as a custom
 // property on the root would restyle every duck
 const mid = (r) => (r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: innerWidth / 2, y: innerHeight / 2 });
 let stageCss = null, staged = null, slamText = null;
@@ -210,7 +210,7 @@ let stageCss = null, staged = null, slamText = null;
 let snapOff = { x: 0, y: 0 };
 const probe = document.body.appendChild(Object.assign(document.createElement("i"), { className: "vt-probe" }));
 // The transitions that write screen places (styles.css names the probe only in these)
-const PLACED = new Set(["iris", "zoom", "vertigo", "slam"]);
+const PLACED = new Set(["iris", "vertigo", "slam"]);
 function snapOffset(a) {
   const m = a?.effect.getKeyframes()[0]?.transform?.match(/matrix\(([^)]+)\)/);
   if (!m) return null;
@@ -227,7 +227,7 @@ function writeStage() {
   const R = Math.ceil(Math.hypot(Math.max(staged.x, innerWidth - staged.x), Math.max(staged.y, innerHeight - staged.y)) + Math.hypot(snapOff.x, snapOff.y));
   const small = `circle(0 at ${x}px ${y}px)`, big = `circle(${R}px at ${x}px ${y}px)`;
   stageCss.textContent = `@keyframes vt-iris { from { clip-path: ${show ? small : big}; } to { clip-path: ${show ? big : small}; } }
-:is(html[data-vt="zoom"], html[data-vt="vertigo"])::view-transition-old(root), :is(html[data-vt="zoom"], html[data-vt="vertigo"])::view-transition-new(root) { transform-origin: ${x}px ${y}px; }
+html[data-vt="vertigo"]::view-transition-old(root), html[data-vt="vertigo"]::view-transition-new(root) { transform-origin: ${x}px ${y}px; }
 ${slamText ? slamText(snapOff) : ""}`;
 }
 // Turn: each player's half on the week on show, and each Cast tab, glides from its old place to its new one
@@ -285,15 +285,15 @@ function fall() {
   } else { run = runner(c, w, h, reducedMotion, opts, fallFrames); run.start(); }
   if (!reducedMotion) watchPage();
 }
-// The night sky (night.js): the stars, with a comet now and then, and the aurora; without the worker, drawn once, still
+// The night sky (night.js): the stars and the aurora; without the worker, drawn once, still
 // (moving, they'd take the page's frames)
-const NIGHT = ["stars", "comets", "aurora", "auroraRes", "auroraFps", "auroraBright", "auroraSpeed"];
+const NIGHT = ["stars", "aurora", "auroraRes", "auroraFps", "auroraBright", "auroraSpeed"];
 function night() {
   stopNight();
   if (!get("stars") && !get("aurora")) return;
   const s = $("#fz-stars"), a = $("#fz-aurora"), w = document.documentElement.clientWidth, h = innerHeight, worker = !nightRun && scene();
   const o = { w, h, dpr: Math.min(2, devicePixelRatio || 1), res: Math.min(2, devicePixelRatio || 1) * get("auroraRes"), fps: get("auroraFps"), reduced: reducedMotion || !worker,
-    stars: get("stars"), comets: get("comets"), aurora: get("aurora"), bright: get("auroraBright"), speed: get("auroraSpeed") };
+    stars: get("stars"), aurora: get("aurora"), bright: get("auroraBright"), speed: get("auroraSpeed") };
   if (worker) {
     if (!givenNight) { givenNight = true; const so = s.transferControlToOffscreen(), ao = a.transferControlToOffscreen(); worker.postMessage({ to: "night", type: "init", stars: so, aurora: ao }, [so, ao]); }
     worker.postMessage({ to: "night", type: "start", arg: o });

@@ -789,6 +789,9 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    from the sun's height each minute, out to the screen's edges (not feathered at the sides, on request). The sky fades
    into the page above it */
 .house > .sky, .house > .ground { position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); }
+/* The sky's optics and the comet (halo.js), the same in both footers: behind the drawing, their light added to the sky,
+   their foot the horizon (main.js sets the height) */
+.house > .sky-c { position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); bottom: calc(67 * var(--u)); pointer-events: none; mix-blend-mode: plus-lighter; }
 /* The sky rises well above the footer, behind the page (the slides are above the footer; Patatas's block is lifted above
    it, #dq), fading out as it goes up */
 .house > .sky {
@@ -921,7 +924,13 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 }
 .show-day.go .smoke { animation: h-smoke 4s 2s linear infinite; }
 @keyframes h-smoke { 0% { opacity: 0; transform: translateY(4px); } 30% { opacity: .4; } 100% { opacity: 0; transform: translateY(-10px); } }
-html.fz .house { display: none; }
+/* In Fantasy Land the house is gone but its sky's sun, moon, halos and comet stay exactly where they are (on request: the
+   dream has replaced the earth in the same place; the same elements, so they hold still through the switch), behind the
+   lake, Alex and the page; its sky clip kept, or they'd be cut away with the rest */
+html.fz .house { visibility: hidden; }
+html.fz .house :is(.sun, .moon, .sky-c, clipPath, clipPath *) { visibility: visible; }
+html.fz #foot { z-index: -1; }
+html.fz .house, html.fz .house * { animation: none !important; } /* its hidden parts' motion stopped (it cost every scroll) */
 /* Footer card off, or reduced motion: lit on show days, still */
 html.no-sea .show-day .house .lt > g > * { animation: none; opacity: .95; }
 html.no-sea .smoke { display: none; }
@@ -1118,16 +1127,14 @@ html.fz .topbar::before { background: linear-gradient(180deg, rgba(58, 12, 96, .
 html.fz body::before { background: #2a0a46; -webkit-backdrop-filter: none; backdrop-filter: none; }
 html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
 
-/* Fantasy Land's footer: a still lake under the rainbow, Alex on his rock (.run while on screen) */
+/* Fantasy Land's footer: a still lake under the house's sky (the sun, the moon, their halos, the comet: kept there, below),
+   Alex on his rock (.run while on screen) */
 .fz-foot { display: none; }
-/* Clips only sideways (overflow-x: clip: no scroll box, no stacking context), so the rainbow can rise behind the table */
-html.fz .fz-foot { --bow: radial-gradient(circle farthest-side at 50% 100%,
-    transparent 46%, rgba(255, 240, 255, .07) 58%, rgba(170, 110, 255, 0) 61%,
-    rgba(170, 110, 255, .5) 63%, rgba(110, 100, 255, .5) 65%, rgba(80, 150, 255, .55) 67%, rgba(90, 230, 150, .55) 69%, rgba(255, 230, 90, .6) 71%, rgba(255, 160, 70, .55) 73.5%, rgba(255, 70, 110, .5) 76%, rgba(255, 70, 110, 0) 78.5%,
-    rgba(170, 110, 255, 0) 84%, rgba(170, 110, 255, .18) 86%, rgba(110, 100, 255, .18) 88%, rgba(80, 150, 255, .2) 90%, rgba(90, 230, 150, .22) 92%, rgba(255, 230, 90, .24) 94%, rgba(255, 160, 70, .22) 96%, rgba(255, 70, 110, .2) 98%, transparent 100%);
+/* Clips only sideways (overflow-x: clip: no scroll box, no stacking context) */
+html.fz .fz-foot {
   display: block; position: relative; height: 136px; margin-top: 8px; overflow-x: clip; pointer-events: none; container-type: inline-size; }
 .fz-waves { position: absolute; inset: 0; overflow: hidden; }
-.lifting #foot, .lifting #dq, .lifting .fz-bow, .lifting .fz-waves { will-change: translate; }
+.lifting #foot, .lifting #dq, .lifting .fz-waves { will-change: translate; }
 /* Mid-swipe lift: scroll-driven, on each swiper's named timeline (timeline-scope on body); main.js sets --la/--lb and the range */
 @property --la { syntax: "<length>"; inherits: false; initial-value: 0px; }
 @property --lb { syntax: "<length>"; inherits: false; initial-value: 0px; }
@@ -1137,15 +1144,9 @@ html.fz .fz-foot { --bow: radial-gradient(circle farthest-side at 50% 100%,
 #cast-body { scroll-timeline: --cast inline; }
 body { timeline-scope: --st, --ep, --cast; }
 @supports (animation-timeline: scroll()) {
-  #foot, #dq, .fz-bow, .fz-waves { animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; }
+  #foot, #dq, .fz-waves { animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; }
 }
-/* The bow and the waves' box move, not .fz-foot: a translate there would make a stacking context and pull the rainbow in front of the page */
-/* Double rainbow, both bows red on top; screened (only lightens); z-index -1, behind the page; its own element so a swipe can move it */
-html.fz .fz-bow {
-  position: absolute; z-index: -1; left: -25%; bottom: 4px; width: 150%; aspect-ratio: 2; opacity: .6; mix-blend-mode: screen;
-  background: var(--bow);
-  -webkit-mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%);
-}
+/* The waves' box moves, not .fz-foot: a translate there would make a stacking context */
 /* The lake (on request: "the same perspective and horizon as the normal footer", calm and reflective, "more James Cameron
    Avatar"; then "look real"): a flat plane from the house footer's horizon (67 units up, as its ground's top at 69 of
    136) to the foot, the sky's purple far off where it mirrors most, deep water near, with glowing plankton smaller and
@@ -1239,9 +1240,8 @@ html.no-howlight .how-card { animation: none !important; }
 html.fz #foot { position: relative; height: 0; margin: 0; }
 /* Transitions to and from Fantasy Land (flip.js, html[data-vt]; chosen on a Moss card), after film's dream sequences.
    The browser pictures the page before and after; these animate the two pictures. Every curve is an easy ease, and all
-   but Ripple's wave and Lens's mask move only transform, opacity, clip-path and filter, so they run off the main thread.
-   flip.js writes what depends on the tap (Iris's circle, Zoom's and Vertigo's centre) */
-@property --vt-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
+   but Ripple's wave move only transform, opacity, clip-path and filter, so they run off the main thread. flip.js writes
+   what depends on the tap (Iris's circle, Vertigo's centre) */
 @media not (prefers-reduced-motion: reduce) {
   html[data-vt]::view-transition { background: var(--bg); }
   html[data-vt]::view-transition-old(root), html[data-vt]::view-transition-new(root) { mix-blend-mode: normal; animation-timing-function: cubic-bezier(.33, 0, .67, 1); animation-fill-mode: both; }
@@ -1256,48 +1256,10 @@ html.fz #foot { position: relative; height: 0; margin: 0; }
   html[data-vt="ripple"]::view-transition-old(root), html[data-vt="ripple"]::view-transition-new(root) { mix-blend-mode: plus-lighter; animation-duration: 1.5s; }
   html[data-vt="ripple"]::view-transition-old(root) { animation-name: vt-fade-out; }
   html[data-vt="ripple"]::view-transition-new(root) { animation-name: vt-fade-in; }
-  /* Blur: a rack blur washes the view out entirely, then the other comes into focus */
-  html[data-vt="blur"]::view-transition-old(root) { animation-name: vt-blur-out; animation-duration: 1.1s; }
-  html[data-vt="blur"]::view-transition-new(root) { animation-name: vt-blur-in; animation-duration: 1.1s; }
-  /* Lens: the edges blur into a halo as the other view opens sharp from the centre */
-  html[data-vt="lens"]::view-transition-old(root) { animation-name: vt-lens-old; animation-duration: 1.3s; }
-  html[data-vt="lens"]::view-transition-new(root) {
-    animation-name: vt-lens; animation-duration: 1.3s;
-    -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 var(--vt-r), transparent calc(var(--vt-r) + 32vmin)); mask-image: radial-gradient(circle at 50% 50%, #000 var(--vt-r), transparent calc(var(--vt-r) + 32vmin));
-  }
-  /* Flare: the view burns out into a prismatic glare, which clears to the other */
-  html[data-vt="flare"]::view-transition {
-    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .9) 48%, transparent 66%),
-      radial-gradient(130% 95% at 30% 22%, #fff 0, #fff4fb 24%, #ffd3ef 44%, #bfe6ff 64%, #d6c2ff 84%, #b9a2ff 100%);
-  }
-  html[data-vt="flare"]::view-transition-old(root) { animation-name: vt-flare-out; animation-duration: 1s; }
-  html[data-vt="flare"]::view-transition-new(root) { animation-name: vt-flare-in; animation-duration: 1s; }
-  /* Swirl: the view twists into a vortex at the centre, uncovering the other */
-  html[data-vt="swirl"]::view-transition-old(root) { z-index: 1; animation-name: vt-swirl; animation-duration: 1.1s; }
-  html[data-vt="swirl"]::view-transition-new(root) { animation-name: vt-swirl-under; animation-duration: 1.1s; }
-  /* Slow: a long, slow-motion dissolve, each view drifting */
-  html[data-vt="slow"]::view-transition-old(root), html[data-vt="slow"]::view-transition-new(root) { mix-blend-mode: plus-lighter; animation-duration: 2s; }
-  html[data-vt="slow"]::view-transition-old(root) { animation-name: vt-slow-out; }
-  html[data-vt="slow"]::view-transition-new(root) { animation-name: vt-slow-in; }
-  /* Flash: three white flashes across the cut (no more than three a second, so it's safe for photosensitivity) */
-  html[data-vt="flash"]::view-transition { background: #fff7fc; }
-  html[data-vt="flash"]::view-transition-old(root) { animation-name: vt-flash-out; animation-duration: 1s; }
-  html[data-vt="flash"]::view-transition-new(root) { animation-name: vt-flash-in; animation-duration: 1s; }
   /* Grade: a wipe across, the view ahead of it pushed to a hot, oversaturated grade that the other settles out of */
   html[data-vt="grade"]::view-transition-old(root) { animation-name: vt-grade-old; animation-duration: 1.1s; }
   html[data-vt="grade"]::view-transition-new(root) { animation-name: vt-grade-new; animation-duration: 1.1s; }
   html[data-vt="grade"]:not(.vt-in)::view-transition-new(root) { animation-name: vt-grade-back; }
-  /* Zoom: into what was tapped until it fills the screen, then out into the other view */
-  html[data-vt="zoom"]::view-transition-old(root) { animation-name: vt-zoom-out; animation-duration: 1.1s; }
-  html[data-vt="zoom"]::view-transition-new(root) { animation-name: vt-zoom-in; animation-duration: 1.1s; }
-  /* Roll: the camera rolls the view upside down, and the other rolls in upright */
-  html[data-vt="roll"]::view-transition-old(root) { animation-name: vt-roll-out; animation-duration: 1.2s; }
-  html[data-vt="roll"]::view-transition-new(root) { animation-name: vt-roll-in; animation-duration: 1.2s; }
-  /* Tilt: the camera tilts up into the sky, and back down on the other view */
-  html[data-vt="tilt"]::view-transition { background: linear-gradient(#0a1030, #1a2350 60%, #2a2f5c); }
-  html[data-vt="tilt"].vt-in::view-transition { background: linear-gradient(#ffd8f0, #e2b8ff 45%, #a98bff 80%, #8b6cff); }
-  html[data-vt="tilt"]::view-transition-old(root) { animation-name: vt-tilt-out; animation-duration: 1.4s; }
-  html[data-vt="tilt"]::view-transition-new(root) { animation-name: vt-tilt-in; animation-duration: 1.4s; }
   /* Vertigo: a dolly zoom, the view lurching around what was tapped, which holds still (its own group, flip.js) */
   html[data-vt="vertigo"]::view-transition-old(root) { animation-name: vt-vertigo-out; animation-duration: 1.2s; }
   html[data-vt="vertigo"]::view-transition-new(root) { animation-name: vt-vertigo-in; animation-duration: 1.2s; }
@@ -1314,27 +1276,9 @@ html.fz #foot { position: relative; height: 0; margin: 0; }
 @keyframes vt-swell { 50% { transform: scale(1.1); } }
 @keyframes vt-fade-out { to { opacity: 0; } }
 @keyframes vt-fade-in { from { opacity: 0; } }
-@keyframes vt-blur-out { 0% { filter: none; } 50% { filter: blur(28px); opacity: 1; } 60%, 100% { filter: blur(28px); opacity: 0; } }
-@keyframes vt-blur-in { 0%, 40% { filter: blur(28px); opacity: 0; } 50% { filter: blur(28px); opacity: 1; } 100% { filter: none; opacity: 1; } }
-@keyframes vt-lens-old { to { filter: blur(16px) brightness(.8); } }
-@keyframes vt-lens { from { --vt-r: -32vmin; } to { --vt-r: 110vmax; } }
-@keyframes vt-flare-out { 0% { filter: none; } 50%, 100% { opacity: 0; filter: brightness(2.6) blur(6px); } }
-@keyframes vt-flare-in { 0%, 50% { opacity: 0; filter: brightness(2.6) blur(6px); } 100% { opacity: 1; filter: none; } }
-@keyframes vt-swirl { 70% { opacity: 1; } 100% { opacity: 0; transform: rotate(540deg) scale(0); filter: blur(6px); } }
-@keyframes vt-swirl-under { from { transform: scale(1.12); filter: blur(8px); } }
-@keyframes vt-slow-out { to { opacity: 0; transform: scale(1.04); } }
-@keyframes vt-slow-in { from { opacity: 0; transform: scale(.98); } }
-@keyframes vt-flash-out { 0% { opacity: 1; } 6% { opacity: 0; } 14%, 36% { opacity: 1; } 42%, 100% { opacity: 0; } }
-@keyframes vt-flash-in { 0%, 42% { opacity: 0; } 50%, 70% { opacity: 1; } 76% { opacity: 0; } 84%, 100% { opacity: 1; } }
 @keyframes vt-grade-old { 0% { filter: none; } 60%, 100% { filter: saturate(2.6) hue-rotate(40deg) contrast(1.2) brightness(1.1); } }
 @keyframes vt-grade-new { from { clip-path: inset(0 100% 0 0); filter: saturate(2.4) hue-rotate(-40deg) contrast(1.15); } to { clip-path: inset(0); filter: none; } }
 @keyframes vt-grade-back { from { clip-path: inset(0 0 0 100%); filter: saturate(2.4) hue-rotate(-40deg) contrast(1.15); } to { clip-path: inset(0); filter: none; } }
-@keyframes vt-zoom-out { 55% { opacity: 1; } 100% { opacity: 0; transform: scale(6); filter: blur(4px); } }
-@keyframes vt-zoom-in { 0%, 45% { opacity: 0; transform: scale(3); } 70% { opacity: 1; } 100% { opacity: 1; transform: none; } }
-@keyframes vt-roll-out { 40% { opacity: 1; } 55%, 100% { opacity: 0; transform: rotate(180deg) scale(.6); } }
-@keyframes vt-roll-in { 0%, 45% { opacity: 0; transform: rotate(-180deg) scale(.6); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
-@keyframes vt-tilt-out { 0% { transform: none; } 50%, 100% { transform: translateY(100%); } }
-@keyframes vt-tilt-in { 0%, 50% { transform: translateY(100%); } 100% { transform: none; } }
 @keyframes vt-vertigo-out { 55% { opacity: 1; } 100% { opacity: 0; transform: scale(1.7); filter: blur(3px); } }
 @keyframes vt-vertigo-in { 0%, 40% { opacity: 0; transform: scale(.6); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
 /* Slam pictures the bar with its glass near solid (flip.js) */
@@ -1343,7 +1287,7 @@ html.vt-glass.fz .topbar::before { background: linear-gradient(180deg, #3a0c60, 
 /* A 1px probe, in the transitions that write screen places (PLACED in flip.js): where it's pictured tells flip.js where
    the screen is in the pictures' space */
 .vt-probe { position: fixed; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-html:is([data-vt="iris"], [data-vt="zoom"], [data-vt="vertigo"], [data-vt="slam"]) .vt-probe { view-transition-name: vt-probe; }
+html:is([data-vt="iris"], [data-vt="vertigo"], [data-vt="slam"]) .vt-probe { view-transition-name: vt-probe; }
 /* Slam's dust, sparks, smoke and shine (slam-fx.js): over everything, for the transition only */
 .vt-fx { position: fixed; inset: 0; z-index: 30; width: 100%; height: 100%; pointer-events: none; }
 /* Slam's rows flip over as its shockwave reaches them (the rest of Slam is written by flip.js, from where things are) */
