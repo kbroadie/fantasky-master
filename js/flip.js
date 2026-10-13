@@ -40,9 +40,10 @@ function set(show, anchor, tap) {
   const name = () => { if (how === "turn") nameMovers(); if (subject) $(subject)?.style.setProperty("view-transition-name", "vt-subject"); };
   name();
   if (how === "ripple") for (const a of document.querySelectorAll("#vt-wave animate")) a.beginElement();
+  pinStrip();
   const before = how === "slam" ? slamBefore() : null;
   let fx = null;
-  const vt = document.startViewTransition(() => { swap(); name(); if (before) fx = slamAfter(before); });
+  const vt = document.startViewTransition(() => { swap(); pinStrip(); name(); if (before) fx = slamAfter(before); });
   if (PLACED.has(how)) vt.ready.then(() => {
     // Where the screen is in the pictures' space, now that it's set up: the places written above move with it. One look
     // through the page's animations (in the dream, the sea's and the dolphins' too) finds the probe's and Slam's clock
@@ -53,6 +54,7 @@ function set(show, anchor, tap) {
     fx?.start(pick("::view-transition"));
   }).catch(() => {});
   vt.finished.finally(() => {
+    pinStrip(true);
     hooks.later();
     fx?.stop();
     delete html.dataset.vt; html.classList.remove("vt-in");
@@ -60,6 +62,18 @@ function set(show, anchor, tap) {
     if (how === "slam") slamNames("clear");
     if (subject) $(subject)?.style.removeProperty("view-transition-name");
   });
+}
+
+// The page's sub-tab strip is pinned where it stands for the transition's pictures, in the flow like the rest of the page:
+// stuck, it was pictured against the pictures' space, which on a phone with the address bar showing starts above the
+// screen, so it slid up under the bar for the whole transition (at the page's end, the address bar hidden, it didn't)
+function pinStrip(drop) {
+  for (const el of document.querySelectorAll(".page > .strip")) { el.style.position = ""; el.style.top = ""; }
+  const el = !drop && $(".page.active > .strip");
+  if (!el) return;
+  const stuck = el.getBoundingClientRect().top;
+  el.style.position = "relative"; el.style.top = "0px";
+  el.style.top = `${stuck - el.getBoundingClientRect().top}px`;
 }
 
 // Slam: the camera zooms in on last place's row, which lifts out of the table; the other rows slide down a place as the
