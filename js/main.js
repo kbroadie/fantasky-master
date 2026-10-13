@@ -995,13 +995,13 @@ const houseSeen = new IntersectionObserver((es) => {
   if (e.isIntersecting) e.target.classList.add("up");
   e.target.classList.toggle("go", e.isIntersecting);
 });
-// The ducks ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
+// The ducks (and Alex and his tail) ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
 // with them, so each duck's bob starts where the wave under it is
 function ducksOnWaves() {
   const sea = $(".fz-waves"), w = sea.offsetWidth;
   if (!state.fantasy || !w) return;
   const left = sea.getBoundingClientRect().left, wave = 0.35 * w;
-  for (const dk of $$("#foot .dk")) {
+  for (const dk of $$("#foot .dk, .fz-mer, .fz-tail")) {
     const r = dk.getBoundingClientRect(), u = ((((r.left + r.width / 2 - left) / wave - 0.25) % 1) + 1) % 1;
     dk.style.animationDelay = `${(-5 * u).toFixed(3)}s`;
   }
