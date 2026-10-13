@@ -1,7 +1,8 @@
-// Alex's stream in Fantasy Land's footer: water from his chest funnel, a solid jet that breaks up into droplets, under a
-// faint mist, splashing and ringing the sea where it lands. Its pressure rises while he's pressed (main.js) and the arc
-// rises and reaches with it, at its fullest the circle round the rainbow's centre, as the rainbow above. Each drop keeps
-// the arc it left on, so a change runs out along the stream. Shared by stream-worker.js and main.js's fallback; no DOM.
+// Alex's stream in Fantasy Land's footer: water from his chest funnel, a solid jet that breaks up into droplets,
+// splashing and ringing the lake where it lands, all of it mirrored in the lake. Its pressure rises while he's pressed
+// (main.js) and the arc rises and reaches with it, at its fullest the circle round the rainbow's centre, as the rainbow
+// above. Each drop keeps the arc it left on, so a change runs out along the stream. Shared by stream-worker.js and
+// main.js's fallback; no DOM.
 
 const FPS = 30; // the footer's other motion is the compositor's; this is drawn, so at a pace a 60 or 120Hz screen divides
 const RATE = 230; // drops a second
@@ -39,17 +40,12 @@ export function streamer(canvas) {
     x.setTransform(k, 0, 0, k, 0, 0);
     x.clearRect(0, 0, W, H);
     const e = ease(p), sb = breakAt(e);
-    // Along its arc: a veil of mist, widening, and the broken stream's faint body, thinning to the water
     const along = (s0, s1, w, col, dy = 0) => {
       x.lineWidth = w; x.strokeStyle = col; x.beginPath();
       for (let s = s0; s <= s1 + 1e-6; s += 0.01) { const [jx, jy] = at(e, Math.min(1, s)); s > s0 ? x.lineTo(jx, jy + dy) : x.moveTo(jx, jy + dy); }
       x.stroke();
     };
     x.lineCap = "round"; x.lineJoin = "round";
-    along(sb, 0.55, 6 + 3 * e, "rgba(200,235,255,.045)");
-    along(0.5, 1, 10 + 4 * e, "rgba(200,235,255,.035)");
-    along(sb, 0.6, 1.3, "rgba(215,242,255,.22)");
-    along(0.55, 1, 0.8, "rgba(215,242,255,.12)");
     // The solid jet from the spout: a glassy body, a pale core
     along(0, sb + 0.04, 4.6 + 2 * e, "rgba(150,215,255,.16)");
     along(0, sb + 0.04, 2.4 + e, "rgba(205,238,255,.7)");
@@ -73,7 +69,7 @@ export function streamer(canvas) {
       x.stroke();
     });
     // Splashes thrown up where it lands, falling back
-    x.fillStyle = "rgba(235,250,255,.75)";
+    x.fillStyle = "rgba(200,250,255,.8)";
     x.beginPath();
     bits = bits.filter((b) => {
       const a = t - b.t0, bx = b.x + b.vx * a, by = b.y + b.vy * a + 0.5 * 320 * a * a;
@@ -82,13 +78,26 @@ export function streamer(canvas) {
       return true;
     });
     x.fill();
-    // Rings spreading on the water
-    x.lineWidth = 0.8;
+    // All of it mirrored in the lake below the waterline, faint and fading with depth
+    const wd = Math.round(g.wy * k), cw = canvas.width;
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.globalAlpha = 0.3;
+    x.setTransform(1, 0, 0, -1, 0, 2 * wd);
+    x.drawImage(canvas, 0, 0, cw, wd, 0, 0, cw, wd);
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.globalAlpha = 1;
+    x.globalCompositeOperation = "destination-out";
+    x.fillStyle = g.fade;
+    x.fillRect(0, wd, cw, canvas.height - wd);
+    x.globalCompositeOperation = "source-over";
+    x.setTransform(k, 0, 0, k, 0, 0);
+    // Rings spreading on the water, glowing
     rings = rings.filter((r) => {
       const a = (t - r.t0) / 0.9;
       if (a >= 1) return false;
-      x.strokeStyle = `rgba(210,240,255,${(0.45 * (1 - a)).toFixed(3)})`;
-      x.beginPath(); x.ellipse(r.x, g.wy - 1, 2 + 16 * a, 0.6 + 3 * a, 0, 0, Math.PI * 2); x.stroke();
+      x.beginPath(); x.ellipse(r.x, g.wy, 2 + 16 * a, 0.6 + 3 * a, 0, 0, Math.PI * 2);
+      x.lineWidth = 2.4; x.strokeStyle = `rgba(80,225,255,${(0.16 * (1 - a)).toFixed(3)})`; x.stroke();
+      x.lineWidth = 0.8; x.strokeStyle = `rgba(150,245,255,${(0.6 * (1 - a)).toFixed(3)})`; x.stroke();
       return true;
     });
   }
@@ -123,6 +132,9 @@ export function streamer(canvas) {
       g.a1 = Math.atan2(g.wy - g.cy, -Math.sqrt(Math.max(0, g.R ** 2 - (g.wy - g.cy) ** 2)));
       k = m.res;
       canvas.width = Math.round(g.W * k); canvas.height = Math.round(g.H * k);
+      const wd = Math.round(g.wy * k);
+      g.fade = x.createLinearGradient(0, wd, 0, wd + 40 * k);
+      g.fade.addColorStop(0, "rgba(0,0,0,0)"); g.fade.addColorStop(1, "rgba(0,0,0,1)");
       still = m.still;
       if (still) stillFrame();
     },

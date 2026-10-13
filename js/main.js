@@ -805,7 +805,6 @@ $("#ep-body").addEventListener("click", (e) => e.target.closest(".tname")?.class
 // Watches the waves, not the footer: mid-swipe only they rise into view (lift)
 const footSeen = new IntersectionObserver((es) => {
   const e = es.at(-1);
-  if (e.isIntersecting) ducksOnWaves();
   e.target.parentElement.classList.toggle("run", e.isIntersecting);
   $("#foot").classList.toggle("run", e.isIntersecting);
 });
@@ -835,7 +834,7 @@ function waterOn() {
   const a = $(".fz-alex").getBoundingClientRect(), m = $(".fz-mer").getBoundingClientRect(), u = m.width / 124;
   if (!a.width || !state.fantasy || document.hidden) return;
   if (!water) waterSend("stop"); // set up first: here, without a worker, it's drawn still (moving, it took the main thread)
-  waterSend("geom", { W: a.width, H: a.height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: a.height - 41, cx: a.width / 2, cy: a.height - 4,
+  waterSend("geom", { W: a.width, H: a.height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: a.height - 40, cx: a.width / 2, cy: a.height - 4,
     res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
   waterSend("start");
 }
@@ -1038,18 +1037,6 @@ const houseSeen = new IntersectionObserver((es) => {
   if (e.isIntersecting) e.target.classList.add("up");
   e.target.classList.toggle("go", e.isIntersecting);
 });
-// The ducks ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
-// with them, so each duck's bob starts where the wave under it is
-function ducksOnWaves() {
-  const sea = $(".fz-waves"), w = sea.offsetWidth;
-  if (!state.fantasy || !w) return;
-  const left = sea.getBoundingClientRect().left, wave = 0.35 * w;
-  for (const dk of $$("#foot .dk")) {
-    const r = dk.getBoundingClientRect(), u = ((((r.left + r.width / 2 - left) / wave - 0.25) % 1) + 1) % 1;
-    dk.style.animationDelay = `${(-5 * u).toFixed(3)}s`;
-  }
-}
-
 // Sideways strips fade at the edge where more tabs are hidden
 function edges() {
   for (const s of $$(".strip.scroll")) {
@@ -1084,7 +1071,7 @@ const queueLight = () => { if (!lraf) lraf = requestAnimationFrame(cardLight); }
 addEventListener("scroll", queueLight, { passive: true });
 if (!SDA) addEventListener("scroll", queuePeek, { passive: true });
 
-addEventListener("resize", () => { peek(); ducksOnWaves(); for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); queueLight(); edges(); for (const r of $$("#st-body .pc.open")) placeLine(r); if (state.stView) syncBoards(true); });
+addEventListener("resize", () => { peek(); for (const sw of [ST, EP, CAST]) if ($(sw.body).offsetParent) jump(sw, sw.get()); queueLight(); edges(); for (const r of $$("#st-body .pc.open")) placeLine(r); if (state.stView) syncBoards(true); });
 
 addEventListener("hashchange", () => {
   const h = readHash();

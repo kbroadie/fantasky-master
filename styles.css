@@ -1121,7 +1121,7 @@ html.fz .strip { background: linear-gradient(180deg, #33124f, #260a42); }
 /* Dolphins' footer (fantasy): three nested boxes per dolphin (across, up/down, turn), transforms only; animates only on screen (.run) */
 .fz-foot { display: none; }
 /* Clips only sideways (overflow-x: clip: no scroll box, no stacking context), so the rainbow can rise behind the table */
-html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top: 8px; overflow-x: clip; pointer-events: none; }
+html.fz .fz-foot { display: block; position: relative; height: 136px; margin-top: 8px; overflow-x: clip; pointer-events: none; container-type: inline-size; }
 .fz-waves { position: absolute; inset: 0; overflow: hidden; }
 .lifting #foot, .lifting #dq, .lifting .fz-bow, .lifting .fz-waves { will-change: translate; }
 /* Mid-swipe lift: scroll-driven, on each swiper's named timeline (timeline-scope on body); main.js sets --la/--lb and the range */
@@ -1138,28 +1138,42 @@ body { timeline-scope: --st, --ep, --cast; }
 /* The bow and waves move, not .fz-foot: a translate there would make a stacking context and pull the rainbow in front of the page */
 /* Double rainbow, both bows red on top; screened (only lightens); z-index -1, behind the page; its own element so a swipe can move it */
 html.fz .fz-bow {
-  position: absolute; z-index: -1; left: -25%; bottom: 4px; width: 150%; aspect-ratio: 2; opacity: .85; mix-blend-mode: screen;
+  position: absolute; z-index: -1; left: -25%; bottom: 4px; width: 150%; aspect-ratio: 2; opacity: .6; mix-blend-mode: screen;
   background: radial-gradient(circle farthest-side at 50% 100%,
     transparent 46%, rgba(255, 240, 255, .07) 58%, rgba(170, 110, 255, 0) 61%,
     rgba(170, 110, 255, .5) 63%, rgba(110, 100, 255, .5) 65%, rgba(80, 150, 255, .55) 67%, rgba(90, 230, 150, .55) 69%, rgba(255, 230, 90, .6) 71%, rgba(255, 160, 70, .55) 73.5%, rgba(255, 70, 110, .5) 76%, rgba(255, 70, 110, 0) 78.5%,
     rgba(170, 110, 255, 0) 84%, rgba(170, 110, 255, .18) 86%, rgba(110, 100, 255, .18) 88%, rgba(80, 150, 255, .2) 90%, rgba(90, 230, 150, .22) 92%, rgba(255, 230, 90, .24) 94%, rgba(255, 160, 70, .22) 96%, rgba(255, 70, 110, .2) 98%, transparent 100%);
   -webkit-mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%); mask-image: linear-gradient(to top, transparent 4%, rgba(0, 0, 0, .35) 26%, #000 72%);
 }
-html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; bottom: 36px; height: 34px; background: radial-gradient(60% 100% at 50% 100%, rgba(255, 200, 250, .16), transparent 75%); }
 /* Sea: soft crest over bluish water, a fainter wave behind, deep purple base */
-.fz-sea { position: absolute; left: 0; bottom: 0; width: 140%; height: 50px; filter: drop-shadow(0 -2px 6px rgba(79, 216, 255, .35)); }
-.dl { --d: 3.4s; --w: 0s; position: absolute; bottom: 0; height: 100%; width: 30%; }
+/* The lake (on request: "the same perspective and horizon as the normal footer", calm and reflective, "more James Cameron
+   Avatar"): a flat plane from the house footer's horizon (67 units up, as its ground's top at 69 of 136) to the foot,
+   pale and bright far off where it mirrors the sky, deep blue-black near, with faint lines and glowing plankton closer
+   together toward the horizon (img/lake.svg) and a thin glow along the horizon. Still: only the stream and the dolphins
+   splash and ring it */
+.fz-lake { position: absolute; left: 0; right: 0; bottom: 0; height: calc(67 * min(390px, 100cqw) / 390);
+  background: url("img/lake.svg") 0 0 / 400px 100% repeat-x, linear-gradient(#3d6f9c, #1a4470 22%, #0d2a4c 55%, #06162b); }
+.fz-lake::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 3px; background: linear-gradient(90deg, transparent, rgba(150, 240, 255, .5) 20%, rgba(190, 250, 255, .7) 50%, rgba(150, 240, 255, .5) 80%, transparent); filter: blur(1px); }
+/* The scene above the water, mirrored in it about the waterline (40px up): the dolphins (the same, moving in step, cut
+   at the waterline as they are) and Alex's rock; faint, and fading with depth. The ducks reflect themselves (below), and
+   the stream draws its own (stream.js) */
+.fz-mirror { position: absolute; inset: 0; overflow: hidden; opacity: .42; /* clipped: flipped, it hung below the page */
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, .1), rgba(0, 0, 0, .35) 14px, #000 39px, transparent 41px); mask-image: linear-gradient(to top, rgba(0, 0, 0, .1), rgba(0, 0, 0, .35) 14px, #000 39px, transparent 41px); }
+.fz-flip { position: absolute; inset: 0; transform: scaleY(-1); transform-origin: 50% calc(100% - 40px); }
+.fz-mirror .mr-refl { position: absolute; left: calc(50% + 72px); bottom: 40px; width: 124px; height: auto; }
+.fz-mirror .dl u { display: none; }
+html.fz #foot .duck { -webkit-box-reflect: below 0 linear-gradient(transparent 45%, rgba(0, 0, 0, .38)); }.dl { --d: 3.4s; --w: 0s; position: absolute; bottom: 0; height: 100%; width: 30%; }
 .dl:nth-of-type(1) { left: 6%; }
 .dl:nth-of-type(2) { left: 37%; --d: 3.9s; --w: -1.3s; scale: -1 1; }
 .dl:nth-of-type(3) { left: 66%; --d: 3.6s; --w: -2.5s; }
 /* Cut at the waterline (the water is see-through) */
 .dl i { position: absolute; inset: 0; transform: translateX(50%); clip-path: inset(-100px -100px 39px -100px); }
 .dl b { position: absolute; left: -32px; bottom: 0; width: 64px; height: 27px; transform: translateY(-80px); }
-.dl svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 4px rgba(255, 110, 210, .45)); }
+.dl svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 4px rgba(90, 230, 255, .55)); }
 .dl::before, .dl::after {
   content: ""; position: absolute; bottom: 36px; width: 28px; height: 22px; margin-left: -14px; opacity: 0;
   background: radial-gradient(circle at 20% 80%, #fff 1.6px, transparent 2.2px), radial-gradient(circle at 45% 35%, #bff6ff 1.8px, transparent 2.4px),
-    radial-gradient(circle at 70% 60%, #fff 1.4px, transparent 2px), radial-gradient(circle at 85% 20%, #ffd6f5 1.2px, transparent 1.8px), radial-gradient(circle at 35% 10%, #fff 1px, transparent 1.6px);
+    radial-gradient(circle at 70% 60%, #fff 1.4px, transparent 2px), radial-gradient(circle at 85% 20%, #b8fbff 1.2px, transparent 1.8px), radial-gradient(circle at 35% 10%, #fff 1px, transparent 1.6px);
 }
 .dl::before { left: 0; }
 .dl::after { left: 100%; }
@@ -1169,7 +1183,8 @@ html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; b
   .run .dl svg { animation: fz-dr var(--d) var(--w) infinite linear; }
   .run .dl::before { animation: fz-splash-in var(--d) var(--w) infinite; }
   .run .dl::after { animation: fz-splash-out var(--d) var(--w) infinite; }
-  .run .fz-sea { animation: fz-sea 5s linear infinite; }
+  .run .dl u:first-of-type { animation: fz-ring-out var(--d) var(--w) infinite; }
+  .run .dl u:last-of-type { animation: fz-ring-in var(--d) var(--w) infinite; }
 }
 @keyframes fz-dx { 0% { transform: translateX(0); } 48%, 100% { transform: translateX(100%); } }
 @keyframes fz-dy {
@@ -1180,18 +1195,23 @@ html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; b
 @keyframes fz-dr { 0% { transform: rotate(-48deg); } 48%, 100% { transform: rotate(52deg); } } /* transform: rotate on an <svg> kept the main thread restyling every frame */
 @keyframes fz-splash-in { 0% { opacity: 0; transform: translateY(6px) scale(.5); } 4% { opacity: 1; } 14%, 100% { opacity: 0; transform: translateY(-10px) scale(1.2); } }
 @keyframes fz-splash-out { 0%, 42% { opacity: 0; transform: translateY(6px) scale(.5); } 47% { opacity: 1; } 58%, 100% { opacity: 0; transform: translateY(-10px) scale(1.25); } }
-@keyframes fz-sea { to { transform: translateX(-25%); } }
+/* Rings where a dolphin leaves the water and where it goes back in, glowing */
+.dl u { position: absolute; bottom: 37px; width: 34px; height: 7px; margin-left: -17px; border-radius: 50%; border: 1px solid rgba(140, 245, 255, .85); box-shadow: 0 0 6px rgba(80, 225, 255, .55); opacity: 0; }
+.dl u:first-of-type { left: 0; }
+.dl u:last-of-type { left: 100%; }
+@keyframes fz-ring-out { 0% { opacity: .9; transform: scale(.2); } 18%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes fz-ring-in { 0%, 46% { opacity: 0; transform: scale(.2); } 47% { opacity: .9; transform: scale(.2); } 64%, 100% { opacity: 0; transform: scale(1.6); } }
 /* Alex Horne as a mermaid on his rock (on request; img/alex-rock.webp, cut from a painting the user sent, its own spray
-   left out): at the right of the footer, the painting's waterline on the sea's, the water hiding what's under it (a mask,
-   as the dolphins are cut), in front of the dolphins; foam at the rock's foot. His stream is drawn on a canvas over the
-   whole box (stream.js, .mr-water). Outside the waves' box, which clips, and reaching above the footer for the stream */
-.fz-alex { position: absolute; inset: -90px 0 0; pointer-events: none; -webkit-mask-image: linear-gradient(to top, transparent 37px, #000 43px); mask-image: linear-gradient(to top, transparent 37px, #000 43px); }
-.fz-mer { position: absolute; left: calc(50% + 72px); bottom: 21.6px; width: 124px; pointer-events: auto; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+   left out, cut off at its waterline): at the right of the footer, standing on the lake's waterline (40px up, where his
+   reflection is mirrored, .fz-mirror), in front of the dolphins; foam at the rock's foot. His stream is drawn on a canvas
+   over the whole box (stream.js, .mr-water), reaching above the footer for its height */
+.fz-alex { position: absolute; inset: -90px 0 0; pointer-events: none; }
+.fz-mer { position: absolute; left: calc(50% + 72px); bottom: 40px; width: 124px; pointer-events: auto; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 .fz-mer > img { display: block; width: 100%; height: auto; -webkit-touch-callout: none; }
 /* Foam where the rock meets the sea */
 .fz-mer::after {
-  content: ""; position: absolute; left: 4%; right: 6%; bottom: 17px; height: 9px; opacity: .55;
-  background: radial-gradient(circle at 8% 70%, #fff 1.4px, transparent 2px), radial-gradient(circle at 20% 40%, #e6fbff 1.6px, transparent 2.2px), radial-gradient(circle at 34% 75%, #fff 1.2px, transparent 1.8px), radial-gradient(circle at 70% 60%, #fff 1.5px, transparent 2.1px), radial-gradient(circle at 84% 35%, #e6fbff 1.3px, transparent 1.9px), radial-gradient(circle at 95% 70%, #fff 1.2px, transparent 1.8px);
+  content: ""; position: absolute; left: 4%; right: 6%; bottom: -4px; height: 8px; opacity: .55;
+  background: radial-gradient(circle at 8% 70%, #c8fbff 1.4px, transparent 2px), radial-gradient(circle at 20% 40%, #9ff4ff 1.6px, transparent 2.2px), radial-gradient(circle at 34% 75%, #fff 1.2px, transparent 1.8px), radial-gradient(circle at 70% 60%, #fff 1.5px, transparent 2.1px), radial-gradient(circle at 84% 35%, #e6fbff 1.3px, transparent 1.9px), radial-gradient(circle at 95% 70%, #fff 1.2px, transparent 1.8px);
 }
 .mr-water { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 @media (prefers-reduced-motion: no-preference) { .run .fz-mer::after { animation: mr-foam 2.4s infinite ease-in-out alternate; } }
@@ -1256,21 +1276,11 @@ html.no-deco .tab-ind::before, html.no-deco .ep-title::before, html.no-deco .ep-
 html.no-deco .fz-word::after { display: none; }
 /* Its footer off: the sea still; the dolphins, which would hang mid-leap, hidden; the ducks hold where the still sea puts
    them (their bob paused at its start, as under reduced motion) */
-html.no-sea .fz-sea { animation: none !important; }
 html.no-sea .dl { display: none; }
 html.no-sea .fz-mer::after { animation: none !important; }
-html.no-sea #foot .dk { animation-play-state: paused !important; }
 html.no-howlight .how-card { animation: none !important; }
-/* In the dream the ducks float on the dolphins' sea, riding its waves: main.js starts each one's bob where the wave under it is.
-   The sea moves a wavelength in 5s; its crests and troughs are parabolas, so each quarter is a quadratic ease, ±5px */
+/* In the dream the ducks sit on the calm lake, still */
 html.fz #foot { position: relative; height: 0; margin: 0; }
-html.fz #foot.run .dk { animation: fz-bob 5s infinite; }
-@media (prefers-reduced-motion: reduce) { html.fz #foot.run .dk { animation-play-state: paused; } } /* still, where the still sea is */
-@keyframes fz-bob {
-  0%, 100% { translate: 0 -5px; animation-timing-function: cubic-bezier(.333, 0, .667, .333); }
-  25%, 75% { translate: 0 0; animation-timing-function: cubic-bezier(.333, .667, .667, 1); }
-  50% { translate: 0 5px; animation-timing-function: cubic-bezier(.333, 0, .667, .333); }
-}
 /* Transitions to and from Fantasy Land (flip.js, html[data-vt]; chosen on a Moss card), after film's dream sequences.
    The browser pictures the page before and after; these animate the two pictures. Every curve is an easy ease, and all
    but Ripple's wave and Lens's mask move only transform, opacity, clip-path and filter, so they run off the main thread.
