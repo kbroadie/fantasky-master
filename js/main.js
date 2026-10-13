@@ -3,7 +3,7 @@ import { loadText, parseCSV, buildSeries } from "./csv.js";
 import { initEdit } from "./edit.js";
 import { derive, currentSeriesKey, airInstant } from "./league.js";
 import { moonAt, moonPath, skyFor } from "./sky.js";
-import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer, DINGHY } from "./ui.js";
+import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides, castSlide, fill, at as sliderAt, changedSay, resettable } from "./views/cast.js";
@@ -12,7 +12,8 @@ import "./tools.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay, reloadFresh } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
-import { initFlip, toggleFantasy } from "./flip.js";
+import { initFlip, toggleFantasy, moduleWorkers } from "./flip.js";
+import { streamer } from "./stream.js";
 
 const PAGES = ["standings", "episodes", "cast"];
 let SERIES = {}, CURRENT = null;
@@ -45,7 +46,7 @@ function loadSeries(key) {
   btn.setAttribute("aria-label", `Series ${key}. Tap to switch series`);
   renderStandings(d);
   renderSlides(d);
-  if (!$("#foot").children.length) { $("#foot").innerHTML = footer(); $(".fz-boat").innerHTML = DINGHY; houseSeen.observe($("#foot")); }
+  if (!$("#foot").children.length) { $("#foot").innerHTML = footer(); houseSeen.observe($("#foot")); }
   showDay();
   if (!$("#dq").children.length) $("#dq").innerHTML = EMBRACE;
   countdown();
@@ -809,6 +810,48 @@ const footSeen = new IntersectionObserver((es) => {
   $("#foot").classList.toggle("run", e.isIntersecting);
 });
 footSeen.observe($(".fz-waves"));
+// Alex's stream (stream.js): drawn in a worker that owns its canvas where it can be, else here; only while the footer's
+// waves are on screen and the page is showing. Pressing him pumps it up: its pressure rises while he's held, for a
+// moment at least on a tap, and falls when he's let go or the press turns into a scroll or swipe
+let water = null, waterWorker = false;
+function waterSend(type, arg) {
+  if (!water) {
+    const c = $(".mr-water");
+    if (moduleWorkers && "transferControlToOffscreen" in c) {
+      try {
+        const w = new Worker(new URL("./stream-worker.js", import.meta.url), { type: "module" }), off = c.transferControlToOffscreen();
+        w.postMessage({ type: "init", canvas: off }, [off]);
+        water = (t, a) => w.postMessage({ type: t, arg: a });
+        waterWorker = true;
+      } catch {}
+    }
+    if (!water) { const s = streamer(c); water = (t, a) => s[t](a); }
+  }
+  water(type, arg);
+}
+// Its places (CSS px, in the canvas): the spout (56.6px, 29px into his 124px picture), the water and the rainbow's
+// centre (the bow's foot, 4px up, styles.css)
+function waterOn() {
+  const a = $(".fz-alex").getBoundingClientRect(), m = $(".fz-mer").getBoundingClientRect(), u = m.width / 124;
+  if (!a.width || !state.fantasy || document.hidden) return;
+  if (!water) waterSend("stop"); // set up first: here, without a worker, it's drawn still (moving, it took the main thread)
+  waterSend("geom", { W: a.width, H: a.height, sx: m.left - a.left + 56.6 * u, sy: m.top - a.top + 29 * u, wy: a.height - 41, cx: a.width / 2, cy: a.height - 4,
+    res: Math.min(2, devicePixelRatio || 1), still: reducedMotion || !get("fzSea") || !waterWorker });
+  waterSend("start");
+}
+const waterOff = () => water?.("stop");
+let waterSeen = false;
+new IntersectionObserver((es) => { waterSeen = es.at(-1).isIntersecting; waterSeen ? waterOn() : waterOff(); }).observe($(".fz-waves"));
+document.addEventListener("visibilitychange", () => (document.hidden ? waterOff() : waterSeen && waterOn()));
+addEventListener("resize", () => { if (waterSeen) waterOn(); });
+onSwitch(["fzSea"], () => { if (waterSeen) { waterOff(); waterOn(); } });
+const mer = $(".fz-mer");
+let merAt = null, merT = 0, merOff = 0;
+const merUp = () => { merAt = null; clearTimeout(merOff); merOff = setTimeout(() => water?.("press", false), Math.max(0, 450 - (performance.now() - merT))); };
+mer.addEventListener("pointerdown", (e) => { merAt = [e.pointerId, e.clientX, e.clientY]; merT = performance.now(); clearTimeout(merOff); water?.("press", true); });
+mer.addEventListener("pointermove", (e) => { if (merAt?.[0] === e.pointerId && Math.hypot(e.clientX - merAt[1], e.clientY - merAt[2]) > 10) merUp(); });
+for (const t of ["pointerup", "pointercancel", "pointerleave"]) mer.addEventListener(t, (e) => { if (merAt?.[0] === e.pointerId) merUp(); });
+mer.addEventListener("contextmenu", (e) => e.preventDefault()); // a long press is his, not the image menu's
 // The house (ui.js) lights up on show days: the day, on this device, that any episode airs. Checked each minute, so it
 // comes on at midnight. Its lights come up the first time it's seen (.up), and its chimney smokes while it's on screen
 function showDay() {
@@ -995,13 +1038,13 @@ const houseSeen = new IntersectionObserver((es) => {
   if (e.isIntersecting) e.target.classList.add("up");
   e.target.classList.toggle("go", e.isIntersecting);
 });
-// The ducks (and Alex's dinghy) ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
+// The ducks ride the sea (styles.css): it moves a wavelength (0.35 of its width, a crest a quarter in) every 5s and starts
 // with them, so each duck's bob starts where the wave under it is
 function ducksOnWaves() {
   const sea = $(".fz-waves"), w = sea.offsetWidth;
   if (!state.fantasy || !w) return;
   const left = sea.getBoundingClientRect().left, wave = 0.35 * w;
-  for (const dk of $$("#foot .dk, .fz-boat")) {
+  for (const dk of $$("#foot .dk")) {
     const r = dk.getBoundingClientRect(), u = ((((r.left + r.width / 2 - left) / wave - 0.25) % 1) + 1) % 1;
     dk.style.animationDelay = `${(-5 * u).toFixed(3)}s`;
   }

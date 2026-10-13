@@ -933,9 +933,8 @@ html.no-sea .smoke { display: none; }
 html:not(.fz) .ducks { bottom: min(27px, 6.923cqw); }
 html:not(.fz) .dk { padding: min(10px, 2.564cqw) min(3.5px, .897cqw); }
 html:not(.fz) .duck { width: min(18px, 4.615cqw); height: min(14px, 3.59cqw); }
-.duck { width: 18px; height: 14px; fill: var(--gold2); opacity: .8; }
-/* In the normal view they're solid rubber, shaded by the house's light (#dk-shade) */
-html:not(.fz) .duck { fill: url(#dk-shade); opacity: 1; }
+/* Solid rubber, shaded by the light (#dk-shade: the house's, turned by main.js), in both views (on request) */
+.duck { width: 18px; height: 14px; fill: url(#dk-shade); }
 /* In the normal view the ducks take the light too, dimmer and cooler in twilight and by night (their filter, set by
    main.js); not on the sea */
 html.fz #foot .ducks, html.fz #foot .dk { filter: none !important; } /* nor the house's shadow (main.js) */
@@ -1182,41 +1181,21 @@ html.fz .fz-waves::after { content: ""; position: absolute; left: 0; right: 0; b
 @keyframes fz-splash-in { 0% { opacity: 0; transform: translateY(6px) scale(.5); } 4% { opacity: 1; } 14%, 100% { opacity: 0; transform: translateY(-10px) scale(1.2); } }
 @keyframes fz-splash-out { 0%, 42% { opacity: 0; transform: translateY(6px) scale(.5); } 47% { opacity: 1; } 58%, 100% { opacity: 0; transform: translateY(-10px) scale(1.25); } }
 @keyframes fz-sea { to { transform: translateX(-25%); } }
-/* Alex Horne as a mermaid in the dinghy from the still of him on a pond with a stone gorilla (on request; ui.js, DINGHY:
-   drawn as the house is). It drifts slowly to and fro behind the ducks and rides the waves as they do (main.js,
-   ducksOnWaves), rocking on them. Both his funnels point out and spray from their spouts, the left over the gorilla into
-   the sea, the right away: a jet and droplets along each (across at a steady speed, up and down as a parabola, each half
-   a quadratic ease). The water hides what's under it (a mask at the waterline, as the dolphins are cut) */
-.fz-alex { position: absolute; inset: 0; -webkit-mask-image: linear-gradient(to top, transparent 37px, #000 43px); mask-image: linear-gradient(to top, transparent 37px, #000 43px); }
-.fz-drift { position: absolute; left: calc(50% + 28px); bottom: 26px; width: 140px; height: 92px; }
-.fz-boat { position: absolute; inset: 0; transform-origin: 50% 85%; }
-.fz-boat .bt { display: block; width: 140px; height: 92px; overflow: visible; }
-.bt .bt-d { fill: none; stroke: #000; stroke-opacity: .32; stroke-width: .7; stroke-linecap: round; stroke-linejoin: round; }
-.bt .bt-jet path { fill: none; stroke: url(#bt-jet); stroke-linecap: round; }
-.bt-dy { fill: #fff; opacity: 0; }
-@media (prefers-reduced-motion: no-preference) {
-  .run .fz-drift { animation: fz-drift 23s ease-in-out infinite alternate; }
-  .run .fz-boat { animation: fz-boat 5s infinite; }
-  .run .bt-dx { animation: bt-dx 1.3s infinite linear; }
-  .run .bt-dy { animation: bt-dy 1.3s infinite; }
-  .run .bt-dx:nth-child(2) { --dw: -.22s; } .run .bt-dx:nth-child(3) { --dw: -.43s; } .run .bt-dx:nth-child(4) { --dw: -.65s; }
-  .run .bt-dx:nth-child(5) { --dw: -.87s; } .run .bt-dx:nth-child(6) { --dw: -1.08s; }
-  .run :is(.bt-dx, .bt-dy) { animation-delay: var(--dw, 0s); }
+/* Alex Horne as a mermaid on his rock (on request; img/alex-rock.webp, cut from a painting the user sent, its own spray
+   left out): at the right of the footer, the painting's waterline on the sea's, the water hiding what's under it (a mask,
+   as the dolphins are cut), in front of the dolphins; foam at the rock's foot. His stream is drawn on a canvas over the
+   whole box (stream.js, .mr-water). Outside the waves' box, which clips, and reaching above the footer for the stream */
+.fz-alex { position: absolute; inset: -90px 0 0; pointer-events: none; -webkit-mask-image: linear-gradient(to top, transparent 37px, #000 43px); mask-image: linear-gradient(to top, transparent 37px, #000 43px); }
+.fz-mer { position: absolute; left: calc(50% + 72px); bottom: 21.6px; width: 124px; pointer-events: auto; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.fz-mer > img { display: block; width: 100%; height: auto; -webkit-touch-callout: none; }
+/* Foam where the rock meets the sea */
+.fz-mer::after {
+  content: ""; position: absolute; left: 4%; right: 6%; bottom: 17px; height: 9px; opacity: .55;
+  background: radial-gradient(circle at 8% 70%, #fff 1.4px, transparent 2px), radial-gradient(circle at 20% 40%, #e6fbff 1.6px, transparent 2.2px), radial-gradient(circle at 34% 75%, #fff 1.2px, transparent 1.8px), radial-gradient(circle at 70% 60%, #fff 1.5px, transparent 2.1px), radial-gradient(circle at 84% 35%, #e6fbff 1.3px, transparent 1.9px), radial-gradient(circle at 95% 70%, #fff 1.2px, transparent 1.8px);
 }
-@keyframes fz-drift { from { transform: translateX(-22px); } to { transform: translateX(14px); } }
-@keyframes fz-boat {
-  0%, 100% { translate: 0 -3px; rotate: 0deg; animation-timing-function: cubic-bezier(.333, 0, .667, .333); }
-  25% { translate: 0 0; rotate: 1.2deg; animation-timing-function: cubic-bezier(.333, .667, .667, 1); }
-  50% { translate: 0 3px; rotate: 0deg; animation-timing-function: cubic-bezier(.333, 0, .667, .333); }
-  75% { translate: 0 0; rotate: -1.2deg; animation-timing-function: cubic-bezier(.333, .667, .667, 1); }
-}
-/* From each spout, 98.5px out and 37.4px down to the water, 34.2px up at its height (40.9% of the way), clearing the gorilla */
-@keyframes bt-dx { to { transform: translateX(-98.5px); } }
-@keyframes bt-dy {
-  0% { transform: translateY(0); opacity: .9; animation-timing-function: cubic-bezier(.333, .667, .667, 1); }
-  40.9% { transform: translateY(-34.2px); animation-timing-function: cubic-bezier(.333, 0, .667, .333); }
-  100% { transform: translateY(37.4px); opacity: .7; }
-}
+.mr-water { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) { .run .fz-mer::after { animation: mr-foam 2.4s infinite ease-in-out alternate; } }
+@keyframes mr-foam { from { opacity: .35; transform: translateY(1px) scaleX(.96); } to { opacity: .7; transform: translateY(-1px) scaleX(1.03); } }
 /* While anything scrolls (main.js still()), the decorative animations hold still, all but the footer's */
 html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling :is(.ep-title, .fz-word)::after { animation-play-state: paused !important; }
 /* Moss's cards, the hidden settings (cast.js) */
@@ -1278,8 +1257,8 @@ html.no-deco .fz-word::after { display: none; }
 /* Its footer off: the sea still; the dolphins, which would hang mid-leap, hidden; the ducks hold where the still sea puts
    them (their bob paused at its start, as under reduced motion) */
 html.no-sea .fz-sea { animation: none !important; }
-html.no-sea .dl, html.no-sea .bt-dx { display: none; }
-html.no-sea :is(.fz-drift, .fz-boat) { animation-play-state: paused !important; }
+html.no-sea .dl { display: none; }
+html.no-sea .fz-mer::after { animation: none !important; }
 html.no-sea #foot .dk { animation-play-state: paused !important; }
 html.no-howlight .how-card { animation: none !important; }
 /* In the dream the ducks float on the dolphins' sea, riding its waves: main.js starts each one's bob where the wave under it is.
