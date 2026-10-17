@@ -1,6 +1,6 @@
 // Wiring: data, render, tabs, swipers, bar, countdown. Routes: #/22/episodes/4, #/22/cast/Nina.
 import { loadText, parseCSV, buildSeries } from "./csv.js";
-import { initEdit, hasKey, putFile } from "./edit.js";
+import { initEdit, hasKey, putFile, askKey } from "./edit.js";
 import { derive, currentSeriesKey, airInstant } from "./league.js";
 import { moonAt, moonPath, skyFor } from "./sky.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
@@ -688,7 +688,7 @@ const counted = (slide) => {
   slide.querySelector(".sw-count").textContent = changedSay(n);
   slide.querySelector(".sw-reset").disabled = !resettable();
   const pub = slide.querySelector(".sw-publish");
-  if (pub && !publishing) { pub.disabled = !n; slide.querySelector(".sw-pub").textContent = publishSay(n); }
+  if (pub && !publishing) slide.querySelector(".sw-pub").textContent = publishSay(n);
   for (const g of GROUPS) { const el = slide.querySelector(`.sw-group[data-g="${g.id}"] .sw-g-sum`); if (el) el.textContent = groupSay(g); }
 };
 let reloading = false, publishing = false;
@@ -696,7 +696,9 @@ let reloading = false, publishing = false;
 // defaults (site.js), with edit mode's GitHub key; live once Pages has it (about a minute)
 async function publish(slide) {
   const btn = slide.querySelector(".sw-publish"), say = slide.querySelector(".sw-pub");
-  if (!hasKey()) { say.textContent = "Needs edit mode's GitHub key: tap the seven ducks to add it"; return; }
+  // (always tappable: it says why when there's nothing to do, and asks for the key when there isn't one)
+  if (!changed()) { say.textContent = "Nothing to publish: everyone already sees these settings"; return; }
+  if (!hasKey()) { askKey(() => publish(slide)); return; }
   publishing = true; btn.disabled = true; say.textContent = "Publishing…";
   const all = toPublish(), keys = Object.keys(all);
   const text = `// The live site's settings: chosen on Maurice Moss's cards and published from there (main.js, the Live site card), they
@@ -706,7 +708,8 @@ export const SITE = ${JSON.stringify(all, null, 2)};
   try {
     await putFile("js/site.js", text, `Site settings from Moss's cards: ${keys.length ? keys.map((k) => `${k} ${all[k]}`).join(", ") : "as designed"}`);
     say.textContent = "Published. Live for everyone in about a minute";
-  } catch (e) { say.textContent = e.message; btn.disabled = false; }
+  } catch (e) { say.textContent = `Not published: ${e.message}`; }
+  btn.disabled = false;
   publishing = false;
 }
 $("#cast-body").addEventListener("click", (e) => {

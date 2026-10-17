@@ -103,7 +103,7 @@ const switchCards = () => {
         <div class="sw-count">${changedSay(n)}</div></div>
       <div class="card sw-card"><div class="card-head"><span>Revision</span><button type="button" class="ed-btn sw-reload">Reload</button></div>
         <div class="sw-count"><b class="sw-pr">#${PR}</b> · <span class="sw-rev">Checking…</span></div></div>
-      <div class="card sw-card wide"><div class="card-head"><span>Live site</span><button type="button" class="ed-btn sw-publish"${n ? "" : " disabled"}>Publish</button></div>
+      <div class="card sw-card wide"><div class="card-head"><span>Live site</span><button type="button" class="ed-btn sw-publish">Publish</button></div>
         <div class="sw-count sw-pub">${publishSay(n)}</div></div>`)}</div>`;
 };
 
