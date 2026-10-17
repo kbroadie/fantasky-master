@@ -948,14 +948,15 @@ function celestial() {
   const hr = house.getBoundingClientRect(), u = hr.width / 390, W = $("#foot").clientWidth, left = (W - hr.width) / 2;
   const deg = degPx(innerWidth, innerHeight), fz = state.fantasy;
   // Only as tall as what's drawn reaches: the 46° halo (and the arc 46° above a low sun) round whichever is up, or the comet
-  // Halos only round Fantasy Land's moon (on request: "No haloes in normal view", "don't show halos during the day")
-  const halo = fz && !light.sun;
+  // Halos only in Fantasy Land, round its sun by day and its moon by night (on request: "No haloes in normal view", then
+  // "Halos in day and night fantasy view")
+  const halo = fz;
   const upY = (69 - (light.sun ? light.at.sun : light.at.moon)[1]) * u, cs = cometSky(new Date(), hourOf(get("houseTime")));
   const Hc = Math.max(1, Math.ceil(Math.max(halo ? upY + 50 * deg : 0, cs ? (cs.elev + 6) * deg : 0)));
   skyC.style.height = `${Hc}px`;
   const place = ([x, y]) => ({ x: left + x * u, y: Hc - (69 - y) * u }), dark = (from) => (fz ? 1 : Math.max(0, Math.min(1, (-light.height - from) / 6)));
   const sunUp = light.sun, bright = moonLit ** 3; // a quarter moon gives about a tenth of a full one's light
-  const sun = sunUp ? { ...place(light.at.sun), elev: light.height, show: 0 } : null;
+  const sun = sunUp ? { ...place(light.at.sun), elev: light.height, show: halo ? 1 : 0 } : null;
   const moon = !sunUp ? { ...place(light.at.moon), elev: 55 * Math.sin(Math.PI * light.t), show: halo ? 0.45 * Math.sqrt(bright) : 0 } : null;
   const h = hourOf(get("houseTime"));
   let comet = null;
