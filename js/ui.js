@@ -132,7 +132,7 @@ const KEYS = ["tree", "hedge", "garage", "chimney", "wing", "end", "gable"];
 // them and the floor's near edge (all in the dome's own frame, then moved onto the drive)
 // Recesses: an inner shadow round their edges (#h-inset)
 const inset = (el) => el.replace(/class="[^"]*"/, 'class="inset"');
-const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"><canvas class="stars-c"></canvas><canvas class="aurora-c"></canvas></div><canvas class="sky-c"></canvas><div class="ground"></div><svg viewBox="0 0 390 136">
+const HOUSE = `<div class="house" aria-hidden="true"><div class="sky"><canvas class="stars-c"></canvas></div><canvas class="aurora-c"></canvas><canvas class="sky-c"></canvas><div class="ground"></div><svg viewBox="0 0 390 136">
   <defs><radialGradient id="h-win" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#ecc040"/></radialGradient>
     <radialGradient id="h-halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ecc040" stop-opacity=".22"/><stop offset="1" stop-color="#ecc040" stop-opacity="0"/></radialGradient>
     <radialGradient id="h-moonhalo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#dfe6ff" stop-opacity=".16"/><stop offset="1" stop-color="#dfe6ff" stop-opacity="0"/></radialGradient>

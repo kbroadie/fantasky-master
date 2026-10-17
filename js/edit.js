@@ -88,6 +88,23 @@ async function save() {
   }
 }
 
+// Any other file written to the site the same way, with this browser's key (Moss's Live site card publishes its
+// settings so). Its message says what it is
+export const hasKey = () => !!token();
+export async function putFile(path, text, msg) {
+  const api = `https://api.github.com/repos/${REPO}/contents/${path}`;
+  for (let attempt = 0; ; attempt++) {
+    const got = await gh(`${api}?ref=${BRANCH}`);
+    if (got.status === 401) throw new Error("GitHub didn't accept the key. Open edit mode to paste a new one.");
+    const sha = got.ok ? (await got.json()).sha : undefined;
+    const res = await gh(api, { method: "PUT", body: JSON.stringify({ message: msg, content: b64encode(text), sha, branch: BRANCH }) });
+    if ((res.status === 409 || res.status === 422) && attempt < 2) continue;
+    if (res.status === 403 || res.status === 404) throw new Error("The key can read but not save. Give it Contents: Read and write.");
+    if (!res.ok) throw new Error(`GitHub said ${res.status}`);
+    return;
+  }
+}
+
 let lit = 0, litTimer = 0;
 function duck(dk) {
   if (state.edit || dk.classList.contains("lit")) return;

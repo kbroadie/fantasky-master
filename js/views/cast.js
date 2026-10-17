@@ -2,7 +2,7 @@
 import { esc, rich, ord, framed, state, icon, ICON_PATHS, TASK_NAME } from "../ui.js";
 import { statsFor, badgesFor, factsFor } from "../alltime.js";
 import { faceFor } from "../heroes.js";
-import { GROUPS, changed, changedIn, get, shown, dialAt } from "../switches.js";
+import { GROUPS, changed, changedIn, get, shown, dialAt, sitePublished } from "../switches.js";
 import { PR } from "../version.js";
 
 // Fantasy: lowest total first
@@ -70,11 +70,13 @@ const switchCard = (c, alone = false) => {
       ${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
     </div>`;
 };
-// How many settings differ from the design; Reset does nothing without any
-export const changedSay = (n = changed()) => (n ? `${n} changed` : "As designed");
+// How many settings differ from the defaults (the design's, or the live site's once it has published its own); Reset does
+// nothing without any
+export const changedSay = (n = changed()) => (n ? `${n} changed` : sitePublished() ? "As the site" : "As designed");
 export const resettable = () => changed() > 0;
 // Each group folds away under its head (main.js keeps which are open, per device); its head says how many of its
-// settings are changed. The page's own cards last: Defaults, and Revision (the PR this page came in with)
+// settings are changed. The page's own cards last: Defaults, Revision (the PR this page came in with) and Live site, which
+// publishes this device's settings as everyone's defaults (main.js)
 export const groupOpen = (id) => { try { return localStorage.getItem(`fm-grp-${id}`) === "1"; } catch { return false; } };
 const CHEV = '<svg class="sw-chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>';
 const group = (id, title, sum, body) => {
@@ -86,6 +88,8 @@ const group = (id, title, sum, body) => {
     </section>`;
 };
 export const groupSay = (g) => changedSay(changedIn(g));
+// The Live site card: what Publish would do
+export const publishSay = (n = changed()) => (n ? `Publish this device's ${n} change${n > 1 ? "s" : ""} for everyone` : "Everyone sees these settings");
 // A group's cards: a tile left alone in its row spans it
 const cardsOf = (g) => {
   const tiles = g.cards.filter(tiled);
@@ -98,7 +102,9 @@ const switchCards = () => {
       <div class="card sw-card"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset"${resettable() ? "" : " disabled"}>Reset</button></div>
         <div class="sw-count">${changedSay(n)}</div></div>
       <div class="card sw-card"><div class="card-head"><span>Revision</span><button type="button" class="ed-btn sw-reload">Reload</button></div>
-        <div class="sw-count"><b class="sw-pr">#${PR}</b> · <span class="sw-rev">Checking…</span></div></div>`)}</div>`;
+        <div class="sw-count"><b class="sw-pr">#${PR}</b> · <span class="sw-rev">Checking…</span></div></div>
+      <div class="card sw-card wide"><div class="card-head"><span>Live site</span><button type="button" class="ed-btn sw-publish"${n ? "" : " disabled"}>Publish</button></div>
+        <div class="sw-count sw-pub">${publishSay(n)}</div></div>`)}</div>`;
 };
 
 function median(xs) {

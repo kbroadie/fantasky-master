@@ -1,5 +1,7 @@
 // The aurora (on request: "Make the Aurora physically accurate for the new fantasy land", "position the Aurora relative to
-// the atmospheric effects instead of the background"): in the house's sky with its stars and halos, its foot the horizon,
+// the atmospheric effects instead of the background", then "twist and turn with perspective like it's going from the
+// horizon to offscreen overhead with bright saturated highlights. The viewer should feel like they're surrounded"): in
+// the house's sky, a screen tall, its foot the horizon,
 // facing south through the same level camera (degPx), drawn in the scene's worker (stream-worker.js), which also hands
 // it to the lake to mirror. Fantasy Land is where London was, under a great storm's aurora, as London saw in May 2024: the
 // oval pushed south past it, so its curtains hang in the southern sky.
@@ -25,8 +27,13 @@ float noise(vec2 p) {
 }
 float fbm(vec2 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { s += a * noise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; } return s; }
 const float R = 6371.0, TI = 2.246; // the Earth's radius (km); tan of the field's dip at London (66°)
-// A sheet's footprint at x (km east): its base line south of us (Y, km), folding as it drifts
-float foot(float x, float Y, float A, float sc, float id) { return Y + A * (fbm(vec2(x / sc + uT * 0.012 * (1.0 + 0.3 * id), id * 7.3)) - 0.5); }
+// A sheet's footprint at x (km east): its base line south of us (Y, km), meandering in great folds that swing it from
+// far off, low over the horizon, to near overhead, and folding finer as it drifts; never nearer than 50km (closer, it
+// would be overhead, past the top of the screen)
+float foot(float x, float Y, float A, float sc, float id) {
+  float w = sin(x / sc + uT * 0.045 * (1.0 + 0.35 * id) + id * 1.7) + 0.5 * sin(x / (0.37 * sc) - uT * 0.07 + id * 4.1);
+  return min(-50.0, Y + A * (0.6 * w + 0.9 * (fbm(vec2(x / (0.5 * sc) + uT * 0.02, id * 7.3)) - 0.5)));
+}
 void main() {
   vec2 q = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uRes * uView; // CSS px from the top left; the foot is the horizon
   float F = uDeg * 57.29578;
@@ -39,13 +46,13 @@ void main() {
   float a = N + U / TI, b = (1.0 - U * U) / (2.0 * R * TI);
   for (int i = 0; i < 5; i++) {
     float fi = float(i);
-    float Y = i == 0 ? -170.0 : i == 1 ? -280.0 : i == 2 ? -420.0 : i == 3 ? -640.0 : -1050.0;
-    float A = i == 4 ? 30.0 : 130.0 + 60.0 * fi, sc = i == 4 ? 900.0 : 110.0 + 50.0 * fi;
+    float Y = i == 0 ? -140.0 : i == 1 ? -260.0 : i == 2 ? -430.0 : i == 3 ? -700.0 : -1100.0;
+    float A = i == 4 ? 30.0 : i == 0 ? 120.0 : 150.0 + 70.0 * fi, sc = i == 4 ? 900.0 : 90.0 + 70.0 * fi;
     // Where the ray meets the sheet: solve, then again at the fold there
     float s = 0.0, Yc = Y;
-    for (int k = 0; k < 3; k++) {
+    for (int k = 0; k < 4; k++) {
       float c = -100.0 / TI - Yc, disc = a * a - 4.0 * b * c;
-      if (disc < 0.0) { s = -1.0; break; }
+      if (disc < 0.0 || a >= 0.0) { s = -1.0; break; }
       s = 2.0 * c / (-a + sqrt(disc)); // the nearer root, without cancelling (b is tiny)
       Yc = foot(s * E, Y, A, sc, fi);
     }
@@ -54,30 +61,35 @@ void main() {
     if (h < 80.0 || h > 700.0) continue;
     // The path through it: its thickness over how fast the ray crosses it (a fold seen edge-on is brightest)
     float slope = (foot(x + 2.0, Y, A, sc, fi) - foot(x - 2.0, Y, A, sc, fi)) / 4.0;
-    float path = 1.0 / max(0.06, abs(a + 2.0 * b * s - slope * E));
+    float path = 1.0 / max(0.035, abs(a + 2.0 * b * s - slope * E));
     vec3 c;
     if (i == 4) { // the stable red arc: all oxygen red, high, smooth
       c = vec3(1.0, 0.1, 0.16) * 0.2 * exp(-pow((h - 420.0) / 140.0, 2.0));
     } else {
       // How strong the curtain is along its length, patchy, and its rays: field-aligned, so they depend only on where
       // along the curtain they stand, drifting along it
-      float str = smoothstep(0.2, 0.7, fbm(vec2(x / 230.0 + uT * 0.008, fi * 3.1)));
-      float ray = 0.12 + 0.88 * smoothstep(0.35, 0.8, fbm(vec2(x / 7.0 + uT * (0.35 + 0.1 * fi), fi * 5.0 + uT * 0.05)));
+      float str = smoothstep(0.15, 0.65, fbm(vec2(x / 260.0 + uT * 0.01, fi * 3.1)));
+      float ray = 0.1 + 0.9 * smoothstep(0.35, 0.8, fbm(vec2(x / 7.0 + uT * (0.35 + 0.1 * fi), fi * 5.0 + uT * 0.05)));
       float hb = 100.0 + 14.0 * fbm(vec2(x / 140.0 - uT * 0.01, fi + 20.0)); // its lower edge
       float edge = smoothstep(hb - 3.0, hb + 2.0, h);
-      float green = edge * exp(-max(0.0, h - hb - 4.0) / 38.0) * ray;
-      float red = 0.2 * smoothstep(150.0, 230.0, h) * exp(-max(0.0, h - 260.0) / 130.0) * (0.55 + 0.45 * str);
+      float green = edge * exp(-max(0.0, h - hb - 4.0) / 42.0) * ray;
+      float red = 0.16 * smoothstep(150.0, 230.0, h) * exp(-max(0.0, h - 260.0) / 130.0) * (0.55 + 0.45 * str);
       float fringe = smoothstep(hb - 9.0, hb - 2.0, h) * (1.0 - smoothstep(hb - 1.0, hb + 5.0, h)) * ray;
-      c = (vec3(0.22, 1.0, 0.46) * 1.6 * green + vec3(1.0, 0.36, 0.72) * 0.55 * fringe + vec3(0.48, 0.32, 1.0) * 0.4 * fringe) * str + vec3(1.0, 0.1, 0.18) * red;
-      c *= 0.9 - 0.12 * fi; // the further ones a little fainter (their storm's edge)
+      c = (vec3(0.12, 1.0, 0.42) * 2.4 * green + vec3(1.0, 0.25, 0.7) * 0.6 * fringe + vec3(0.45, 0.25, 1.0) * 0.45 * fringe) * str + vec3(1.0, 0.06, 0.2) * red;
+      c *= 1.0 - 0.1 * fi; // the further ones a little fainter (their storm's edge)
     }
-    col += c * min(path, 9.0) * 0.9;
+    col += c * min(path, 22.0) * 0.8;
   }
   // The air it shines through, low down: dimmer, and redder
   float X = 1.0 / (U + 0.025 * exp(-11.0 * U));
   col *= exp(-vec3(0.36, 0.22, 0.14) * (X - 1.0) * 0.6);
-  col = 1.0 - exp(-col * uB * 1.4); // a camera's soft shoulder
-  gl_FragColor = vec4(col, 0.0); // light added to the sky under it
+  // A camera's soft shoulder on its brightness, keeping its hue, so the bright folds stay saturated; only the very
+  // brightest bloom toward white
+  col *= uB * 1.4;
+  float L = max(col.r, max(col.g, col.b));
+  vec3 o = L > 0.0 ? col * (1.0 - exp(-L)) / L : col;
+  o = mix(o, vec3(1.0), 0.25 * smoothstep(2.5, 8.0, L));
+  gl_FragColor = vec4(o, 0.0); // light added to the sky under it
 }`;
 
 function aurora(canvas) {

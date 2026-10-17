@@ -1,13 +1,13 @@
 // Wiring: data, render, tabs, swipers, bar, countdown. Routes: #/22/episodes/4, #/22/cast/Nina.
 import { loadText, parseCSV, buildSeries } from "./csv.js";
-import { initEdit } from "./edit.js";
+import { initEdit, hasKey, putFile } from "./edit.js";
 import { derive, currentSeriesKey, airInstant } from "./league.js";
 import { moonAt, moonPath, skyFor } from "./sky.js";
 import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, footer } from "./ui.js";
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
-import { castOrder, castTabs, castSlides, castSlide, fill, at as sliderAt, changedSay, resettable, groupSay } from "./views/cast.js";
-import { GROUPS, get, set, item, shown, hourOf, resetAll, changed, onSwitch, setAirPhase } from "./switches.js";
+import { castOrder, castTabs, castSlides, castSlide, fill, at as sliderAt, changedSay, resettable, groupSay, publishSay } from "./views/cast.js";
+import { GROUPS, get, set, item, shown, hourOf, resetAll, changed, onSwitch, setAirPhase, toPublish } from "./switches.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay, reloadFresh } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
@@ -687,9 +687,28 @@ const counted = (slide) => {
   const n = changed();
   slide.querySelector(".sw-count").textContent = changedSay(n);
   slide.querySelector(".sw-reset").disabled = !resettable();
+  const pub = slide.querySelector(".sw-publish");
+  if (pub && !publishing) { pub.disabled = !n; slide.querySelector(".sw-pub").textContent = publishSay(n); }
   for (const g of GROUPS) { const el = slide.querySelector(`.sw-group[data-g="${g.id}"] .sw-g-sum`); if (el) el.textContent = groupSay(g); }
 };
-let reloading = false;
+let reloading = false, publishing = false;
+// Moss's Live site card: this device's settings, as they differ from the design, written to the site as everyone's
+// defaults (site.js), with edit mode's GitHub key; live once Pages has it (about a minute)
+async function publish(slide) {
+  const btn = slide.querySelector(".sw-publish"), say = slide.querySelector(".sw-pub");
+  if (!hasKey()) { say.textContent = "Needs edit mode's GitHub key: tap the seven ducks to add it"; return; }
+  publishing = true; btn.disabled = true; say.textContent = "Publishing…";
+  const all = toPublish(), keys = Object.keys(all);
+  const text = `// The live site's settings: chosen on Maurice Moss's cards and published from there (main.js, the Live site card), they
+// are everyone's defaults (switches.js); a device's own choices still win. Written by the app.
+export const SITE = ${JSON.stringify(all, null, 2)};
+`;
+  try {
+    await putFile("js/site.js", text, `Site settings from Moss's cards: ${keys.length ? keys.map((k) => `${k} ${all[k]}`).join(", ") : "as designed"}`);
+    say.textContent = "Published. Live for everyone in about a minute";
+  } catch (e) { say.textContent = e.message; btn.disabled = false; }
+  publishing = false;
+}
 $("#cast-body").addEventListener("click", (e) => {
   const slide = e.target.closest(".slide");
   const head = e.target.closest(".sw-g-head");
@@ -735,6 +754,7 @@ $("#cast-body").addEventListener("click", (e) => {
     if (item(k).main) sw.closest(".sw-card").classList.toggle("off", !get(k));
     return counted(slide);
   }
+  if (e.target.closest(".sw-publish")) { if (!publishing) publish(slide); return; }
   // Reload, its words kept as they are (on request)
   if (e.target.closest(".sw-reload")) {
     if (!reloading) { reloading = true; reloadFresh(); }
@@ -826,8 +846,7 @@ const footSeen = new IntersectionObserver((es) => {
 footSeen.observe($(".fz-waves"));
 // The lake and Alex's stream (stream.js): drawn in the scene's worker (flip.js) on canvases it's handed, where it can
 // be, else here, still; only while the footer's on screen and the page is showing. Pressing him pumps it up: its
-// pressure rises while he's held, for a moment at least on a tap, and falls when he's let go or the press turns into a
-// scroll or swipe
+// pressure rises while he's held, and the flow stops when he's let go or the press turns into a scroll or swipe
 let water = null, waterWorker = false;
 function waterSend(type, arg) {
   if (!water) {
@@ -883,9 +902,9 @@ document.addEventListener("visibilitychange", () => (document.hidden ? waterOff(
 addEventListener("resize", () => { if (waterSeen) waterOn(); else celestial(); });
 onSwitch(["fzSea"], () => { if (waterSeen) { waterOff(); waterOn(); } });
 const mer = $(".fz-mer");
-let merAt = null, merT = 0, merOff = 0;
-const merUp = () => { merAt = null; clearTimeout(merOff); merOff = setTimeout(() => water?.("press", false), Math.max(0, 450 - (performance.now() - merT))); };
-mer.addEventListener("pointerdown", (e) => { merAt = [e.pointerId, e.clientX, e.clientY]; merT = performance.now(); clearTimeout(merOff); water?.("press", true); });
+let merAt = null;
+const merUp = () => { merAt = null; water?.("press", false); }; // the stream stops as he's let go (on request: no longer than the press)
+mer.addEventListener("pointerdown", (e) => { merAt = [e.pointerId, e.clientX, e.clientY]; water?.("press", true); });
 mer.addEventListener("pointermove", (e) => { if (merAt?.[0] === e.pointerId && Math.hypot(e.clientX - merAt[1], e.clientY - merAt[2]) > 10) merUp(); });
 for (const t of ["pointerup", "pointercancel", "pointerleave"]) mer.addEventListener(t, (e) => { if (merAt?.[0] === e.pointerId) merUp(); });
 mer.addEventListener("contextmenu", (e) => e.preventDefault()); // a long press is his, not the image menu's
@@ -929,13 +948,15 @@ function celestial() {
   const hr = house.getBoundingClientRect(), u = hr.width / 390, W = $("#foot").clientWidth, left = (W - hr.width) / 2;
   const deg = degPx(innerWidth, innerHeight), fz = state.fantasy;
   // Only as tall as what's drawn reaches: the 46° halo (and the arc 46° above a low sun) round whichever is up, or the comet
+  // Halos only round Fantasy Land's moon (on request: "No haloes in normal view", "don't show halos during the day")
+  const halo = fz && !light.sun;
   const upY = (69 - (light.sun ? light.at.sun : light.at.moon)[1]) * u, cs = cometSky(new Date(), hourOf(get("houseTime")));
-  const Hc = Math.ceil(Math.max(upY + 50 * deg, cs ? (cs.elev + 6) * deg : 0));
+  const Hc = Math.max(1, Math.ceil(Math.max(halo ? upY + 50 * deg : 0, cs ? (cs.elev + 6) * deg : 0)));
   skyC.style.height = `${Hc}px`;
   const place = ([x, y]) => ({ x: left + x * u, y: Hc - (69 - y) * u }), dark = (from) => (fz ? 1 : Math.max(0, Math.min(1, (-light.height - from) / 6)));
   const sunUp = light.sun, bright = moonLit ** 3; // a quarter moon gives about a tenth of a full one's light
-  const sun = sunUp ? { ...place(light.at.sun), elev: light.height, show: 1 } : null;
-  const moon = !sunUp ? { ...place(light.at.moon), elev: 55 * Math.sin(Math.PI * light.t), show: 0.45 * Math.sqrt(bright) * dark(4) } : null;
+  const sun = sunUp ? { ...place(light.at.sun), elev: light.height, show: 0 } : null;
+  const moon = !sunUp ? { ...place(light.at.moon), elev: 55 * Math.sin(Math.PI * light.t), show: halo ? 0.45 * Math.sqrt(bright) : 0 } : null;
   const h = hourOf(get("houseTime"));
   let comet = null;
   if (cs) {
