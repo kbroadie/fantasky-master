@@ -948,14 +948,15 @@ function celestial() {
   const hr = house.getBoundingClientRect(), u = hr.width / 390, W = $("#foot").clientWidth, left = (W - hr.width) / 2;
   const deg = degPx(innerWidth, innerHeight), fz = state.fantasy;
   // Only as tall as what's drawn reaches: the 46° halo (and the arc 46° above a low sun) round whichever is up, or the comet
-  // Halos only round Fantasy Land's moon (on request: "No haloes in normal view", "don't show halos during the day")
-  const halo = fz && !light.sun;
+  // Halos only in Fantasy Land, round its sun by day and its moon by night (on request: "No haloes in normal view", then
+  // "Halos in day and night fantasy view")
+  const halo = fz;
   const upY = (69 - (light.sun ? light.at.sun : light.at.moon)[1]) * u, cs = cometSky(new Date(), hourOf(get("houseTime")));
   const Hc = Math.max(1, Math.ceil(Math.max(halo ? upY + 50 * deg : 0, cs ? (cs.elev + 6) * deg : 0)));
   skyC.style.height = `${Hc}px`;
   const place = ([x, y]) => ({ x: left + x * u, y: Hc - (69 - y) * u }), dark = (from) => (fz ? 1 : Math.max(0, Math.min(1, (-light.height - from) / 6)));
   const sunUp = light.sun, bright = moonLit ** 3; // a quarter moon gives about a tenth of a full one's light
-  const sun = sunUp ? { ...place(light.at.sun), elev: light.height, show: 0 } : null;
+  const sun = sunUp ? { ...place(light.at.sun), elev: light.height, show: halo ? 1 : 0 } : null;
   const moon = !sunUp ? { ...place(light.at.moon), elev: 55 * Math.sin(Math.PI * light.t), show: halo ? 0.45 * Math.sqrt(bright) : 0 } : null;
   const h = hourOf(get("houseTime"));
   let comet = null;
@@ -1093,17 +1094,16 @@ function shade() {
   Object.assign(props, { "--fF": face(0.66, -lz), "--fT": face(0.8, ly / 0.82), "--fR": face(0.66, lx), "--fL": face(0.66, -lx), "--fS": face(0.72, 0.71 * (ly - lz)) });
   for (const p in props) house.style.setProperty(p, props[p]);
   // The sky: overhead to the horizon, a glow on the horizon under the sun (wide near sunrise and sunset, where it lingers
-  // after sunset; none around the sun itself), and by night a faint one around the moon; the drive in its gravel (styles.css), lit the same way. In
+  // after sunset; none around the sun itself, and none round the moon: no halos in the normal view); the drive in its gravel (styles.css), lit the same way. In
   // the drawing's units from its middle
   const u = (n) => `calc(${n.toFixed(1)} * var(--u))`, x = (n) => `calc(50% + ${(n - 195).toFixed(1)} * var(--u))`;
   const y = (n) => `calc(100% - ${(78 - n).toFixed(1)} * var(--u))`; // the sky box ends at y 78 and rises behind the page
   const [gx] = light.at.sun, gy = 69, hi = Math.max(0, Math.min(1, light.height / 25));
   const glow = (c, a) => `color-mix(in srgb, ${c} ${(a * 100).toFixed(0)}%, transparent)`;
-  const moonGlow = sun ? [] : [`radial-gradient(${u(60)} ${u(60)} at ${x(light.at.moon[0])} ${y(light.at.moon[1])}, ${glow("#c8d2ff", 0.18 * moonLit)}, transparent)`];
   // Opposite the sun in twilight, the Belt of Venus over Earth's shadow; by full night, London's faint glow on the horizon
   const belt = sky.beltA ? [`radial-gradient(${u(230)} ${u(44)} at ${x(390 - gx)} ${y(gy)}, ${glow(`color-mix(in srgb, ${sky.top} 55%, ${sky.horizon})`, sky.beltA)} 22%, ${glow(sky.belt, sky.beltA)} 48%, transparent)`] : [];
   const city = light.height < -8 ? [`linear-gradient(to top, ${glow("#3a2c2a", 0.5 * Math.min(1, (-8 - light.height) / 8))}, transparent ${u(36)})`] : [];
-  house.querySelector(".sky").style.background = [...moonGlow,
+  house.querySelector(".sky").style.background = [
     `radial-gradient(${u(220 - 100 * hi)} ${u(60 + 20 * hi)} at ${x(gx)} ${y(gy)}, ${glow(sky.glow, sky.glowA)}, transparent)`,
     ...belt, ...city,
     `linear-gradient(${OKLAB}to top, ${sky.horizon}, ${sky.low} ${u(30)}, ${sky.high} ${u(120)}, ${sky.top})`].join(",");
