@@ -94,10 +94,11 @@ export const hasKey = () => !!token();
 export async function putFile(path, text, msg) {
   const api = `https://api.github.com/repos/${REPO}/contents/${path}`;
   for (let attempt = 0; ; attempt++) {
-    const got = await gh(`${api}?ref=${BRANCH}`);
+    const got = await gh(`${api}?ref=${BRANCH}`).catch(() => { throw new Error("Couldn't reach GitHub. Check the connection and try again."); });
     if (got.status === 401) throw new Error("GitHub didn't accept the key. Open edit mode to paste a new one.");
     const sha = got.ok ? (await got.json()).sha : undefined;
-    const res = await gh(api, { method: "PUT", body: JSON.stringify({ message: msg, content: b64encode(text), sha, branch: BRANCH }) });
+    const res = await gh(api, { method: "PUT", body: JSON.stringify({ message: msg, content: b64encode(text), sha, branch: BRANCH }) })
+      .catch(() => { throw new Error("Couldn't reach GitHub. Check the connection and try again."); });
     if ((res.status === 409 || res.status === 422) && attempt < 2) continue;
     if (res.status === 403 || res.status === 404) throw new Error("The key can read but not save. Give it Contents: Read and write.");
     if (!res.ok) throw new Error(`GitHub said ${res.status}`);
@@ -122,7 +123,11 @@ function open() {
   keyDialog();
 }
 
-function keyDialog() {
+// then: what to do once the key checks out (edit mode, by default; Moss's Publish passes its own)
+let afterKey = null;
+export const askKey = (then) => keyDialog(then);
+function keyDialog(then = null) {
+  afterKey = then;
   let dlg = $("#ed-key");
   if (!dlg) {
     document.body.insertAdjacentHTML("beforeend", `
@@ -164,7 +169,7 @@ function keyDialog() {
           await getFile();
           store.set(v);
           dlg.close();
-          start();
+          if (afterKey) afterKey(); else start();
         } catch (err) { memKey = prev; msg.textContent = err.message; }
       }
     });
@@ -172,6 +177,7 @@ function keyDialog() {
   $("#ed-key-in").value = "";
   $("#ed-key-msg").textContent = "";
   dlg.querySelector('[data-ed="forget"]').hidden = !token();
+  dlg.querySelector('[data-ed="use"]').textContent = then ? "Publish" : "Start editing";
   dlg.showModal();
 }
 
