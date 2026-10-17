@@ -5,6 +5,8 @@
 // small fixed set segmented buttons (steps, choice), a strength a slider (range), a value that can follow something (the
 // clock, the airdate) a slider over buttons (dial)
 
+import { SITE } from "./site.js";
+
 // Fantasy Land's transition is Slam where Chromium draws it, else Iris (Safari, and every iOS browser, all WebKit)
 const CHROMIUM = !!navigator.userAgentData?.brands?.some((b) => b.brand === "Chromium");
 // The cards in groups, each folding away (cast.js; which are open is kept per device), the same in both views
@@ -94,14 +96,22 @@ try {
   for (const k of Object.keys(localStorage)) if (k.startsWith("fm-sw-") && !ITEMS[k.slice(6)]) localStorage.removeItem(k);
   for (const k of ["fm-auto", "fm-pinned", "fm-fps-pos"]) localStorage.removeItem(k); // auto-tune and the frame rate graphs, gone
 } catch { /* private mode */ }
+// A value it can take: one still offered (not an old slider's in-between step), or a dial's anything in its range
+const valid = (it, v) => (it.type === "dial" ? v === it.design || (typeof v === "string" && v !== "" && +v >= it.min && +v <= it.max)
+  : it.type === "toggle" ? typeof v === "boolean" : it.type === "choice" ? typeof v === "string" && it.options.some(([o]) => o === v)
+  : typeof v === "number" && (it.options ? it.options.some(([o]) => o === v) : v >= it.min && v <= it.max));
+// The design's defaults, then the live site's where it has published its own (site.js)
+for (const [k, it] of Object.entries(ITEMS)) { it.design = it.def; if (k in SITE && valid(it, SITE[k])) it.def = SITE[k]; }
 for (const [k, it] of Object.entries(ITEMS)) {
   let v = null;
   try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
-  const read = it.type === "toggle" ? v === "1" : it.type === "choice" || it.type === "dial" ? v : +v;
-  // A value no longer offered (an old slider's in-between step) is the default; a dial's any value in its range
-  const ok = it.type === "dial" ? read === it.def || (read !== "" && +read >= it.min && +read <= it.max) : !it.options || it.options.some(([o]) => o === read);
-  values[k] = v == null || !ok ? it.def : read;
+  const read = v == null ? null : it.type === "toggle" ? v === "1" : it.type === "choice" || it.type === "dial" ? v : +v;
+  values[k] = read == null || !valid(it, read) ? it.def : read;
+  if (v != null && values[k] === it.def) try { localStorage.removeItem(id(k)); } catch { /* private mode */ } // now the site's own
 }
+// What this device would publish as the live site's settings: everything it has that differs from the design
+export const toPublish = () => Object.fromEntries(Object.entries(ITEMS).filter(([k, it]) => values[k] !== it.design).map(([k]) => [k, values[k]]));
+export const sitePublished = () => Object.keys(SITE).length > 0;
 export const get = (k) => values[k];
 const tell = (k, v) => dispatchEvent(new CustomEvent("fm-switch", { detail: { key: k, value: v } }));
 

@@ -798,9 +798,15 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
 /* The sky's optics and the comet (halo.js), the same in both footers: behind the drawing, their light added to the sky,
    their foot the horizon (main.js sets the height) */
 .house > .sky-c { position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); bottom: calc(67 * var(--u)); pointer-events: none; mix-blend-mode: plus-lighter; }
-/* The stars and the aurora (stars.js, night.js), in the sky, so they peek with it and fade into the page as it does:
-   their foot the horizon, their middle due south */
+/* The stars (stars.js), in the sky, so they peek with it and fade into the page as it does: their foot the horizon,
+   their middle due south */
 .house > .sky > canvas { position: absolute; left: 0; bottom: calc(9 * var(--u)); width: 100%; height: calc(100% - 9 * var(--u)); pointer-events: none; }
+/* The aurora (night.js): from the horizon up past the top of the screen, overhead (on request: "like it's going from the
+   horizon to offscreen overhead"), behind the page; only its last few percent fade */
+.house > .aurora-c {
+  position: absolute; left: 50%; width: 100cqw; translate: -50% 0; --u: calc(min(390px, 100cqw) / 390); bottom: calc(67 * var(--u)); height: calc(100lvh + 40px); pointer-events: none;
+  -webkit-mask-image: linear-gradient(transparent, #000 6%); mask-image: linear-gradient(transparent, #000 6%);
+}
 /* The sky rises well above the footer, behind the page (the slides are above the footer; Patatas's block is lifted above
    it, #dq), fading out as it goes up */
 .house > .sky {
@@ -937,7 +943,7 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    dream has replaced the earth in the same place; the same elements, so they hold still through the switch), behind the
    lake, Alex and the page; its sky clip kept, or they'd be cut away with the rest */
 html.fz .house { visibility: hidden; }
-html.fz .house :is(.sun, .moon, .sky-c, .sky, clipPath, clipPath *) { visibility: visible; }
+html.fz .house :is(.sun, .moon, .sky-c, .sky, .aurora-c, clipPath, clipPath *) { visibility: visible; }
 html.fz .house > .sky { background: none !important; } /* its stars and aurora kept, its colours gone (hidden, it lost its fade too) */
 html.fz #foot { z-index: -1; }
 html.fz .house, html.fz .house * { animation: none !important; } /* its hidden parts' motion stopped (it cost every scroll) */
@@ -1242,7 +1248,7 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-range:focus-visible { outline: none; }
 .sw-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--gold-glow); }
 .sw-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--gold-glow); }
-.sw-reset, .sw-reload { padding: 6px 10px; }
+.sw-reset, .sw-reload, .sw-publish { padding: 6px 10px; }
 /* A small fixed set on a Moss card: segmented buttons, like the top tabs; four to a row when there are many */
 .sw-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 3px; border: 1px solid var(--b-gold); border-radius: 10px; background: var(--s1); }
 .sw-seg.grid { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 12px 12px; }

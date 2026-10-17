@@ -22,7 +22,7 @@ import { glLake } from "./lake-gl.js";
 
 const FPS = 30, CALM = 15; // drawn while there's water in the air or ripples spreading; the lake alone, slower (it moves slowly)
 const UP = 2.2, DOWN = 1.5; // how fast the pressure rises while pressed, and falls when let go (a second)
-const ON = 8, OFF = 5; // how fast the flow turns on when he's pressed, and off when he's let go (a second)
+const ON = 8, OFF = 40; // how fast the flow turns on when he's pressed, and off when he's let go (a second): it stops with the press
 const M = 4; // px of sky either side of the lake, so the waves never shift an edge in
 const SKY = [214, 204, 255]; // the light from the dream's sky, lavender
 const RIPPLE = 0.3, RIPPLES = 16, AGE = 5.6; // a ripple every 0.3s where it lands, as many at once, each spreading so long (the GPU's)
@@ -48,14 +48,14 @@ export function streamer(jet, lake, bg = {}) {
     return y0 + (y1 - y0) * f;
   };
   // A slice's path at a pressure: up from the spout and down under gravity, slowed by the air (drag k), rising h above the
-  // spout and landing at land(e) after T seconds (solved once a pressure)
+  // spout (6–30px) and landing at land(e) after T seconds (solved once a pressure)
   const paths = new Map();
   function path(e) {
     const key = Math.round(e * 100);
     let q = paths.get(key);
     if (q) return q;
     e = key / 100;
-    const [lx, ly] = land(e), D = ly - g.sy, h = 14 + 50 * e, kk = KJ;
+    const [lx, ly] = land(e), D = ly - g.sy, h = 6 + 24 * e, kk = KJ; // low, leaving at about 40°, as his funnel points
     const w0 = Math.sqrt(2 * G * h) * (1 + 0.5 * kk * Math.sqrt((2 * h) / G));
     const z = (t) => ((w0 + G / kk) * (1 - Math.exp(-kk * t))) / kk - (G / kk) * t;
     let T = (w0 + Math.sqrt(w0 * w0 + 2 * G * D)) / G;
