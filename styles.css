@@ -943,6 +943,10 @@ html.fz .hs-cell.dq, html.fz .hs-key.dq { --x: var(--s2); background: var(--cros
    lake, Alex and the page; its sky clip kept, or they'd be cut away with the rest */
 html.fz .house { visibility: hidden; }
 html.fz .house :is(.sun, .moon, .sky-c, .sky, .aurora-c, clipPath, clipPath *) { visibility: visible; }
+/* Safari paints nothing inside a hidden <svg>, however visible its children: so the drawing stays visible, untouchable,
+   and its parts are hidden instead, all but the sky's (the sun and the moon) */
+html.fz .house > svg:not(.smoke) { visibility: visible; pointer-events: none; }
+html.fz .house > svg:not(.smoke) > :not(defs, [clip-path]) { visibility: hidden; }
 html.fz .house > .sky { background: none !important; } /* its stars and aurora kept, its colours gone (hidden, it lost its fade too) */
 html.fz #foot { z-index: -1; }
 html.fz .house, html.fz .house * { animation: none !important; } /* its hidden parts' motion stopped (it cost every scroll) */
@@ -1107,7 +1111,7 @@ html.fz .ep-title .ep-t { color: var(--t1); text-shadow: 0 1px 0 rgba(42, 8, 69,
 /* Sparkles flank the title */
 html.fz .ep-title::before, html.fz .ep-title::after { content: "✨"; flex: none; margin: 0 .3em; font-size: .62em; }
 html.fz .ep-title::after { animation-delay: -1.1s; }
-html.fz .st-how { color: var(--gold2); text-shadow: 0 0 8px rgba(255, 225, 77, .3); }
+html.fz .st-how { color: var(--gold2); text-shadow: 0 0 8px rgba(255, 225, 77, .3); white-space: nowrap; padding-inline: 4px; } /* one line, to 320px */
 /* Profile in the dream: tinted photo, purple shade, pink labels */
 html.fz .pf-bg::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(135deg, rgba(255, 63, 164, .55), rgba(176, 75, 255, .45) 50%, rgba(23, 212, 240, .5)); mix-blend-mode: soft-light; }
 html.fz .pf-bg::after {
