@@ -1227,6 +1227,7 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 /* Moss's cards in a box of their own (cast.js; main.js sets its height to end where the screen does, less Patatas and the
    footer): it scrolls and the page doesn't, so the sky, the footer and Patatas are in view under it as its settings change.
    Its last card fades out at its foot */
+html.moss #dq { display: none; } /* Patatas stands aside on Moss's page (on request), for more of his cards */
 .moss-box {
   overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: 28px;
   -webkit-mask-image: linear-gradient(#000 calc(100% - 22px), transparent); mask-image: linear-gradient(#000 calc(100% - 22px), transparent);
