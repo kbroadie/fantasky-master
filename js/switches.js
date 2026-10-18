@@ -8,7 +8,7 @@
 import { SITE } from "./site.js";
 
 // Fantasy Land's transition is Slam where Chromium draws it, else Iris (Safari, and every iOS browser, all WebKit): Slam is
-// broken there, so it isn't offered, and a device that had chosen it is back on Iris
+// broken there, so it's kept on the card to look into, but chosen only for the visit (`brief`)
 const CHROMIUM = !!navigator.userAgentData?.brands?.some((b) => b.brand === "Chromium");
 // The cards in groups, each folding away (cast.js; which are open is kept per device), the same in both views
 export const GROUPS = [
@@ -16,8 +16,8 @@ export const GROUPS = [
     // Fantasy Land's switch in its head (not a setting: it switches the view), and how the view changes (flip.js): a tap
     // on one plays it
     { title: "Fantasy Land", fz: true,
-      items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["grade", "Grade"],
-        ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]].filter(([o]) => CHROMIUM || o !== "slam") }] },
+      items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", brief: CHROMIUM ? [] : ["slam"], options: [["iris", "Iris"], ["ripple", "Ripple"], ["grade", "Grade"],
+        ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
     { title: "Background effects",
       items: [
         { key: "fall", type: "toggle", def: false, main: true, cls: "no-fall" },
@@ -102,12 +102,12 @@ const valid = (it, v) => (it.type === "dial" ? v === it.design || (typeof v === 
   : it.type === "toggle" ? typeof v === "boolean" : it.type === "choice" ? typeof v === "string" && it.options.some(([o]) => o === v)
   : typeof v === "number" && (it.options ? it.options.some(([o]) => o === v) : v >= it.min && v <= it.max));
 // The design's defaults, then the live site's where it has published its own (site.js)
-for (const [k, it] of Object.entries(ITEMS)) { it.design = it.def; if (k in SITE && valid(it, SITE[k])) it.def = SITE[k]; }
+for (const [k, it] of Object.entries(ITEMS)) { it.design = it.def; if (k in SITE && valid(it, SITE[k]) && !it.brief?.includes(SITE[k])) it.def = SITE[k]; }
 for (const [k, it] of Object.entries(ITEMS)) {
   let v = null;
   try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
   const read = v == null ? null : it.type === "toggle" ? v === "1" : it.type === "choice" || it.type === "dial" ? v : +v;
-  values[k] = read == null || !valid(it, read) ? it.def : read;
+  values[k] = read == null || !valid(it, read) || it.brief?.includes(read) ? it.def : read;
   if (v != null && values[k] === it.def) try { localStorage.removeItem(id(k)); } catch { /* private mode */ } // now the site's own
 }
 // What this device would publish as the live site's settings: everything it has that differs from the design
@@ -120,7 +120,7 @@ export function set(k, v) {
   const it = ITEMS[k];
   values[k] = v;
   try {
-    if (v === it.def) localStorage.removeItem(id(k));
+    if (v === it.def || it.brief?.includes(v)) localStorage.removeItem(id(k)); // (a brief choice lasts the visit)
     else localStorage.setItem(id(k), it.type === "toggle" ? (v ? "1" : "0") : String(v));
   } catch { /* private mode: lasts the visit */ }
   apply(it);
