@@ -338,7 +338,7 @@ Tapping **Embrace failure** under every tab (`flip.js`) switches the whole app t
 | Cast wins | episodes won | episodes on the lowest score |
 | Radar | z-score per axis, −3σ at the centre | the same z, the scale turned inside out (+3σ at the centre) |
 
-The How scoring works cards read "fewest points" and "worst episode placements". The All-time records card isn't shown.
+The How scoring works button reads "How losing works", and its cards read "fewest points" and "worst episode placements". The All-time records card isn't shown.
 
 ---
 

@@ -71,7 +71,7 @@ function leaderLine(d, rows, w) {
 }
 
 export function standingsHero(d, w = stWeek(d)) {
-  const how = `<button type="button" class="st-how" aria-expanded="${state.how}" aria-controls="st-explain-${w}">How scoring works<i class="st-how-chev" aria-hidden="true"></i></button>
+  const how = `<button type="button" class="st-how" aria-expanded="${state.how}" aria-controls="st-explain-${w}">How ${state.fantasy ? "losing" : "scoring"} works<i class="st-how-chev" aria-hidden="true"></i></button>
     <div class="st-explain" id="st-explain-${w}"><div><div class="how-grid">${terms().map(howCard).join("")}</div><button type="button" class="st-wl" aria-controls="welcome">New here? <span>Read the welcome</span></button></div></div>`;
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${esc(fmtDay.format(d.episodes[w - 1].air))}</div>`;
   if (w > d.weeksScored) return `${kicker}<h2 class="ep-title"><span class="ep-w"><span class="ep-t">Episode ${w}</span></span></h2><p class="st-leaders"><span>Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</span></p>${how}`;
