@@ -93,6 +93,7 @@ function renderCast(d) {
 // one in a slide off screen lays out that whole slide (content-visibility), and all of them took ~280ms at a 4× throttled
 // CPU. The rest are fitted as they come near (mark), and all again when the width changes. Reads, then writes
 function fitTitles() {
+  mossFit();
   const near = [ST, EP, CAST].filter((sw) => $(sw.body).offsetParent).flatMap((sw) => { const k = $(sw.body).children, i = sw.get(); return [k[i - 1], k[i], k[i + 1]]; });
   const key = `${pageW} ${state.fantasy ? 1 : 0}`;
   fitLeaders(near.filter(Boolean), key);
@@ -124,6 +125,22 @@ function fitLeaders(slides, key) {
     if (over() && b?.dataset.n > 1) { b.dataset.names = b.textContent; b.textContent = `${b.dataset.n} players`; size(0); shrink(); }
   }
 }
+// Moss's cards (cast.js): their box ends where the screen does, less Patatas and the footer, so the page fits the screen
+// and everything they change in the sky, the footer or Patatas stays in view under them as it changes. Its scroll is kept
+// through a new drawing of it (the switch to Fantasy Land, a reset)
+let mossTop = 0;
+function mossFit() {
+  const box = $("#cast-body .moss-box"), body = $("#cast-body"), s = box?.parentElement;
+  // (measured only on show or beside it: an off-screen slide would be laid out whole to measure it)
+  if (!box || !body.offsetParent || ![s, s.previousElementSibling, s.nextElementSibling].some((x) => x?.classList.contains("here"))) return;
+  const fresh = !box.dataset.fit;
+  box.dataset.fit = 1;
+  const h = `${Math.max(240, Math.floor(roomIn(body) - (s.offsetHeight - box.offsetHeight)))}px`;
+  if (box.style.height !== h) box.style.height = h;
+  if (fresh && mossTop) box.scrollTop = mossTop;
+}
+document.addEventListener("scroll", (e) => { if (e.target.classList?.contains("moss-box")) mossTop = e.target.scrollTop; }, { capture: true, passive: true });
+addEventListener("resize", mossFit);
 // Titles refit when main's width changes
 let pageW = 0;
 new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== pageW) { pageW = w; fitTitles(); } peek(true); }).observe($("main"));
@@ -769,7 +786,12 @@ $("#cast-body").addEventListener("click", (e) => {
     head.setAttribute("aria-expanded", open);
     sec.querySelector(".sw-grid").hidden = !open;
     try { if (open) localStorage.setItem(`fm-grp-${sec.dataset.g}`, "1"); else localStorage.removeItem(`fm-grp-${sec.dataset.g}`); } catch { /* private mode */ }
-    if (open) revision();
+    if (open) {
+      revision();
+      // brought to the top of Moss's box, its cards under it, so they're there without scrolling to them
+      const box = sec.closest(".moss-box");
+      if (box) box.scrollTo({ top: box.scrollTop + sec.getBoundingClientRect().top - box.getBoundingClientRect().top - 12, behavior: reducedMotion ? "auto" : "smooth" });
+    }
     return;
   }
   const opt = e.target.closest(".sw-seg [data-v]");
@@ -813,7 +835,7 @@ $("#cast-body").addEventListener("click", (e) => {
   }
   const img = e.target.closest(".cd-img[data-moss]"), reset = e.target.closest(".sw-reset");
   if (!img && !reset) return;
-  if (img) state.moss = !state.moss; else resetAll();
+  if (img) { state.moss = !state.moss; mossTop = 0; } else resetAll();
   const c = state.d.contestants.find((o) => o.key === slide.querySelector("[data-moss]").dataset.moss);
   slide.innerHTML = castSlide(state.d, c);
   mountPodiumFx($("#cast-body"));

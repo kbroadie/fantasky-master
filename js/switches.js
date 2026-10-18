@@ -60,14 +60,16 @@ export const GROUPS = [
       ] },
   ] },
   { id: "fx", title: "Effects", cards: [
-    { title: "Podium effects",
+    // (with a podium of its own on the card, to see them on: the leader's light and last place's gas)
+    { title: "Podium effects", preview: "podium",
       items: [
         { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
         { key: "podRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
         { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
         { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
       ] },
-    { title: "Scoring cards",
+    // (the card itself one of them, its light drifting)
+    { title: "Scoring cards", preview: "how",
       items: [{ key: "howLight", type: "toggle", def: false, main: true, cls: "no-howlight" }] },
     // The footers' motion: Fantasy Land's lake and Alex's stream (when he's pressed); the house's lights coming up on show
     // days and its chimney's smoke. Off, still (the stream drawn still, the house lit at once)
