@@ -166,12 +166,11 @@ main { padding-top: calc(var(--bar-h) - var(--bar-d) + env(safe-area-inset-top))
 
 .st-hero { text-align: center; padding-block: 18px 16px; } /* the same as .ep-head */
 .st-hero .ep-title { margin-bottom: 0; }
-.st-hero .ep-sub { margin-top: 6px; }
 /* A fixed two lines, whoever leads, in both views (so the Slam pictures the board at one height): the Show's leader over
-   the League's, or one line between them when the same player leads both */
+   the League's, or one line between them when the same player leads both; an unaired week's airtime in the same box */
 .st-leaders {
   display: flex; flex-direction: column; justify-content: center; align-items: center; height: 34px; margin-top: 6px;
-  font-size: 14px; line-height: 16px; color: var(--t2); text-shadow: 0 1px 8px rgba(0, 0, 0, .7);
+  font-size: 14px; line-height: 16px; color: var(--t2); font-variant-numeric: tabular-nums; text-shadow: 0 1px 8px rgba(0, 0, 0, .7);
 }
 .st-leaders > span { white-space: nowrap; }
 .st-leaders > span:only-child { white-space: normal; text-align: center; text-wrap: balance; } /* a tie can take both lines */
