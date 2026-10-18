@@ -107,7 +107,7 @@ function fitTitles() {
 }
 // Titles refit when main's width changes
 let pageW = 0;
-new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== pageW) { pageW = w; fitTitles(); } peek(); }).observe($("main"));
+new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== pageW) { pageW = w; fitTitles(); } peek(true); }).observe($("main"));
 
 // Edit mode: re-render from the new CSV text, keeping slide and open player.
 function refresh(text) {
@@ -222,29 +222,57 @@ function lift(p, t) {
 // which then holds the sky, only the dimming runs, from where the page was laid out before it
 let skyEl = null, skyK = "", sky = { r: 0, h: 1 }, praf = 0;
 const pageTop = (el) => { let y = 0; for (; el; el = el.offsetParent) y += el.offsetTop; return y; }; // as laid out (no lift)
-function peek() {
+// smooth: the page's height changed (a row opening or closing): the sky glides to its new place and opacity with the
+// footer (footGlide), rather than jumping there in a frame (on request: it "shifts abruptly")
+function peek(smooth = false) {
   praf = 0;
   if (!skyEl?.isConnected) { skyEl = $("#foot .house > .sky"); skyK = ""; }
   if (!skyEl) return;
   if (document.body.classList.contains("lifting")) { skyK = ""; return; } // skyLift has it
-  const dq = pageTop($("#dq"));
+  const dq = pageTop($("#dq")), old = sky;
   sky = { r: Math.round(dq - innerHeight), h: Math.max(1, pageTop($("#foot")) - dq) };
   const { r, h } = sky, st = skyEl.style, move = r > 0, dim = r + h > 0;
   if (SDA) {
     const k = `${r} ${h} ${move}`;
     if (k === skyK) return;
+    const was = smooth && skyK && !held();
     skyK = k;
     st.animationName = "none"; getComputedStyle(skyEl).animationName; // restarted: Chrome keeps a running one's old range start
     st.animationTimeline = "";
     st.setProperty("--pk", `${-r}px`);
     st.animationRange = `0px ${Math.max(1, r)}px, ${r}px ${r + h}px`;
     st.animationName = `${move ? "peek" : "none"}, ${dim ? "peek-dim" : "none"}`;
+    // (a restarted scroll-driven animation draws its first frame without its effect: held at its values for it)
+    const b = skyAt(sky);
+    skyEl.animate({ transform: [`translateY(${b.t}px)`, `translateY(${b.t}px)`], opacity: [b.o, b.o] }, { duration: 50 });
+    if (was) skyGlide(old);
   } else {
     const t = move && r > scrollY ? `translateY(${Math.round(scrollY - r)}px)` : "";
     const o = dim && scrollY < r + h ? `${Math.max(0, Math.min(1, (scrollY - r) / h)) * (1 - PEEK_DIM) + PEEK_DIM}` : "";
     if (st.transform !== t) st.transform = t;
     if (st.opacity !== o) st.opacity = o;
+    if (smooth && !held()) skyGlide(old);
   }
+}
+// How far the sky is held up from its place and how bright it is, for its ranges ({ r, h }) at this scroll (as peek and
+// peek-dim give them; worked out, as a scroll-driven animation's new values show only from the next frame), and a glide
+// from what the old ranges gave to what the new ones give: the difference eased away on top of its own animations
+// (added to them), as the footer glides, in step with the rows
+const skyAt = ({ r, h }, y = scrollY) => ({ t: r > 0 && r > y ? y - r : 0, o: r + h > 0 && y < r + h ? Math.max(0, Math.min(1, (y - r) / h)) * (1 - PEEK_DIM) + PEEK_DIM : 1 });
+// A closing row takes the footer up before the page shortens (slideShut): the sky goes with it to what the shorter page
+// will give (the page and the scroll that much less), held there until the new ranges take over (held)
+let skyHold = null;
+function skyAhead(less, scrolled) {
+  if (!skyEl || reducedMotion) return;
+  const a = skyAt(sky), b = skyAt({ r: sky.r - less, h: sky.h }, scrollY - scrolled);
+  if (Math.abs(a.t - b.t) < 1 && Math.abs(a.o - b.o) < 0.01) return;
+  skyHold = skyEl.animate({ transform: ["translateY(0)", `translateY(${(b.t - a.t).toFixed(1)}px)`], opacity: [0, b.o - a.o] }, { duration: GLIDE_MS, easing: FOOT_EASE, fill: "forwards", composite: "add" });
+}
+const held = () => { const h = skyHold; skyHold = null; h?.cancel(); return !!h; };
+function skyGlide(old) {
+  const a = skyAt(old), b = skyAt(sky), dy = a.t - b.t, dop = a.o - b.o;
+  if (reducedMotion || document.documentElement.dataset.vt || (Math.abs(dy) < 1 && Math.abs(dop) < 0.01)) return;
+  skyEl.animate({ transform: [`translateY(${dy.toFixed(1)}px)`, "translateY(0)"], opacity: [dop, 0] }, { duration: GLIDE_MS, easing: FOOT_EASE, composite: "add" });
 }
 const queuePeek = () => { if (!praf) praf = requestAnimationFrame(peek); };
 // The sky's opacity with Patatas's block's top this far down the screen (as peek-dim gives it)
@@ -589,6 +617,7 @@ function slideShut(board, row, finish) {
   const less = now - Math.max(row.closest(".st-slide").offsetHeight - h, roomIn(body));
   const end = document.documentElement.scrollHeight - innerHeight, up = less - Math.max(0, scrollY - (end - less));
   const foot = up < 1 ? [] : lifted.map((el) => el.animate({ transform: ["translateY(0)", `translateY(${-up}px)`] }, { duration: GLIDE_MS, easing: FOOT_EASE, fill: "forwards", composite: "add" }));
+  if (up >= 1) skyAhead(less, less - up); // and the sky with it
   // Reads as closed at once; only the height waits for the glide
   delete row.dataset.open;
   for (const b of row.querySelectorAll(".sd")) b.setAttribute("aria-expanded", "false");
