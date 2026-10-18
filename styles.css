@@ -1256,6 +1256,7 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 3px; border: 1px solid var(--b-gold); border-radius: 10px; background: var(--s1); }
 .sw-seg.grid { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 12px 12px; }
 .sw-seg.grid > :last-child:nth-child(4n + 1) { grid-column: 1 / -1; } /* a last one alone (Off) spans the row */
+.sw-seg.grid > :last-child:nth-child(4n + 3) { grid-column: span 2; } /* or the rest of it (Off, where Slam isn't offered) */
 .sw-seg button {
   min-height: 32px; padding: 0 4px; border: 0; border-radius: 7px; background: none; color: var(--t2);
   font: 500 11px var(--fm); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; -webkit-tap-highlight-color: transparent;

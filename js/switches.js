@@ -7,7 +7,8 @@
 
 import { SITE } from "./site.js";
 
-// Fantasy Land's transition is Slam where Chromium draws it, else Iris (Safari, and every iOS browser, all WebKit)
+// Fantasy Land's transition is Slam where Chromium draws it, else Iris (Safari, and every iOS browser, all WebKit): Slam is
+// broken there, so it isn't offered, and a device that had chosen it is back on Iris
 const CHROMIUM = !!navigator.userAgentData?.brands?.some((b) => b.brand === "Chromium");
 // The cards in groups, each folding away (cast.js; which are open is kept per device), the same in both views
 export const GROUPS = [
@@ -16,7 +17,7 @@ export const GROUPS = [
     // on one plays it
     { title: "Fantasy Land", fz: true,
       items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["grade", "Grade"],
-        ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
+        ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]].filter(([o]) => CHROMIUM || o !== "slam") }] },
     { title: "Background effects",
       items: [
         { key: "fall", type: "toggle", def: false, main: true, cls: "no-fall" },
