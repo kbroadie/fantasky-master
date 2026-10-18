@@ -67,7 +67,7 @@ export function standingsHero(d, w = stWeek(d)) {
     <div class="st-explain" id="st-explain-${w}"><div><div class="how-grid">${terms().map(howCard).join("")}</div><button type="button" class="st-wl" aria-controls="welcome">New here? <span>Read the welcome</span></button></div></div>`;
   const kicker = `<div class="kicker">Series ${esc(state.key)} · ${esc(fmtDay.format(d.episodes[w - 1].air))}</div>`;
   if (w > d.weeksScored) return `${kicker}<h2 class="ep-title"><span class="ep-w"><span class="ep-t">Episode ${w}</span></span></h2><div class="ep-sub">Airs ${esc(fmtWhen.format(d.episodes[w - 1].air))}</div>${how}`;
-  return `${kicker}<h2 class="ep-title"><span class="ep-w"><span class="ep-t">Episode ${w} Standings</span></span></h2><p class="st-leaders">${leaderLine(d, atWeek(d, w), w)}</p>${how}`;
+  return `${kicker}<h2 class="ep-title"><span class="ep-w"><span class="ep-t">Episode ${w} ${state.fantasy ? "Failings" : "Standings"}</span></span></h2><p class="st-leaders">${leaderLine(d, atWeek(d, w), w)}</p>${how}`;
 }
 
 // Welcome card: the host's words, lightly adapted; keep their jokes.
