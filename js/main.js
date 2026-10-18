@@ -130,12 +130,16 @@ function fitLeaders(slides, key) {
 // through a new drawing of it (the switch to Fantasy Land, a reset)
 let mossTop = 0;
 function mossFit() {
-  const box = $("#cast-body .moss-box"), body = $("#cast-body"), s = box?.parentElement;
+  const box = $("#cast-body .moss-box"), body = $("#cast-body"), s = box?.parentElement, html = document.documentElement;
+  // Patatas stands aside while they're on show, for more of them (on request; html.moss)
+  html.classList.toggle("moss", !!(box && body.offsetParent && s.classList.contains("here")));
   // (measured only on show or beside it: an off-screen slide would be laid out whole to measure it)
   if (!box || !body.offsetParent || ![s, s.previousElementSibling, s.nextElementSibling].some((x) => x?.classList.contains("here"))) return;
   const fresh = !box.dataset.fit;
   box.dataset.fit = 1;
-  const h = `${Math.max(240, Math.floor(roomIn(body) - (s.offsetHeight - box.offsetHeight)))}px`;
+  // (beside the slide on show, Patatas is still there: the room he'll leave counted in)
+  const dq = $("#dq"), aside = html.classList.contains("moss") ? 0 : dq.offsetHeight + (parseFloat(getComputedStyle(dq).marginTop) || 0);
+  const h = `${Math.max(240, Math.floor(roomIn(body) + aside - (s.offsetHeight - box.offsetHeight)))}px`;
   if (box.style.height !== h) box.style.height = h;
   if (fresh && mossTop) box.scrollTop = mossTop;
 }
@@ -265,7 +269,7 @@ function peek(smooth = false) {
   if (!skyEl?.isConnected) { skyEl = $("#foot .house > .sky"); skyK = ""; }
   if (!skyEl) return;
   if (document.body.classList.contains("lifting")) { skyK = ""; return; } // skyLift has it
-  const dq = pageTop($("#dq")), old = sky;
+  const dq = pageTop($("#dq").offsetParent ? $("#dq") : $("#foot")), old = sky; // (the footer's top while Patatas stands aside)
   sky = { r: Math.round(dq - innerHeight), h: Math.max(1, pageTop($("#foot")) - dq) };
   const { r, h } = sky, st = skyEl.style, move = r > 0, dim = r + h > 0;
   if (SDA) {
