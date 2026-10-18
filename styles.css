@@ -1224,6 +1224,27 @@ html.fz.scrolling :is(.tab-ind, .ep-title, .fz-word)::before, html.fz.scrolling 
 .sw-card .card-head { gap: 10px; padding: 10px 12px; letter-spacing: .1em; }
 .sw-card .card-head > span { min-width: 0; }
 .sw-card.off .sw-rows { opacity: .4; }
+/* Moss's cards in a box of their own (cast.js; main.js sets its height to end where the screen does, less Patatas and the
+   footer): it scrolls and the page doesn't, so the sky, the footer and Patatas are in view under it as its settings change.
+   Its last card fades out at its foot */
+.moss-box {
+  overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: 28px;
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 22px), transparent); mask-image: linear-gradient(#000 calc(100% - 22px), transparent);
+}
+/* The Podium effects card's own podium: the leader in the light, last place in the gas (podium-fx.js, as any stage) */
+.sw-pod { display: flex; justify-content: center; align-items: flex-end; gap: 56px; margin: 0 12px 12px; padding: 18px 0 16px; border-radius: 10px; background: radial-gradient(120% 90% at 50% 100%, rgba(255, 255, 255, .04), rgba(0, 0, 0, .25)); }
+.sw-pod .pod-col { flex: none; width: 62px; }
+.sw-pod .fp { display: block; width: 100%; height: auto; }
+/* The Scoring cards tile as one of them: their Show card's colours, its light drifting and its crown's glint while on */
+.sw-card.sw-how {
+  --hc: var(--show); --hc-hi: var(--show-hi); --hc-glow: var(--show-glow); --hc-deep: #2a0d10; border-color: var(--show-edge);
+  background: var(--grain), radial-gradient(90% 60% at 35% -6%, var(--hc-glow), transparent 70%), linear-gradient(160deg, var(--hc-deep), var(--s1) 62%);
+  background-size: 140px 140px, 160% 100%, 100% 100%; animation: how-drift 14s ease-in-out infinite alternate;
+}
+.sw-how .how-icon { width: 32px; height: 32px; margin: 0 12px 12px; }
+.sw-how .how-ico { width: 18px; height: 18px; }
+html.no-howlight .sw-how { animation: none; background-position: 0 0, 50% 0, 0 0; }
+@media (prefers-reduced-motion: reduce) { .sw-card.sw-how { animation: none; background-position: 0 0, 50% 0, 0 0; } }
 .sw-rows { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 16px; padding: 2px 12px 12px; }
 .sw-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 1.25; color: var(--t1); }
 .sw-slide { grid-column: 1 / -1; display: grid; grid-template-columns: 6.5em minmax(0, 1fr) 3.4em; gap: 12px; }

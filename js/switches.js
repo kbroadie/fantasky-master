@@ -7,7 +7,8 @@
 
 import { SITE } from "./site.js";
 
-// Fantasy Land's transition is Slam where Chromium draws it, else Iris (Safari, and every iOS browser, all WebKit)
+// Fantasy Land's transition is Slam where Chromium draws it, else Iris (Safari, and every iOS browser, all WebKit): Slam is
+// broken there, so it's kept on the card to look into, but chosen only for the visit (`brief`)
 const CHROMIUM = !!navigator.userAgentData?.brands?.some((b) => b.brand === "Chromium");
 // The cards in groups, each folding away (cast.js; which are open is kept per device), the same in both views
 export const GROUPS = [
@@ -15,7 +16,7 @@ export const GROUPS = [
     // Fantasy Land's switch in its head (not a setting: it switches the view), and how the view changes (flip.js): a tap
     // on one plays it
     { title: "Fantasy Land", fz: true,
-      items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", options: [["iris", "Iris"], ["ripple", "Ripple"], ["grade", "Grade"],
+      items: [{ key: "fzMove", type: "choice", label: "Transition", def: CHROMIUM ? "slam" : "iris", brief: CHROMIUM ? [] : ["slam"], options: [["iris", "Iris"], ["ripple", "Ripple"], ["grade", "Grade"],
         ["vertigo", "Vertigo"], ["dream", "Dream"], ["turn", "Turn"], ["slam", "Slam"], ["off", "Off"]] }] },
     { title: "Background effects",
       items: [
@@ -59,14 +60,16 @@ export const GROUPS = [
       ] },
   ] },
   { id: "fx", title: "Effects", cards: [
-    { title: "Podium effects",
+    // (with a podium of its own on the card, to see them on: the leader's light and last place's gas)
+    { title: "Podium effects", preview: "podium",
       items: [
         { key: "podium", type: "toggle", def: true, main: true, cls: "no-podium" },
         { key: "podRes", type: "steps", label: "Resolution", def: 0.25, options: [[0.25, "25%"], [0.5, "50%"], [0.75, "75%"], [1, "100%"]] },
         { key: "podLight", type: "range", label: "Light", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
         { key: "podGas", type: "range", label: "Gas", def: 1, min: 0, max: 2, step: 0.25, unit: "×" },
       ] },
-    { title: "Scoring cards",
+    // (the card itself one of them, its light drifting)
+    { title: "Scoring cards", preview: "how",
       items: [{ key: "howLight", type: "toggle", def: false, main: true, cls: "no-howlight" }] },
     // The footers' motion: Fantasy Land's lake and Alex's stream (when he's pressed); the house's lights coming up on show
     // days and its chimney's smoke. Off, still (the stream drawn still, the house lit at once)
@@ -101,12 +104,12 @@ const valid = (it, v) => (it.type === "dial" ? v === it.design || (typeof v === 
   : it.type === "toggle" ? typeof v === "boolean" : it.type === "choice" ? typeof v === "string" && it.options.some(([o]) => o === v)
   : typeof v === "number" && (it.options ? it.options.some(([o]) => o === v) : v >= it.min && v <= it.max));
 // The design's defaults, then the live site's where it has published its own (site.js)
-for (const [k, it] of Object.entries(ITEMS)) { it.design = it.def; if (k in SITE && valid(it, SITE[k])) it.def = SITE[k]; }
+for (const [k, it] of Object.entries(ITEMS)) { it.design = it.def; if (k in SITE && valid(it, SITE[k]) && !it.brief?.includes(SITE[k])) it.def = SITE[k]; }
 for (const [k, it] of Object.entries(ITEMS)) {
   let v = null;
   try { v = localStorage.getItem(id(k)); } catch { /* private mode */ }
   const read = v == null ? null : it.type === "toggle" ? v === "1" : it.type === "choice" || it.type === "dial" ? v : +v;
-  values[k] = read == null || !valid(it, read) ? it.def : read;
+  values[k] = read == null || !valid(it, read) || it.brief?.includes(read) ? it.def : read;
   if (v != null && values[k] === it.def) try { localStorage.removeItem(id(k)); } catch { /* private mode */ } // now the site's own
 }
 // What this device would publish as the live site's settings: everything it has that differs from the design
@@ -119,7 +122,7 @@ export function set(k, v) {
   const it = ITEMS[k];
   values[k] = v;
   try {
-    if (v === it.def) localStorage.removeItem(id(k));
+    if (v === it.def || it.brief?.includes(v)) localStorage.removeItem(id(k)); // (a brief choice lasts the visit)
     else localStorage.setItem(id(k), it.type === "toggle" ? (v ? "1" : "0") : String(v));
   } catch { /* private mode: lasts the visit */ }
   apply(it);

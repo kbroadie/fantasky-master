@@ -39,7 +39,16 @@ const control = (it) => (it.type === "steps"
   : `<div class="sw-row sw-slide"><span>${esc(it.label)}</span>${range(it, it.label)}${value(it, it.label)}</div>`);
 // Tiles: a lone switch or slider is a small tile, an effect with settings spans the row
 const tiled = (c) => c.items.length === 1 && !["choice", "dial"].includes(c.items[0].type);
-const switchCard = (c, alone = false) => {
+// A card whose effect shows elsewhere carries its own: a podium (the leader in the light, last place in the gas), or, for
+// the scoring cards, the card itself in their light (its crown's glint and the drifting glow)
+const CROWN = "M3.5 11 2.5 5l3 3L8 3l2.5 5 3-3-1 6z M3.5 13.5h9";
+const podium = (d) => {
+  const o = castOrder(d);
+  return `<div class="sw-pod fx-stage" aria-hidden="true"><div class="pod-col win">${framed(o[0])}</div><div class="pod-col last">${framed(o.at(-1))}</div></div>`;
+};
+const preview = (c, d) => (c.preview === "podium" && d ? podium(d)
+  : c.preview === "how" ? `<span class="how-icon" aria-hidden="true"><svg class="how-ico" viewBox="0 0 16 16"><path d="${CROWN}"/></svg><i class="how-glint"></i></span>` : "");
+const switchCard = (c, alone = false, d = null) => {
   const main = c.items.find((it) => it.main), rest = c.items.filter((it) => !it.main);
   if (c.fz) { // Fantasy Land: its switch, and the transitions, each played by a tap on it
     const it = rest[0];
@@ -65,9 +74,9 @@ const switchCard = (c, alone = false) => {
       <div class="sw-one">${range(it, c.title)}</div></div>`;
   }
   return `
-    <div class="card sw-card${rest.length || alone ? " wide" : ""}${main && !get(main.key) ? " off" : ""}">
+    <div class="card sw-card${rest.length || alone ? " wide" : ""}${main && !get(main.key) ? " off" : ""}${c.preview === "how" ? " sw-how" : ""}">
       <div class="card-head"><span>${esc(c.title)}</span>${main ? toggle(main, c.title) : ""}</div>
-      ${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
+      ${preview(c, d)}${rest.length ? `<div class="sw-rows">${rest.map(control).join("")}</div>` : ""}
     </div>`;
 };
 // How many settings differ from the defaults (the design's, or the live site's once it has published its own); Reset does
@@ -91,13 +100,13 @@ export const groupSay = (g) => changedSay(changedIn(g));
 // The Live site card: what Publish would do
 export const publishSay = (n = changed()) => (n ? `Publish this device's ${n} change${n > 1 ? "s" : ""} for everyone` : "Everyone sees these settings");
 // A group's cards: a tile left alone in its row spans it
-const cardsOf = (g) => {
+const cardsOf = (g, d) => {
   const tiles = g.cards.filter(tiled);
-  return g.cards.map((c) => switchCard(c, tiles.length % 2 === 1 && c === tiles.at(-1))).join("");
+  return g.cards.map((c) => switchCard(c, tiles.length % 2 === 1 && c === tiles.at(-1), d)).join("");
 };
-const switchCards = () => {
+const switchCards = (d) => {
   const n = changed();
-  return `<div class="sw-groups">${GROUPS.map((g) => group(g.id, g.title, groupSay(g), cardsOf(g))).join("")}
+  return `<div class="sw-groups">${GROUPS.map((g) => group(g.id, g.title, groupSay(g), cardsOf(g, d))).join("")}
     ${group("page", "Page", `<b class="sw-pr">#${PR}</b>`, `
       <div class="card sw-card"><div class="card-head"><span>Defaults</span><button type="button" class="ed-btn sw-reset"${resettable() ? "" : " disabled"}>Reset</button></div>
         <div class="sw-count">${changedSay(n)}</div></div>
@@ -137,19 +146,22 @@ function slide(d, c, max, med) {
   const wins = state.fantasy ? d.episodes.filter(({ ep }) => ep <= d.weeksScored && lastIn(d, ep, c)).length : c.wins;
   const bars = barsCard(d, (ep) => ep > d.weeksScored ? null : { v: c.eps[ep - 1], won: won(ep) }, max, med, c.color);
   const moss = state.moss && isMoss(c);
-
-  return `
+  const head = `
     <div class="ep-head cd-head${rank === 1 ? " fx-stage" : ""}">
       <div class="cd-img${rank === 1 ? " pod-col win" : ""}"${isMoss(c) ? ` data-moss="${c.key}"` : ""}>${framed(c)}</div>
       <div class="kicker">${ord(rank)} of ${d.contestants.length} · Series ${state.key}</div>
       <h2 class="ep-title"><span class="ep-w"><span class="ep-t">${moss ? "Maurice Moss" : esc(c.full)}</span></span></h2>
       <div class="ep-sub"><b style="color:${c.color}">${c.total}</b> points · ${c.avg.toFixed(1)} an episode${wins ? ` · ${wins} win${wins > 1 ? "s" : ""}` : ""}</div>
-    </div>
-    ${moss ? switchCards() : `${state.fantasy ? "" : records(d, c)}
+    </div>`;
+  // Moss's cards scroll in a box of their own that ends where the screen does (main.js), so whatever they change in the
+  // sky, the footer or Patatas is in view as it changes
+  if (moss) return `<div class="moss-box">${head}${switchCards(d)}</div>`;
+  return `${head}
+    ${state.fantasy ? "" : records(d, c)}
     ${bars}
     ${heatStrip(d, c)}
     ${radar(d, c)}
-    ${profile(c)}`}`;
+    ${profile(c)}`;
 }
 
 const statsRow = (c) => statsFor(state.allTime, state.key, c.full);
