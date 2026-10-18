@@ -43,7 +43,8 @@ const TERMS = [
   { icon: "trophy", name: "League", rule: ["The player with the ", "best episode placements", " throughout the series wins, regardless of points."], range: "1–5", unit: "pts per episode" },
 ];
 const FANTASY_TERMS = [["most points", "fewest points"], ["best episode placements", "worst episode placements"]];
-const terms = () => (state.fantasy ? TERMS.map((t, i) => ({ ...t, rule: [t.rule[0], FANTASY_TERMS[i][1], t.rule[2]] })) : TERMS);
+// (in Fantasy Land the last place "loses fantastikally", on request)
+const terms = () => (state.fantasy ? TERMS.map((t, i) => ({ ...t, rule: [t.rule[0], FANTASY_TERMS[i][1], t.rule[2].replace(" wins,", " loses fantastikally,")] })) : TERMS);
 const howCard = (t) => `<div class="card how-card ${t.name.toLowerCase()}">
     <div class="how-head">
       <span class="how-icon" aria-hidden="true"><svg class="how-ico" viewBox="0 0 16 16"><path d="${HOW_ICONS[t.icon]}"/></svg><i class="how-glint"></i></span>
@@ -53,13 +54,20 @@ const howCard = (t) => `<div class="card how-card ${t.name.toLowerCase()}">
     <p class="how-range"><b>${esc(t.range)}</b><span>${esc(t.unit)}</span></p>
   </div>`;
 
+// Who leads each board (who wins it, once the series is over); in Fantasy Land who is an embarrassment to it (who loses it
+// fantastikally), on request. A line too wide for the screen is fitted by fitTitles (main.js), the names counted at
+// the last (data-n)
 function leaderLine(d, rows, w) {
   const show = leaders(rows, "show"), league = leaders(rows, "league"), final = d.complete && w === d.episodes.length;
-  const verb = (names) => (final ? (names.length > 1 ? "win" : "wins") : (names.length > 1 ? "lead" : "leads"));
-  const who = (names) => `<b>${esc(listing(names))}</b>`;
+  const who = (names) => `<b data-n="${names.length}">${esc(listing(names))}</b>`;
+  const say = (names, B) => {
+    const many = names.length > 1;
+    if (!state.fantasy) return `${who(names)} ${final ? (many ? "win" : "wins") : (many ? "lead" : "leads")} ${B}`;
+    return final ? `${who(names)} ${many ? "lose" : "loses"} ${B} fantastikally` : `${who(names)} ${many ? "are" : "is"} an embarrassment to ${B}`;
+  };
   const S = `<span class="st-show">The Show</span>`, L = `<span class="st-league">The League</span>`;
-  if (listing(show) === listing(league)) return `<span>${who(show)} ${verb(show)} ${S} and ${L}</span>`;
-  return `<span>${who(show)} ${verb(show)} ${S}</span><span>${who(league)} ${verb(league)} ${L}</span>`;
+  if (listing(show) === listing(league)) return `<span>${say(show, `${S} and ${L}`)}</span>`;
+  return `<span>${say(show, S)}</span><span>${say(league, L)}</span>`;
 }
 
 export function standingsHero(d, w = stWeek(d)) {
@@ -286,7 +294,7 @@ function journey(d, p, side, w) {
   const g = upTo ? gap(p, upTo) : 0;
   const axis = d.episodes.map(({ ep }) => `<span class="${ep === upTo ? "now" : ep > end ? "later" : ""}" style="--x:${f(x(ep))}%">${ep}</span>`).join("");
   const board = BOARD[k], rank = upTo && 1 + d.players.filter((q) => total(q, upTo) > total(p, upTo)).length;
-  const say = upTo ? `${p.name}: ${g ? `${-g} ${board} points behind the leader` : `leads the ${board} on ${shown(p, upTo)}`} after episode ${upTo}, ${ord(rank)}` : `${p.name}: no episodes scored yet`;
+  const say = upTo ? `${p.name}: ${g ? `${-g} ${board} points behind the leader` : `${state.fantasy ? "is an embarrassment to" : "leads"} the ${board} on ${shown(p, upTo)}`} after episode ${upTo}, ${ord(rank)}` : `${p.name}: no episodes scored yet`;
   return `<div class="jr ${k}" role="img" aria-label="${esc(say)}">
     <div class="jr-plot">${grid}${lines}<div class="jr-ax" aria-hidden="true">${axis}</div></div>
   </div>`;

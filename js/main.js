@@ -95,6 +95,7 @@ function renderCast(d) {
 function fitTitles() {
   const near = [ST, EP, CAST].filter((sw) => $(sw.body).offsetParent).flatMap((sw) => { const k = $(sw.body).children, i = sw.get(); return [k[i - 1], k[i], k[i + 1]]; });
   const key = `${pageW} ${state.fantasy ? 1 : 0}`;
+  fitLeaders(near.filter(Boolean), key);
   const ts = near.filter(Boolean).flatMap((s) => [...s.querySelectorAll("h2.ep-title .ep-w")]).filter((t) => t.dataset.fit !== key);
   if (!ts.length) return;
   for (const t of ts) t.style.removeProperty("--fit");
@@ -104,6 +105,24 @@ function fitTitles() {
   // A smaller size isn't quite in proportion (the glyphs' spacing rounds), so any still over are taken down the rest
   const over = ts.filter((t, i) => fit[i] < 1 && t.scrollWidth > t.clientWidth).map((t) => [t, t.clientWidth, t.scrollWidth]);
   for (const [t, cw, sw] of over) set(t, +t.style.getPropertyValue("--fit") * (cw - 1) / sw);
+}
+// A week's leaders line too big for its box (many tied, or Fantasy Land's longer words: a line each too wide, or one line
+// for both boards wrapping past its two lines): its type made smaller, to 11px at the least, and past that its names
+// counted ("5 players")
+function fitLeaders(slides, key) {
+  for (const line of slides.flatMap((s) => [...s.querySelectorAll(".st-leaders > span")])) {
+    if (line.dataset.fit === key) continue;
+    line.dataset.fit = key;
+    const b = line.querySelector("b[data-n]"), box = line.parentElement, alone = !line.nextElementSibling && !line.previousElementSibling;
+    const over = () => (alone ? line.offsetHeight > box.clientHeight : line.scrollWidth > box.clientWidth - 2);
+    const size = (px) => { line.style.fontSize = px ? `${px}px` : ""; line.style.lineHeight = px ? `${((px * 16) / 14).toFixed(2)}px` : ""; };
+    const shrink = () => { for (let px = 13.5; px >= 11 && over(); px -= 0.5) size(px); };
+    size(0);
+    if (b?.dataset.names) { b.textContent = b.dataset.names; delete b.dataset.names; }
+    if (!over()) continue;
+    shrink();
+    if (over() && b?.dataset.n > 1) { b.dataset.names = b.textContent; b.textContent = `${b.dataset.n} players`; size(0); shrink(); }
+  }
 }
 // Titles refit when main's width changes
 let pageW = 0;
