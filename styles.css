@@ -564,6 +564,10 @@ button.st-side.league { border-left: 1px solid var(--b-gold); }
    cards' shadows, 18px deep and 24px in the dream, room to fade out; Patatas sits 12px nearer to keep the same gap) */
 /* Off-screen slides skip rendering. Nothing inside a .slide may be position: fixed. */
 .slide { content-visibility: auto; contain-intrinsic-size: auto 390px auto 1200px; }
+/* ...but the slide on show is drawn for the whole of a switch's transition: a named element in a slide skipping its
+   contents takes no part in it, and Safari judged the slide drawn in the switch to be skipping when it pictured the new
+   view (Slam's rows, hero and board came out blank there); Chrome keeps it drawn */
+html[data-vt] .slide.here { content-visibility: visible; }
 
 #welcome { padding: 12px var(--px) 0; }
 #welcome[hidden] { display: none; }
