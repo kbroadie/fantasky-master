@@ -180,7 +180,11 @@ const ST = { body: "#st-body", tabs: "#st-tabs", get: () => stWeek(state.d) - 1,
 const EP = { body: "#ep-body", tabs: "#ep-tabs", get: () => state.ep - 1, set: (i) => { state.ep = i + 1; } };
 const CAST = { body: "#cast-body", tabs: "#cast-tabs", get: () => state.cast, set: (i) => { state.cast = i; } };
 
-const idxOf = (body) => Math.round(body.scrollLeft / body.clientWidth);
+// A swiper's slide width as laid out, to the fraction: a phone's screen is often a fraction of a pixel wide (411.43px on
+// one Android phone), which clientWidth rounds, so each slide's place came out a little off, more so the further along
+// (on request: the Standings shimmied, nudged back to a slide's place by the reckoning and snapped back by Chrome)
+const slideW = (b) => b.getBoundingClientRect().width;
+const idxOf = (body) => Math.round(body.scrollLeft / slideW(body));
 
 function toTop(smooth = false) {
   if (scrollY > 0) scrollTo({ top: 0, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
@@ -343,7 +347,7 @@ function footGlide(dy) {
   for (const el of lifted) el.animate({ transform: [`translateY(${dy}px)`, "translateY(0)"] }, { duration: GLIDE_MS, easing: FOOT_EASE, composite: "add" });
 }
 function fit(body, glide = false) {
-  const w = body.clientWidth, kids = body.children;
+  const w = slideW(body), kids = body.children;
   if (!w || !kids.length) return;
   const f = body.scrollLeft / w, i = Math.min(Math.floor(f), kids.length - 1), t = f - i;
   if (!(t < 0.01 || t > 0.99 || i + 1 >= kids.length)) {
@@ -405,7 +409,7 @@ function mark(sw, i, smooth = true) {
 }
 function jump(sw, i) {
   const body = $(sw.body);
-  body.scrollLeft = i * body.clientWidth;
+  body.scrollLeft = i * slideW(body);
   mark(sw, i, false);
   fit(body);
 }
@@ -437,7 +441,7 @@ function bindSwiper(sw, onEdge, ends) {
   // the slide it was swiped toward once it's a quarter of the way there, else back (on request: Safari on an iPhone left
   // it between two weeks, and then, going to the nearer, back to the week it was swiped from)
   const unstick = () => {
-    const w = body.clientWidth, f = body.scrollLeft / w;
+    const w = slideW(body), f = body.scrollLeft / w;
     if (!w || touching || settling || body.style.scrollSnapType === "none" || Math.abs(f - Math.round(f)) * w <= 1) return; // (not mid-drag on the footer)
     const start = from ?? Math.round(f), to = Math.abs(f - start) > 0.25 ? start + Math.sign(f - start) : start;
     from = null;
@@ -446,7 +450,7 @@ function bindSwiper(sw, onEdge, ends) {
   body.addEventListener("touchstart", (e) => {
     touching = e.touches.length;
     settling?.abort(); // a finger takes over from a glide
-    const w = body.clientWidth, f = body.scrollLeft / w;
+    const w = slideW(body), f = body.scrollLeft / w;
     from = w && Math.abs(f - Math.round(f)) < 0.05 ? Math.round(f) : from; // the slide it's swiped from
   }, { passive: true });
   for (const t of ["touchend", "touchcancel"]) body.addEventListener(t, (e) => { touching = e.touches.length; }, { passive: true });
@@ -464,7 +468,7 @@ function bindSwiper(sw, onEdge, ends) {
   }, { passive: true });
   $(sw.tabs).addEventListener("click", (e) => {
     const b = e.target.closest("[data-slide]");
-    if (b) body.scrollTo({ left: b.dataset.slide * body.clientWidth, behavior: reducedMotion ? "auto" : "smooth" });
+    if (b) body.scrollTo({ left: b.dataset.slide * slideW(body), behavior: reducedMotion ? "auto" : "smooth" });
   });
   const can = {
     prev: () => ends.prev && body.scrollLeft <= 2,
@@ -524,7 +528,7 @@ function footSwipe(area) {
     id = null;
     if (!on) return;
     dragged = performance.now();
-    const w = body.clientWidth, n = body.children.length, dx = e.clientX - x0, f = body.scrollLeft / w;
+    const w = slideW(body), n = body.children.length, dx = e.clientX - x0, f = body.scrollLeft / w;
     const [t0, xa] = trail[0] || [e.timeStamp, e.clientX], v = (e.clientX - xa) / Math.max(1, e.timeStamp - t0); // px a ms
     // On to the next slide on a flick or a quarter of the way, else back to the nearer
     const go = Math.abs(v) > 0.2 ? v : Math.abs(dx) > w / 4 ? dx : 0;
