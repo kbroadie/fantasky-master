@@ -429,15 +429,23 @@ function edgeNav(el, can, onEdge) {
 
 function bindSwiper(sw, onEdge, ends) {
   const body = $(sw.body);
-  let raf = 0, settle = 0, still = 0, touching = 0;
-  // A swiper left between two slides once it's still, with no finger on it and no footer drag settling it, glides to the
-  // nearer: Safari on an iPhone could leave it there (on request: it got stuck between two weeks)
+  let raf = 0, settle = 0, still = 0, touching = 0, from = null;
+  // A swiper left between two slides once it's still, with no finger on it and no footer drag settling it, glides on to
+  // the slide it was swiped toward once it's a quarter of the way there, else back (on request: Safari on an iPhone left
+  // it between two weeks, and then, going to the nearer, back to the week it was swiped from)
   const unstick = () => {
-    const w = body.clientWidth, at = Math.round(body.scrollLeft / w) * w;
-    if (!w || touching || body.style.scrollSnapType === "none" || Math.abs(body.scrollLeft - at) <= 1) return;
-    body.scrollTo({ left: at, behavior: reducedMotion ? "auto" : "smooth" });
+    const w = body.clientWidth, f = body.scrollLeft / w;
+    if (!w || touching || settling || body.style.scrollSnapType === "none" || Math.abs(f - Math.round(f)) * w <= 1) return; // (not mid-drag on the footer)
+    const start = from ?? Math.round(f), to = Math.abs(f - start) > 0.25 ? start + Math.sign(f - start) : start;
+    from = null;
+    settleTo(body, Math.max(0, Math.min(body.children.length - 1, to)) * w);
   };
-  body.addEventListener("touchstart", () => { touching++; }, { passive: true });
+  body.addEventListener("touchstart", (e) => {
+    touching = e.touches.length;
+    settling?.abort(); // a finger takes over from a glide
+    const w = body.clientWidth, f = body.scrollLeft / w;
+    from = w && Math.abs(f - Math.round(f)) < 0.05 ? Math.round(f) : from; // the slide it's swiped from
+  }, { passive: true });
   for (const t of ["touchend", "touchcancel"]) body.addEventListener(t, (e) => { touching = e.touches.length; }, { passive: true });
   body.addEventListener("scroll", () => {
     if (!raf) raf = requestAnimationFrame(() => {
@@ -469,6 +477,23 @@ const EDGES = new Map();
 // to the nearer slide, or on to the next on a flick; past an end, to the neighbouring tab, as on the slides. Snapping is
 // off while the finger moves it, as each scroll would snap, and back once it settles. A drag isn't a tap
 let dragged = 0, settling = null;
+// A swiper glided to a slide by the page itself, a frame at a time, with snapping off till it's there: Safari cut a
+// smooth scrollTo short, leaving it between two slides (on request). settling: the glide under way, which a finger stops
+function settleTo(b, left) {
+  settling?.abort();
+  b.style.scrollSnapType = "none";
+  const x0 = b.scrollLeft, d = left - x0, t0 = performance.now(), dur = reducedMotion ? 0 : Math.min(420, 200 + Math.abs(d) * 0.5);
+  let id = 0;
+  const done = () => { cancelAnimationFrame(id); b.style.scrollSnapType = ""; if (settling === me) settling = null; };
+  const me = { abort: done };
+  const step = (now) => {
+    const k = dur ? Math.min(1, (now - t0) / dur) : 1;
+    b.scrollLeft = x0 + d * (1 - (1 - k) ** 3); // eased out
+    if (k < 1) id = requestAnimationFrame(step); else done();
+  };
+  settling = me;
+  id = requestAnimationFrame(step);
+}
 function footSwipe(area) {
   let id = null, x0 = 0, y0 = 0, s0 = 0, body = null, on = false, trail = [];
   area.addEventListener("pointerdown", (e) => {
@@ -501,20 +526,8 @@ function footSwipe(area) {
     // On to the next slide on a flick or a quarter of the way, else back to the nearer
     const go = Math.abs(v) > 0.2 ? v : Math.abs(dx) > w / 4 ? dx : 0;
     const i = Math.max(0, Math.min(n - 1, go < 0 ? Math.ceil(f) : go > 0 ? Math.floor(f) : Math.round(f)));
-    // Snapping back on once it's there (the drag's own scrolls end too, before it's moved off)
-    const b = body, ac = new AbortController(), restore = (force) => {
-      if (force !== true && Math.abs(b.scrollLeft - i * w) > 1) return;
-      ac.abort();
-      b.style.scrollSnapType = "";
-      // (not there in time: its glide was cut short, and Safari doesn't snap again as snapping comes back on)
-      if (Math.abs(b.scrollLeft - i * w) > 1) b.scrollTo({ left: i * w, behavior: reducedMotion ? "auto" : "smooth" });
-    };
-    settling = ac;
-    b.scrollTo({ left: i * w, behavior: reducedMotion ? "auto" : "smooth" });
-    b.addEventListener("scrollend", restore, { signal: ac.signal });
-    b.addEventListener("scroll", restore, { signal: ac.signal, passive: true }); // where there's no scrollend
-    const t = setTimeout(() => restore(true), 1200);
-    ac.signal.addEventListener("abort", () => clearTimeout(t));
+    const b = body;
+    settleTo(b, i * w);
     // Past an end: the neighbouring tab
     const edge = EDGES.get(b);
     if (edge && Math.abs(dx) >= 60) {
