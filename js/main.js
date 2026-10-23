@@ -429,7 +429,16 @@ function edgeNav(el, can, onEdge) {
 
 function bindSwiper(sw, onEdge, ends) {
   const body = $(sw.body);
-  let raf = 0, settle = 0;
+  let raf = 0, settle = 0, still = 0, touching = 0;
+  // A swiper left between two slides once it's still, with no finger on it and no footer drag settling it, glides to the
+  // nearer: Safari on an iPhone could leave it there (on request: it got stuck between two weeks)
+  const unstick = () => {
+    const w = body.clientWidth, at = Math.round(body.scrollLeft / w) * w;
+    if (!w || touching || body.style.scrollSnapType === "none" || Math.abs(body.scrollLeft - at) <= 1) return;
+    body.scrollTo({ left: at, behavior: reducedMotion ? "auto" : "smooth" });
+  };
+  body.addEventListener("touchstart", () => { touching++; }, { passive: true });
+  for (const t of ["touchend", "touchcancel"]) body.addEventListener(t, (e) => { touching = e.touches.length; }, { passive: true });
   body.addEventListener("scroll", () => {
     if (!raf) raf = requestAnimationFrame(() => {
       raf = 0;
@@ -439,6 +448,8 @@ function bindSwiper(sw, onEdge, ends) {
     });
     clearTimeout(settle);
     settle = setTimeout(() => fit(body), 120);
+    clearTimeout(still);
+    still = setTimeout(unstick, 250);
   }, { passive: true });
   $(sw.tabs).addEventListener("click", (e) => {
     const b = e.target.closest("[data-slide]");
@@ -495,6 +506,8 @@ function footSwipe(area) {
       if (force !== true && Math.abs(b.scrollLeft - i * w) > 1) return;
       ac.abort();
       b.style.scrollSnapType = "";
+      // (not there in time: its glide was cut short, and Safari doesn't snap again as snapping comes back on)
+      if (Math.abs(b.scrollLeft - i * w) > 1) b.scrollTo({ left: i * w, behavior: reducedMotion ? "auto" : "smooth" });
     };
     settling = ac;
     b.scrollTo({ left: i * w, behavior: reducedMotion ? "auto" : "smooth" });
