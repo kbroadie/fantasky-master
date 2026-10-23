@@ -7,7 +7,7 @@ import { $, $$, esc, reducedMotion, state, fmtWhen, until, perEpisodeStats, foot
 import { standingsSlides, stWeek, weekTabs, rowMore, boardChart, boardHead, chartable, welcomeCard, EMBRACE } from "./views/table.js";
 import { epTabs, epSlides } from "./views/episodes.js";
 import { castOrder, castTabs, castSlides, castSlide, fill, at as sliderAt, changedSay, resettable, groupSay, publishSay } from "./views/cast.js";
-import { GROUPS, get, set, item, shown, hourOf, resetAll, changed, onSwitch, setAirPhase, toPublish } from "./switches.js";
+import { GROUPS, get, set, item, shown, hourOf, resetAll, changed, onSwitch, setAirPhase, toPublish, CHROMIUM } from "./switches.js";
 import { mountPodiumFx } from "./podium-fx.js";
 import { PR, latestPR, revSay, reloadFresh } from "./version.js";
 import { loadStats, allTimePerEpisode } from "./alltime.js";
@@ -347,6 +347,9 @@ function fit(body, glide = false) {
   if (!w || !kids.length) return;
   const f = body.scrollLeft / w, i = Math.min(Math.floor(f), kids.length - 1), t = f - i;
   if (!(t < 0.01 || t > 0.99 || i + 1 >= kids.length)) {
+    // Safari snaps a swiper whose size changes mid-swipe back to the slide it was on (on request: Episode 9 wouldn't swipe
+    // to 8, a short week to a tall one): there it keeps its height, and the footer its place, till the swipe has settled
+    if (!CHROMIUM) return;
     if (pair?.body !== body || pair.i !== i) {
       const pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
       const view = innerHeight, top = topIn(body);

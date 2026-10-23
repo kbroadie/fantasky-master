@@ -9,7 +9,7 @@ import { SITE } from "./site.js";
 
 // Fantasy Land's transition is Slam where Chromium draws it, else Iris (Safari, and every iOS browser, all WebKit): Slam is
 // broken there, so it's kept on the card to look into, but chosen only for the visit (`brief`)
-const CHROMIUM = !!navigator.userAgentData?.brands?.some((b) => b.brand === "Chromium");
+export const CHROMIUM = !!navigator.userAgentData?.brands?.some((b) => b.brand === "Chromium");
 // The cards in groups, each folding away (cast.js; which are open is kept per device), the same in both views
 export const GROUPS = [
   { id: "fz", title: "Fantasy Land", cards: [
