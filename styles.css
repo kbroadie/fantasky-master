@@ -1349,6 +1349,10 @@ html.vt-glass.fz .topbar::before { background: linear-gradient(180deg, #3a0c60, 
 html:is([data-vt="iris"], [data-vt="vertigo"], [data-vt="slam"]) .vt-probe { view-transition-name: vt-probe; }
 /* Slam's dust, sparks, smoke and shine (slam-fx.js): over everything, for the transition only */
 .vt-fx { position: fixed; inset: 0; z-index: 30; width: 100%; height: 100%; pointer-events: none; }
+/* Slam's shine (slam-fx.js): two bands of light across the landed row, in the row itself, so its picture carries them */
+.vt-shine { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; --sh: rgba(255, 240, 205, 1); }
+.vt-shine.fz { --sh: rgba(255, 236, 250, 1); }
+.vt-shine > i { position: absolute; top: 0; bottom: 0; left: 0; width: 36%; opacity: 0; mix-blend-mode: plus-lighter; background: linear-gradient(105deg, transparent, var(--sh), transparent); }
 /* Slam's rows flip over as its shockwave reaches them (the rest of Slam is written by flip.js, from where things are) */
 /* Edge on, a picture still left a hairline, so it's hidden there */
 @keyframes vt-flip-out { 99% { opacity: 1; } to { transform: perspective(600px) rotateX(90deg); opacity: 0; } }

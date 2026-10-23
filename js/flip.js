@@ -155,7 +155,7 @@ html[data-vt="slam"]::view-transition-old(${nm}), html[data-vt="slam"]::view-tra
   });
   // Dust and smoke as it breaks loose, sparks and smoke where it lands, and a shine across it (slam-fx.js): a canvas
   // over everything, the new view's only, drawn live
-  const fx = slamFx({ from: o, to: n, loose: SLAM.loose, lift: L, impact: T, end, fantasy: document.documentElement.classList.contains("fz") });
+  const fx = slamFx({ from: o, to: n, row: rows[0], loose: SLAM.loose, lift: L, impact: T, end, fantasy: document.documentElement.classList.contains("fz") });
   fx.canvas.style.viewTransitionName = "vt-fx";
   document.body.append(fx.canvas);
   // The places the camera, the row and the wave's front are written at: the screen's, moved by where the screen is in
