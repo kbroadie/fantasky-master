@@ -19,9 +19,9 @@ function sprite(key, size, stops) {
 const glow = (col) => sprite(`g${col}`, 32, [[0, "#fff"], [0.18, col], [0.5, col.replace(/[\d.]+\)$/, "0.25)")], [1, col.replace(/[\d.]+\)$/, "0)")]]);
 const puff = (col) => sprite(`p${col}`, 96, [[0, col.replace(/[\d.]+\)$/, "0.55)")], [0.45, col.replace(/[\d.]+\)$/, "0.28)")], [1, col.replace(/[\d.]+\)$/, "0)")]]);
 
-// from, to: the row's rect before and where it lands; times in seconds: loose (shaking), lift (lifted), impact, end;
-// fantasy: the view it lands in, whose colours it throws
-export function slamFx({ from: o, to: n, loose, lift, impact, end, fantasy }) {
+// from, to: the row's rect before and where it lands; row: the landed row (its new picture's element); times in seconds:
+// loose (shaking), lift (lifted), impact, end; fantasy: the view it lands in, whose colours it throws
+export function slamFx({ from: o, to: n, row, loose, lift, impact, end, fantasy }) {
   const dpr = 1, W = innerWidth, H = innerHeight; // soft light and smoke: a quarter of a 2× screen's pixels does
   const canvas = Object.assign(document.createElement("canvas"), { className: "vt-fx", width: Math.round(W * dpr), height: Math.round(H * dpr) });
   canvas.setAttribute("aria-hidden", "true");
@@ -47,12 +47,16 @@ export function slamFx({ from: o, to: n, loose, lift, impact, end, fantasy }) {
     const x = rand(n.left, n.right), out = Math.sign(x - (n.left + n.right) / 2) || 1;
     bits.push({ kind: "smoke", t0: impact + rand(0, 0.08), life: rand(0.8, 1.05), x, y: n.bottom - 6, vx: out * rand(40, 170), vy: -rand(8, 40), r0: rand(10, 16), r1: rand(46, 72), a: 0.32, col: smoke });
   }
-  // The shine: two bands of light sweep across the landed row
-  const shine = [impact + 0.1, impact + 0.28];
+  // The shine: two bands of light sweep across the landed row, drawn in the row itself (styles.css, .vt-shine), so its
+  // picture carries them wherever the browser places it (on the canvas, Safari showed them above the row)
+  const shine = [[impact + 0.1, 0.5], [impact + 0.28, 0.28]];
+  const glint = Object.assign(document.createElement("i"), { className: `vt-shine${fantasy ? " fz" : ""}`, innerHTML: "<i></i><i></i>" });
+  glint.setAttribute("aria-hidden", "true");
+  row?.append(glint);
 
   // Nothing showing and nothing left on the canvas: nothing to draw, so the canvas isn't sent again
   let shown = true;
-  const showing = (t) => bits.some((b) => t >= b.t0 && t <= b.t0 + b.life) || shine.some((t0) => t >= t0 && t <= t0 + 0.5);
+  const showing = (t) => bits.some((b) => t >= b.t0 && t <= b.t0 + b.life);
   const draw = (t) => {
     const now = showing(t);
     if (!now && !shown) return;
@@ -83,21 +87,6 @@ export function slamFx({ from: o, to: n, loose, lift, impact, end, fantasy }) {
       const z = b.r * 5;
       g.drawImage(glow(b.col), x - z, y - z, 2 * z, 2 * z);
     }
-    for (const [i, t0] of shine.entries()) {
-      const k = (t - t0) / 0.5;
-      if (k < 0 || k > 1) continue;
-      const w = n.width, cx = n.left - 0.3 * w + k * 1.6 * w, band = 0.18 * w;
-      g.save();
-      g.beginPath(); g.rect(n.left, n.top, n.width, n.height); g.clip();
-      const gr = g.createLinearGradient(cx - band, n.top, cx + band, n.bottom);
-      const peak = (i ? 0.28 : 0.5) * Math.sin(Math.PI * k);
-      gr.addColorStop(0, "rgba(255, 255, 255, 0)");
-      gr.addColorStop(0.5, fantasy ? `rgba(255, 236, 250, ${peak})` : `rgba(255, 240, 205, ${peak})`);
-      gr.addColorStop(1, "rgba(255, 255, 255, 0)");
-      g.globalAlpha = 1; g.fillStyle = gr;
-      g.fillRect(n.left, n.top, n.width, n.height);
-      g.restore();
-    }
     g.globalAlpha = 1;
   };
 
@@ -111,7 +100,17 @@ export function slamFx({ from: o, to: n, loose, lift, impact, end, fantasy }) {
   const stop = () => { cancelAnimationFrame(raf); raf = 0; g.clearRect(0, 0, W, H); };
   return {
     canvas,
-    start(anim) { clock = anim; if (!raf) raf = requestAnimationFrame(frame); },
-    stop() { stop(); canvas.remove(); },
+    start(anim) {
+      clock = anim;
+      if (!raf) raf = requestAnimationFrame(frame);
+      // The shine's bands on the same clock: each crosses the row diagonally in half a second, its light rising and falling
+      [...glint.children].forEach((band, i) => {
+        const [t0, peak] = shine[i];
+        const a = band.animate([{ transform: "translateX(-135%)", opacity: 0 }, { opacity: peak, offset: 0.5 }, { transform: "translateX(310%)", opacity: 0 }],
+          { duration: 500, delay: t0 * 1000, fill: "both" });
+        if (anim?.startTime != null) a.startTime = anim.startTime;
+      });
+    },
+    stop() { stop(); canvas.remove(); glint.remove(); },
   };
 }
